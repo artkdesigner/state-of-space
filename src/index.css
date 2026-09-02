@@ -6,6 +6,43 @@
   --color-light: #f5f2ec;
   --color-brown: #544f4c;
   --font-manrope: 'Manrope', sans-serif;
+
+  /* Брейкпоинты как в Webflow-проектах (Nordhaus/Snapa): sm — Mobile
+     Landscape (480px), md — Tablet (768px, штатное значение Tailwind),
+     lg — Desktop (992px). Значения на каждом шаге берутся из соответствующего
+     Figma-фрейма (mobile/tablet/desktop), без clamp() в компонентах — вместо
+     этого плавность даёт rem-скейлинг корня ниже. */
+  --breakpoint-sm: 30rem;
+  --breakpoint-lg: 62rem;
+}
+
+/* Rem-скейлинг корня — тот же приём, что в Nordhaus/Snapa (Webflow): font-size
+   html зависит от vw, поэтому любой rem на странице масштабируется плавно и
+   непрерывно внутри каждой брейкпоинт-зоны, а не скачет между фиксированными
+   значениями. Коэффициент в каждой зоне подобран так, чтобы 1rem = 16px ровно
+   на ширине эталонного Figma-фрейма для этой зоны (Desktop 1920 / Tablet 768 /
+   Mobile 390) — тогда rem-значения, взятые из макета конкретного брейкпоинта,
+   на его ширине дают ровно те же px, что в Figma, а между брейкпоинтами и за
+   пределами 1920 — плавно продолжают масштабироваться, а не остаются плоскими.
+   Длины в @media — в rem: спецификация резолвит их по дефолтному (16px)
+   размеру шрифта браузера, не по переопределённому здесь же, так что
+   зацикливания нет. */
+html {
+  font-size: 0.83333vw; /* 16px при 1920px (Desktop) */
+}
+
+@media screen and (max-width: 61.9375rem) {
+  /* ≤991px — Tablet */
+  html {
+    font-size: 2.08333vw; /* 16px при 768px (Tablet) */
+  }
+}
+
+@media screen and (max-width: 30rem) {
+  /* ≤480px — Mobile */
+  html {
+    font-size: 4.10256vw; /* 16px при 390px (Mobile) */
+  }
 }
 
 :root {

@@ -4,9 +4,9 @@ export default function IntroSection() {
   return (
     <section
       id="intro"
-      className="Intro flex min-h-dvh flex-col items-center justify-between bg-brown px-[clamp(0.625rem,0.2083rem+0.8681vw,1.25rem)] py-[clamp(3.75rem,1.25rem+5.208vw,7.5rem)] text-light"
+      className="Intro flex min-h-dvh flex-col items-center justify-between bg-brown px-2.5 py-15 text-light lg:px-5 lg:py-30"
     >
-      <h2 className="Intro-title mx-auto max-w-[94rem] text-center font-manrope text-[clamp(1.25rem,0.6128rem+2.6144vw,3.75rem)] font-semibold leading-[1.2] tracking-[-0.03em]">
+      <h2 className="Intro-title mx-auto max-w-[94rem] text-center font-manrope text-[1.25rem] font-semibold leading-[1.2] tracking-[-0.03em] md:text-[1.875rem] lg:text-[3.75rem]">
         Live a unique experience inspired by the natural rhythm of the ocean. An
         experience where the important thing is not a change of scenery, but the
         inner sensation.
@@ -15,10 +15,10 @@ export default function IntroSection() {
       <img
         src={introLogo}
         alt="State of Space"
-        className="Intro-logo size-[6.25rem]"
+        className="Intro-logo size-25"
       />
 
-      <div className="Intro-bottom-wrap grid w-full grid-cols-1 items-start gap-5 font-manrope text-[clamp(0.875rem,0.7083rem+0.3472vw,1.125rem)] font-medium leading-[1.3] tracking-[-0.01em] text-light/60 md:grid-cols-[1fr_auto_1fr]">
+      <div className="Intro-bottom-wrap grid w-full grid-cols-1 items-start gap-5 font-manrope text-[0.875rem] font-medium leading-[1.3] tracking-[-0.01em] text-light/60 md:grid-cols-[1fr_auto_1fr] lg:text-[1.125rem]">
         <p className="Intro-bottom-title order-1 whitespace-nowrap md:order-none md:text-left">
           Ocean Space
         </p>
