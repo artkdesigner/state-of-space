@@ -1,13 +1,11 @@
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@500;600&display=swap');
 @import 'tailwindcss';
 
-/*
-  Токены дизайн-системы из Figma (цвета, шрифты, отступы) добавлять сюда,
-  например:
-  @theme {
-    --color-brand: #...;
-    --font-heading: ...;
-  }
-*/
+@theme {
+  --color-dark: #33302f;
+  --color-light: #f5f2ec;
+  --font-manrope: 'Manrope', sans-serif;
+}
 
 :root {
   color-scheme: light dark;
