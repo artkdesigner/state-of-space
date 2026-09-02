@@ -53,6 +53,19 @@ body {
   margin: 0;
 }
 
+/* Скрыть полосу прокрутки (как в Nordhaus/Snapa) — скролл остаётся рабочим,
+   просто без видимого скроллбара. */
+html,
+body {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE 10+ */
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Edge */
+}
+
 /* Уважать системную настройку «уменьшить движение» — гасит все reveal-переходы
    и анимации (см. src/lib/anim.tsx). */
 @media (prefers-reduced-motion: reduce) {
