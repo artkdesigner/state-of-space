@@ -48,8 +48,11 @@ export default function NavBar() {
         ))}
       </header>
 
-      <header className="Nav fixed inset-x-0 top-0 z-50 flex items-center p-2.5 font-manrope text-dark lg:hidden">
-        <a href="#hero" className="Nav-logo absolute left-1/2 -translate-x-1/2">
+      <header className="Nav fixed inset-x-2.5 top-2.5 z-50 flex h-10 items-center font-manrope text-dark md:h-12 lg:hidden">
+        <a
+          href="#hero"
+          className="Nav-logo absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+        >
           <NavLogo className="size-10 md:size-12" />
         </a>
 

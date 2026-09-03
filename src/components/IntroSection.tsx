@@ -18,11 +18,11 @@ export default function IntroSection() {
         className="Intro-logo size-25"
       />
 
-      <div className="Intro-bottom-wrap grid w-full grid-cols-1 items-start gap-5 font-manrope text-[0.875rem] font-medium leading-[1.3] tracking-[-0.01em] text-light/60 md:grid-cols-[1fr_auto_1fr] lg:text-[1.125rem]">
-        <p className="Intro-bottom-title order-1 whitespace-nowrap md:order-none md:text-left">
+      <div className="Intro-bottom-wrap grid w-full grid-cols-1 items-start gap-5 font-manrope text-[0.875rem] font-medium leading-[1.3] tracking-[-0.01em] text-light/60 md:grid-cols-[10.75rem_1fr_10.75rem] lg:grid-cols-[1fr_37.75rem_1fr] lg:gap-0 lg:text-[1.125rem]">
+        <p className="Intro-bottom-title order-1 whitespace-nowrap text-center md:order-none md:text-left">
           Ocean Space
         </p>
-        <p className="Intro-bottom-sub order-3 mx-auto max-w-[37.75rem] text-center md:order-none">
+        <p className="Intro-bottom-sub order-3 text-center md:order-none">
           Inspired by ocean landscapes and minimalist architecture, the project
           examines how spatial design influences focus, perception, and
           cognitive balance. Natural elements are used intentionally - to
