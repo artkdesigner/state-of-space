@@ -44,42 +44,44 @@ export default function QualitiesSection() {
           ))}
         </div>
 
-        <div className="Qualities-list flex w-full flex-col items-end gap-2.5 pr-2.5 md:flex-1 md:items-center md:justify-center md:gap-0 md:pr-0 lg:w-full lg:flex-none lg:items-center lg:justify-center">
-          {QUALITIES.map((quality, index) => (
-            <button
-              key={quality.title}
-              type="button"
-              onMouseEnter={() => setActiveIndex(index)}
-              onFocus={() => setActiveIndex(index)}
-              className="Qualities-item flex w-full cursor-pointer items-start justify-end md:items-center"
-            >
-              <span
-                className={`font-manrope text-[1.625rem] font-medium leading-none tracking-[-0.04em] transition-colors duration-300 md:text-[3.125rem] lg:text-[8.75rem] ${
-                  index === activeIndex ? 'text-dark' : 'text-dark/30'
-                }`}
+        <div className="Qualities-list flex w-full flex-col items-end gap-2.5 pr-2.5 md:flex-1 md:justify-center md:gap-0 md:pr-0 lg:w-full lg:flex-none lg:justify-center">
+          <div className="flex flex-col">
+            {QUALITIES.map((quality, index) => (
+              <button
+                key={quality.title}
+                type="button"
+                onMouseEnter={() => setActiveIndex(index)}
+                onFocus={() => setActiveIndex(index)}
+                className="Qualities-item cursor-pointer text-left"
               >
-                {quality.title}
-              </span>
-            </button>
-          ))}
+                <span
+                  className={`font-manrope text-[1.625rem] font-medium leading-none tracking-[-0.04em] transition-colors duration-300 md:text-[3.125rem] lg:text-[8.75rem] ${
+                    index === activeIndex ? 'text-dark' : 'text-dark/30'
+                  }`}
+                >
+                  {quality.title}
+                </span>
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
       <div className="Qualities-numbers flex w-full flex-col items-start justify-end gap-5 px-2.5 pb-2.5 font-manrope font-medium md:flex-row md:items-end md:gap-2.5 md:px-2.5 md:pb-2.5 lg:gap-5 lg:p-5">
-        <div className="Qualities-numbers-left flex w-full items-start gap-4 md:w-60.75 md:flex-col md:items-start md:gap-2.5 lg:w-153.25 lg:gap-5">
+        <div className="Qualities-numbers-left flex w-full items-start gap-2 md:w-60.75 md:flex-col md:items-start md:gap-2.5 lg:w-153.25 lg:gap-5">
           <p className="w-27.25 text-[0.875rem] leading-[1.3] tracking-[-0.01em] text-dark/60 md:w-full md:text-dark lg:text-[1.125rem]">
             Hours to enter the state
           </p>
-          <p className="whitespace-nowrap text-[5.625rem] leading-[1.2] tracking-[-0.06em] text-dark md:text-[10.5rem] lg:text-[26.25rem]">
+          <p className="whitespace-nowrap text-[5.625rem] leading-[0.75] tracking-[-0.06em] text-dark md:text-[10.5rem] lg:text-[26.25rem]">
             72
           </p>
         </div>
 
-        <div className="Qualities-numbers-right flex w-full items-start gap-4 md:flex-1 md:flex-col md:items-start md:gap-2.5 lg:gap-5">
+        <div className="Qualities-numbers-right flex w-full items-start gap-2 md:flex-1 md:flex-col md:items-start md:gap-2.5 lg:gap-5">
           <p className="w-27.25 text-[0.875rem] leading-[1.3] tracking-[-0.01em] text-dark/60 md:w-full md:text-dark lg:text-[1.125rem]">
             Meters above sea level
           </p>
-          <p className="whitespace-nowrap text-[5.625rem] leading-[1.2] tracking-[-0.06em] text-dark md:text-[10.5rem] lg:text-[26.25rem]">
+          <p className="whitespace-nowrap text-[5.625rem] leading-[0.75] tracking-[-0.06em] text-dark md:text-[10.5rem] lg:text-[26.25rem]">
             1650
           </p>
         </div>
