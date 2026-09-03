@@ -9,6 +9,7 @@ import AboveSection from '../components/AboveSection'
 import CapacitySection from '../components/CapacitySection'
 import PresenceSection from '../components/PresenceSection'
 import Location2Section from '../components/Location2Section'
+import Location3Section from '../components/Location3Section'
 import BookingPopup from '../components/BookingPopup'
 
 export default function HomePage() {
@@ -27,6 +28,7 @@ export default function HomePage() {
         <CapacitySection />
         <PresenceSection onBookNow={() => setBookingOpen(true)} />
         <Location2Section onBookNow={() => setBookingOpen(true)} />
+        <Location3Section onBookNow={() => setBookingOpen(true)} />
       </main>
       <BookingPopup open={bookingOpen} onClose={() => setBookingOpen(false)} />
     </>
