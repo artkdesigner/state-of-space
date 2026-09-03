@@ -109,9 +109,9 @@ export default function ResidenceSection() {
         </div>
       </div>
 
-      <div className="Residence-bottom flex flex-col items-center gap-35 px-2.5 py-5 md:gap-20 md:py-15 lg:gap-10 lg:px-5 lg:py-30">
-        <div className="Residence-bottom-header flex w-full flex-col gap-35 pt-35 text-light md:gap-5 md:pt-0 lg:flex-row lg:items-start lg:justify-between">
-          <p className="Residence-bottom-header-sub w-55.5 font-manrope text-[0.75rem] font-semibold leading-none tracking-[-0.0075rem] md:w-60 md:text-[0.875rem] md:tracking-[-0.00875rem] lg:w-150 lg:text-[0.875rem] lg:tracking-[-0.00875rem] lg:leading-[1.1]">
+      <div className="Residence-bottom flex flex-col items-center gap-35 px-2.5 py-5 md:gap-20 md:py-15 lg:gap-10 lg:px-0 lg:py-30">
+        <div className="Residence-bottom-header flex w-full flex-col gap-35 pt-35 text-light md:gap-5 md:pt-0 lg:flex-row lg:items-start lg:justify-between lg:px-5">
+          <p className="Residence-bottom-header-sub w-55.5 font-manrope text-[0.75rem] font-semibold leading-none tracking-[-0.0075rem] md:w-60 md:text-[0.875rem] md:tracking-[-0.00875rem] lg:w-60 lg:text-[0.875rem] lg:tracking-[-0.00875rem] lg:leading-[1.1]">
             A private water residence built as a continuous, autonomous living
             system on the ocean
           </p>
@@ -123,7 +123,7 @@ export default function ResidenceSection() {
         </div>
 
         <div className="Residence-bottom-footer flex w-full items-center pl-30 md:pl-0 lg:pl-[59.9375rem]">
-          <div className="Residence-bottom-column flex flex-1 flex-col gap-5 font-manrope text-[0.875rem] font-medium tracking-[-0.00875rem] md:grid md:grid-cols-2 md:gap-10 lg:flex lg:w-100 lg:flex-none lg:flex-col lg:text-[1.125rem] lg:tracking-[-0.01125rem]">
+          <div className="Residence-bottom-column flex flex-1 flex-col gap-5 font-manrope text-[0.875rem] font-medium tracking-[-0.00875rem] md:grid md:grid-cols-2 md:gap-10 lg:flex lg:w-100 lg:flex-none lg:flex-col lg:gap-5 lg:text-[1.125rem] lg:tracking-[-0.01125rem]">
             {BOTTOM_CARDS.map((card) => (
               <div
                 key={card.title}
