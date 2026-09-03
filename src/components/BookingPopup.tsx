@@ -92,7 +92,7 @@ export default function BookingPopup({ open, onClose }: BookingPopupProps) {
           aria-label="Close"
           className="Popup-close hidden flex-1 cursor-pointer text-light md:block"
         >
-          <CloseIcon className="ml-2.5 mt-[58.9556rem] size-[8.8388rem] lg:mt-[54.4375rem] lg:-ml-[0.5619rem] lg:size-49.5" />
+          <CloseIcon className="ml-5 mt-231 size-20 lg:ml-9.75 lg:mt-229.5 lg:size-25.75" />
         </button>
 
         <div
