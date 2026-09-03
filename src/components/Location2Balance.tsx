@@ -29,7 +29,7 @@ export default function Location2Balance({ onBookNow }: Location2BalanceProps) {
         src={cursor3}
         alt=""
         loading="lazy"
-        className="Balance-cursor-img-3 absolute top-[25.625rem] left-[calc(50%-0.8125rem)] z-1 h-[15rem] w-[11rem] rounded-[0.9375rem] object-cover md:top-[32.03rem] md:left-[calc(50%+0.03125rem)] md:h-[15rem] md:w-[10.9375rem] lg:top-[34.625rem] lg:left-[43.625rem] lg:h-[11.25rem] lg:w-[8.75rem] lg:rounded-[1.875rem]"
+        className="Balance-cursor-img-3 absolute top-[25.625rem] left-[calc(50%-0.8125rem)] z-1 h-[15rem] w-[11rem] rounded-[0.9375rem] object-cover md:top-1/2 md:left-[calc(50%+0.03125rem)] md:h-[15rem] md:w-[10.9375rem] md:-translate-x-1/2 md:-translate-y-1/2 lg:top-[34.625rem] lg:left-[43.625rem] lg:h-[11.25rem] lg:w-[8.75rem] lg:translate-x-0 lg:translate-y-0 lg:rounded-[1.875rem]"
       />
       <img
         src={cursor4}

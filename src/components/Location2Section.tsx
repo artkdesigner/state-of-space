@@ -42,51 +42,58 @@ export default function Location2Section({ onBookNow }: Location2SectionProps) {
      * mobile секция обычный вертикальный поток без пина. */
     mm.add('(min-width: 48rem)', () => {
       const getDistance = () => track.scrollWidth - window.innerWidth
-      const getRetreatWidth = () => retreatRef.current?.offsetWidth ?? 0
+      /** Отдельный бюджет скролла на кроссфейд трёх фото ретрит-панели —
+       * трек всё это время стоит на месте (x: 0), и только после того как
+       * кроссфейд долистан до конца, начинается горизонтальный переезд к
+       * Location2-about. Тот же приём "N × высота экрана на слайд", что и в
+       * Location1/Location3Section. */
+      const getCrossfadeBudget = () => window.innerHeight * SLIDE_COUNT
 
-      const tween = gsap.to(track, {
-        x: () => -getDistance(),
-        ease: 'none',
-        scrollTrigger: {
-          trigger: section,
-          start: 'top top',
-          end: () => '+=' + getDistance(),
-          pin: true,
-          scrub: true,
-          invalidateOnRefresh: true,
-          onUpdate: (self) => {
-            const retreatWidth = getRetreatWidth()
-            const distance = getDistance()
-            if (!retreatWidth || !distance) return
+      const trigger = ScrollTrigger.create({
+        trigger: section,
+        start: 'top top',
+        end: () => '+=' + (getCrossfadeBudget() + getDistance()),
+        pin: true,
+        scrub: true,
+        invalidateOnRefresh: true,
+        onUpdate: (self) => {
+          const distance = getDistance()
+          const crossfadeBudget = getCrossfadeBudget()
+          const total = crossfadeBudget + distance
+          if (!distance || !total) return
 
-            const local = gsap.utils.clamp(
-              0,
-              1,
-              (self.progress * distance) / retreatWidth,
-            )
+          const splitProgress = crossfadeBudget / total
 
-            for (let i = 0; i < SLIDE_COUNT - 1; i++) {
-              const boundary = (i + 1) / SLIDE_COUNT
-              const from = boundary - CROSSFADE / 2
-              const to = boundary + CROSSFADE / 2
-              const t = gsap.utils.clamp(0, 1, (local - from) / (to - from))
-              const el = slideEls.current[i]
-              if (el) el.style.opacity = String(1 - smoothstep(t))
-            }
+          // Фаза 1 (0 → splitProgress): кроссфейд слайдов, трек неподвижен.
+          const local = gsap.utils.clamp(0, 1, self.progress / splitProgress)
 
-            const index = Math.min(
-              SLIDE_COUNT - 1,
-              Math.floor(local * SLIDE_COUNT),
-            )
-            setActiveIndex((prev) => (prev === index ? prev : index))
-          },
+          for (let i = 0; i < SLIDE_COUNT - 1; i++) {
+            const boundary = (i + 1) / SLIDE_COUNT
+            const from = boundary - CROSSFADE / 2
+            const to = boundary + CROSSFADE / 2
+            const t = gsap.utils.clamp(0, 1, (local - from) / (to - from))
+            const el = slideEls.current[i]
+            if (el) el.style.opacity = String(1 - smoothstep(t))
+          }
+
+          const index = Math.min(
+            SLIDE_COUNT - 1,
+            Math.floor(local * SLIDE_COUNT),
+          )
+          setActiveIndex((prev) => (prev === index ? prev : index))
+
+          // Фаза 2 (splitProgress → 1): горизонтальный переезд трека,
+          // начинается только после того как кроссфейд завершён.
+          const scrollLocal = gsap.utils.clamp(
+            0,
+            1,
+            (self.progress - splitProgress) / (1 - splitProgress),
+          )
+          gsap.set(track, { x: -distance * scrollLocal })
         },
       })
 
-      return () => {
-        tween.scrollTrigger?.kill()
-        tween.kill()
-      }
+      return () => trigger.kill()
     })
 
     return () => mm.revert()

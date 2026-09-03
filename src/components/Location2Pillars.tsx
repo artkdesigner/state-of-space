@@ -75,8 +75,8 @@ function PillarCard({ pillar }: { pillar: Pillar }) {
 
 export default function Location2Pillars() {
   return (
-    <div className="Location2-pillars flex flex-col items-center gap-10 px-2.5 py-15 md:h-dvh md:w-max md:shrink-0 md:flex-row md:justify-center md:px-2.5 md:py-2.5 lg:gap-30 lg:justify-start lg:py-0 lg:pl-5 lg:pr-75">
-      <p className="Pillars-title min-w-full shrink-0 text-center font-manrope text-[1.875rem] font-semibold tracking-[-0.04em] text-dark md:min-w-0 md:w-auto md:text-left md:text-[3.375rem] lg:text-[8.375rem] lg:tracking-[-0.06em] lg:leading-none">
+    <div className="Location2-pillars flex flex-col items-center gap-10 px-2.5 py-15 md:h-dvh md:w-max md:shrink-0 md:flex-row md:justify-center md:gap-30 md:px-75 md:py-2.5 lg:gap-30 lg:justify-start lg:py-0 lg:pl-5 lg:pr-75">
+      <p className="Pillars-title min-w-full shrink-0 text-center font-manrope text-[1.875rem] font-semibold tracking-[-0.04em] text-dark md:min-w-0 md:w-auto md:text-left md:text-[3.375rem] md:leading-none lg:text-[8.375rem] lg:tracking-[-0.06em] lg:leading-none">
         <span className="md:block">Key Pillars</span>{' '}
         <span className="md:block">of the Stay</span>
       </p>
@@ -118,7 +118,7 @@ export default function Location2Pillars() {
           src={img4}
           alt="Locally sourced meal served at The Island Retreat"
           loading="lazy"
-          className="absolute top-0 left-[14.375rem] h-[9.625rem] w-[calc(100%-14.375rem)] max-w-none rounded-md object-cover md:left-[9.3125rem] md:h-[6.25rem] md:w-[calc(100%-9.3125rem)] lg:top-[-3.75rem] lg:left-[19.6875rem] lg:h-[12.875rem] lg:w-[11.875rem] lg:rounded-[1.875rem]"
+          className="absolute top-0 left-[14.375rem] h-[9.625rem] w-[calc(100%-14.375rem)] max-w-none rounded-md object-cover md:top-[-1.25rem] md:left-[9.3125rem] md:h-[6.25rem] md:w-[calc(100%-9.3125rem)] lg:top-[-3.75rem] lg:left-[19.6875rem] lg:h-[12.875rem] lg:w-[11.875rem] lg:rounded-[1.875rem]"
         />
       </div>
 

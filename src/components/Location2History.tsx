@@ -15,7 +15,7 @@ export default function Location2History() {
         </p>
       </div>
 
-      <div className="History-part-2 flex shrink-0 flex-col justify-between gap-10 pt-5 font-manrope text-[0.875rem] tracking-[-0.01em] text-dark md:gap-0 md:pt-0 md:pl-2.5 lg:w-auto lg:pt-0 lg:pr-30 lg:pl-5 lg:text-[1.75rem] lg:tracking-[-0.02em]">
+      <div className="History-part-2 flex shrink-0 flex-col justify-between gap-10 pt-5 font-manrope text-[0.875rem] tracking-[-0.01em] text-dark md:w-[22.75rem] md:gap-0 md:pt-0 md:pl-2.5 lg:w-auto lg:pt-0 lg:pr-30 lg:pl-5 lg:text-[1.75rem] lg:tracking-[-0.02em]">
         <p className="leading-[1.3] font-medium lg:w-[38.75rem] lg:leading-[1.1] lg:font-semibold">
           The retreat is designed as a low, organic structure that seems to
           emerge from the land. Built with rammed earth, reclaimed wood
@@ -36,14 +36,14 @@ export default function Location2History() {
           Materials are selected for texture, thermal balance, and continuity
           with the island landscape, reinforcing physical grounding.
         </p>
-        <div className="History-part-3-sub-wrap flex flex-col gap-2 text-[0.875rem] tracking-[-0.01em] text-dark/60 md:flex-row md:gap-2.5 lg:gap-5 lg:text-[1.125rem]">
-          <p className="w-[18.75rem] leading-[1.3] font-medium md:w-auto md:flex-1 lg:w-[25rem] lg:flex-none">
+        <div className="History-part-3-sub-wrap flex flex-col gap-2 text-[0.875rem] tracking-[-0.01em] text-dark/60 md:gap-2.5 lg:flex-row lg:gap-5 lg:text-[1.125rem]">
+          <p className="w-[18.75rem] leading-[1.3] font-medium md:w-full lg:w-[25rem] lg:flex-none">
             The Pool serves as the retreat&rsquo;s central element — a still
             body of water designed for slow immersion and sensory recalibration.
             Its temperature and depth are carefully adjusted to support
             relaxation without excess stimulation.
           </p>
-          <p className="w-[18.75rem] leading-[1.3] font-medium md:w-auto md:flex-1 lg:w-[25rem] lg:flex-none">
+          <p className="w-[18.75rem] leading-[1.3] font-medium md:w-full lg:w-[25rem] lg:flex-none">
             The Herbarium and kitchen extend this restorative logic — fresh
             island botanicals and plant-forward, locally sourced meals are
             curated to provide steady nourishment and balanced energy throughout
