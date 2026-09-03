@@ -53,7 +53,7 @@ export default function NavBar({ onBookNow }: NavBarProps) {
         ))}
       </header>
 
-      <header className="Nav fixed inset-x-2.5 top-2.5 z-50 flex h-10 items-center font-manrope text-dark md:h-12 lg:hidden">
+      <header className="Nav fixed inset-x-2.5 top-2.5 z-50 flex h-10 items-center font-manrope text-white mix-blend-difference md:h-12 lg:hidden">
         <a
           href="#hero"
           className="Nav-logo absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
