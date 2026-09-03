@@ -78,9 +78,7 @@ export default function BookingPopup({ open, onClose }: BookingPopupProps) {
 
   return (
     <div
-      className={`Popup fixed inset-0 z-100 bg-[rgba(0,0,0,0.7)] transition-opacity duration-500 lg:backdrop-blur-[1.25rem] ${
-        visible ? 'opacity-100' : 'opacity-0'
-      }`}
+      className="Popup fixed inset-0 z-100 bg-[rgba(0,0,0,0.7)] lg:backdrop-blur-[1.25rem]"
       role="dialog"
       aria-modal="true"
       aria-label="Booking form"
