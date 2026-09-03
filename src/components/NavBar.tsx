@@ -21,6 +21,7 @@ const SECTION_THEMES: { id: string; theme: 'dark' | 'light' }[] = [
   { id: 'location1', theme: 'light' },
   { id: 'cliff', theme: 'dark' },
   { id: 'qualities', theme: 'dark' },
+  { id: 'capacity', theme: 'dark' },
 ]
 
 const THEME_CLASS = {
