@@ -8,7 +8,10 @@ gsap.registerPlugin(ScrollTrigger)
 
 const SLIDE_COUNT = 3
 /** Доля общего прогресса секции, за которую верхний слайд успевает уйти. */
-const CROSSFADE = 0.16
+const CROSSFADE = 0.28
+
+/** Smoothstep — тот же диапазон, что и линейная интерполяция, но мягче на краях. */
+const smoothstep = (t: number) => t * t * (3 - 2 * t)
 
 export default function Location1Section() {
   const sectionRef = useRef<HTMLElement>(null)
@@ -26,7 +29,7 @@ export default function Location1Section() {
     const trigger = ScrollTrigger.create({
       trigger: section,
       start: 'top top',
-      end: () => '+=' + window.innerHeight * (SLIDE_COUNT - 1),
+      end: () => '+=' + window.innerHeight * SLIDE_COUNT,
       pin: true,
       scrub: true,
       onUpdate: (self) => {
@@ -40,7 +43,7 @@ export default function Location1Section() {
           const to = boundary + CROSSFADE / 2
           const local = gsap.utils.clamp(0, 1, (progress - from) / (to - from))
           const el = slideEls.current[i]
-          if (el) el.style.opacity = String(1 - local)
+          if (el) el.style.opacity = String(1 - smoothstep(local))
         }
 
         const index = Math.min(

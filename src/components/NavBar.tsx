@@ -27,7 +27,7 @@ export default function NavBar() {
           <button
             key={label}
             type="button"
-            className="Nav-link cursor-pointer whitespace-nowrap text-[0.9375rem] font-medium tracking-[-0.03em]"
+            className="Nav-link cursor-pointer whitespace-nowrap text-[0.9375rem] font-medium tracking-[-0.03em] transition-opacity duration-300 hover:opacity-70"
           >
             {label}
           </button>
@@ -41,7 +41,7 @@ export default function NavBar() {
           <button
             key={label}
             type="button"
-            className="Nav-link cursor-pointer whitespace-nowrap text-[0.9375rem] font-medium tracking-[-0.03em]"
+            className="Nav-link cursor-pointer whitespace-nowrap text-[0.9375rem] font-medium tracking-[-0.03em] transition-opacity duration-300 hover:opacity-70"
           >
             {label}
           </button>
