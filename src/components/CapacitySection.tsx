@@ -18,17 +18,17 @@ export default function CapacitySection() {
       <img
         src={capacityCirclesMobile}
         alt=""
-        className="Capacity-circles-wrap pointer-events-none absolute left-1/2 top-1/2 h-[32.4969rem] w-[35.3144rem] -translate-x-1/2 -translate-y-1/2 md:hidden"
+        className="Capacity-circles-wrap pointer-events-none absolute left-1/2 top-1/2 h-[32.4969rem] w-[35.3144rem] max-w-none -translate-x-1/2 -translate-y-1/2 md:hidden"
       />
       <img
         src={capacityCirclesTablet}
         alt=""
-        className="Capacity-circles-wrap pointer-events-none absolute left-1/2 top-1/2 hidden h-[56.25rem] w-[61.1271rem] -translate-x-1/2 -translate-y-1/2 md:block lg:hidden"
+        className="Capacity-circles-wrap pointer-events-none absolute left-1/2 top-1/2 hidden h-[56.25rem] w-[61.1271rem] max-w-none -translate-x-1/2 -translate-y-1/2 md:block lg:hidden"
       />
       <img
         src={capacityCirclesDesktop}
         alt=""
-        className="Capacity-circles-wrap pointer-events-none absolute left-1/2 top-1/2 hidden h-[130.6125rem] w-[141.9371rem] -translate-x-1/2 -translate-y-1/2 lg:block"
+        className="Capacity-circles-wrap pointer-events-none absolute left-1/2 top-1/2 hidden h-[130.6125rem] w-[141.9371rem] max-w-none -translate-x-1/2 -translate-y-1/2 lg:block"
       />
     </section>
   )

@@ -3,8 +3,25 @@ import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import LocationCard from './LocationCard'
 import LocationSlider from './LocationSlider'
+import baseImg from '../assets/location1-slider-base.webp'
+import slide1 from '../assets/location1-slide-1.webp'
+import slide2 from '../assets/location1-slide-2.webp'
+import slide3 from '../assets/location1-slide-3.webp'
 
-gsap.registerPlugin(ScrollTrigger)
+const SLIDES = [
+  {
+    src: slide1,
+    alt: 'The Cliff Villa terrace and infinity pool at sunset, framed by the concrete and timber roofline',
+  },
+  {
+    src: slide2,
+    alt: 'The Cliff Villa seen against the mountain, with the pool reflecting the sunset sky',
+  },
+  {
+    src: slide3,
+    alt: 'The Cliff Villa perched above the ocean, mountain cliffs rising behind it',
+  },
+]
 
 const SLIDE_COUNT = 3
 /** Доля общего прогресса секции, за которую верхний слайд успевает уйти. */
@@ -67,8 +84,18 @@ export default function Location1Section({ onBookNow }: Location1SectionProps) {
       ref={sectionRef}
       className="Location1 relative isolate flex h-dvh w-full flex-col items-center justify-end overflow-hidden px-2.5 pb-2.5 lg:px-5 lg:pt-30 lg:pb-5"
     >
-      <LocationCard activeIndex={activeIndex} onBookNow={onBookNow} />
-      <LocationSlider setSlideRef={setSlideRef} />
+      <LocationCard
+        activeIndex={activeIndex}
+        onBookNow={onBookNow}
+        quote="Height clears perception, form gathers focus, and silence restores clarity."
+        locationLabel="Location 1"
+        nameLines={['The', 'Cliff Villa']}
+      />
+      <LocationSlider
+        baseSrc={baseImg}
+        slides={SLIDES}
+        setSlideRef={setSlideRef}
+      />
     </section>
   )
 }

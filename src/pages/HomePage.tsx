@@ -7,6 +7,7 @@ import CliffSection from '../components/CliffSection'
 import QualitiesSection from '../components/QualitiesSection'
 import AboveSection from '../components/AboveSection'
 import CapacitySection from '../components/CapacitySection'
+import Location2Section from '../components/Location2Section'
 import BookingPopup from '../components/BookingPopup'
 
 export default function HomePage() {
@@ -23,6 +24,7 @@ export default function HomePage() {
         <QualitiesSection />
         <AboveSection />
         <CapacitySection />
+        <Location2Section onBookNow={() => setBookingOpen(true)} />
       </main>
       <BookingPopup open={bookingOpen} onClose={() => setBookingOpen(false)} />
     </>
