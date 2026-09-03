@@ -18,7 +18,7 @@ export default function CliffSection() {
       </h2>
 
       <div className="Cliff-content-wrap relative z-2 flex w-full flex-col items-center lg:flex-row lg:items-center lg:justify-center lg:gap-5">
-        <p className="Cliff-sub-title w-full text-center font-manrope text-[1.25rem] font-semibold leading-[1.1] tracking-[-0.02em] text-dark md:w-72.5 lg:w-[38.75rem] lg:text-left lg:text-[2.875rem]">
+        <p className="Cliff-sub-title w-full -translate-y-46 text-center font-manrope text-[1.25rem] font-semibold leading-[1.1] tracking-[-0.02em] text-dark md:w-72.5 lg:w-[38.75rem] lg:translate-y-0 lg:-translate-x-165 lg:text-left lg:text-[2.875rem]">
           Not an Escape,
           <br />
           but a Return <br className="hidden lg:block" />
@@ -82,7 +82,7 @@ export default function CliffSection() {
           </div>
         </div>
 
-        <div className="Cliff-description-wrap flex w-full lg:w-[38.75rem] lg:justify-end">
+        <div className="Cliff-description-wrap flex w-full -translate-y-56.5 md:-translate-y-62 lg:w-[38.75rem] lg:translate-y-0 lg:translate-x-165 lg:justify-end">
           <p className="Cliff-description w-full text-center font-manrope text-[0.875rem] leading-[1.3] font-medium tracking-[-0.01em] text-dark lg:w-[23.125rem] lg:text-left lg:text-[1.125rem]">
             This space is not about retreating from life, but about removing
             what distracts you from it. Here, attention becomes stable. Thoughts
