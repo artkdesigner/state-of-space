@@ -12,7 +12,11 @@ function NavLogo({ className }: { className?: string }) {
 const LEFT_LINKS = ['Experience', 'Spaces', 'About']
 const RIGHT_LINKS = ['Blog', 'Contact', 'Book now']
 
-export default function NavBar() {
+type NavBarProps = {
+  onBookNow: () => void
+}
+
+export default function NavBar({ onBookNow }: NavBarProps) {
   return (
     <>
       {/* Desktop: белый текст + mix-blend-difference даёт автоконтраст на любом
@@ -41,6 +45,7 @@ export default function NavBar() {
           <button
             key={label}
             type="button"
+            onClick={label === 'Book now' ? onBookNow : undefined}
             className="Nav-link cursor-pointer whitespace-nowrap text-[0.9375rem] font-medium tracking-[-0.03em] transition-opacity duration-300 hover:opacity-70"
           >
             {label}

@@ -13,7 +13,11 @@ const CROSSFADE = 0.28
 /** Smoothstep — тот же диапазон, что и линейная интерполяция, но мягче на краях. */
 const smoothstep = (t: number) => t * t * (3 - 2 * t)
 
-export default function Location1Section() {
+type Location1SectionProps = {
+  onBookNow: () => void
+}
+
+export default function Location1Section({ onBookNow }: Location1SectionProps) {
   const sectionRef = useRef<HTMLElement>(null)
   const slideEls = useRef<(HTMLDivElement | null)[]>([])
   const [activeIndex, setActiveIndex] = useState(0)
@@ -63,7 +67,7 @@ export default function Location1Section() {
       ref={sectionRef}
       className="Location1 relative isolate flex h-dvh w-full flex-col items-center justify-end overflow-hidden px-2.5 pb-2.5 lg:px-5 lg:pt-30 lg:pb-5"
     >
-      <LocationCard activeIndex={activeIndex} />
+      <LocationCard activeIndex={activeIndex} onBookNow={onBookNow} />
       <LocationSlider setSlideRef={setSlideRef} />
     </section>
   )
