@@ -1,3 +1,4 @@
+import { Fragment } from 'react'
 import Button from './Button'
 
 type LocationCardProps = {
@@ -5,7 +6,7 @@ type LocationCardProps = {
   onBookNow: () => void
   quote: string
   locationLabel: string
-  nameLines: [string, string]
+  nameLines: string[]
 }
 
 const STEP_COUNT = 3
@@ -43,9 +44,12 @@ export default function LocationCard({
 
         <div className="Location-content-wrap flex w-full items-end gap-5">
           <p className="Location-footer-title flex-1 font-manrope text-[1.5rem] leading-[0.9] font-semibold tracking-[-0.03em] text-light uppercase md:text-[1.75rem] lg:text-[2rem]">
-            {nameLines[0]}
-            <br />
-            {nameLines[1]}
+            {nameLines.map((line, i) => (
+              <Fragment key={i}>
+                {i > 0 && <br />}
+                {line}
+              </Fragment>
+            ))}
           </p>
           <Button variant="light" onClick={onBookNow}>
             Book now

@@ -11,12 +11,15 @@ import slide3 from '../assets/location3-slide-3.webp'
 const SLIDES = [
   {
     src: slide1,
-    alt: 'The Cliff Villa yacht deck at sunset, hills rising across the water',
+    alt: 'The Water Residence yacht deck at sunset, hills rising across the water',
   },
-  { src: slide2, alt: 'The Cliff Villa yacht cruising along the coastline' },
+  {
+    src: slide2,
+    alt: 'The Water Residence yacht cruising along the coastline',
+  },
   {
     src: slide3,
-    alt: 'The Cliff Villa yacht deck seating overlooking the sea',
+    alt: 'The Water Residence yacht deck seating overlooking the sea',
   },
 ]
 
@@ -84,9 +87,11 @@ export default function Location3Section({ onBookNow }: Location3SectionProps) {
       <LocationCard
         activeIndex={activeIndex}
         onBookNow={onBookNow}
-        quote="Height clears perception, form gathers focus, and silence restores clarity."
+        quote={
+          'Where earth meets water, a profound sense of "I am here" naturally arises.'
+        }
         locationLabel="Location 3"
-        nameLines={['The', 'Cliff Villa']}
+        nameLines={['The Water Residence']}
       />
       <LocationSlider
         baseSrc={baseImg}
