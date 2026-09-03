@@ -96,7 +96,7 @@ export default function BookingPopup({ open, onClose }: BookingPopupProps) {
         </button>
 
         <div
-          className={`Popup-body relative flex h-full w-full shrink-0 flex-col items-start justify-between gap-10 overflow-y-auto bg-light p-2.5 text-dark transition-transform duration-500 ease-out md:w-125 md:p-5 lg:w-129 lg:gap-20 lg:p-10 ${
+          className={`Popup-body relative flex h-full w-full shrink-0 flex-col items-start justify-between gap-10 overflow-y-auto bg-light p-2.5 text-dark transition-transform duration-500 ease-out md:w-125 md:p-5 lg:w-322.5 lg:gap-20 lg:p-10 ${
             visible ? 'translate-x-0' : 'translate-x-full'
           }`}
         >
