@@ -1,4 +1,6 @@
-import ctaIcon from '../assets/location2/cta-icon.svg'
+import ctaIconMobile from '../assets/location2/cta-icon-mobile.svg'
+import ctaIconTablet from '../assets/location2/cta-icon-tablet.svg'
+import ctaIconDesktop from '../assets/location2/cta-icon.svg'
 import cursor1 from '../assets/location2/pillars-img-4.webp'
 import cursor2 from '../assets/location2/balance-cursor-2.webp'
 import cursor3 from '../assets/location2/balance-cursor-3.webp'
@@ -36,7 +38,7 @@ export default function Location2Balance({ onBookNow }: Location2BalanceProps) {
         className="Balance-cursor-img-4 absolute top-[38.625rem] left-[37.625rem] z-0 hidden h-[11.25rem] w-[8.75rem] rounded-[1.875rem] object-cover lg:block"
       />
 
-      <p className="relative z-5 font-manrope text-[1.875rem] font-semibold tracking-[-0.04em] text-dark md:text-[3.375rem] lg:text-[8.375rem] lg:tracking-[-0.06em]">
+      <p className="relative z-5 font-manrope text-[1.875rem] leading-none font-semibold tracking-[-0.04em] text-dark md:text-[3.375rem] lg:text-[8.375rem] lg:tracking-[-0.06em]">
         <span>A balanced island </span>
         <span className="text-dark/60 lg:text-dark/30">
           retreat between land and horizon
@@ -52,11 +54,19 @@ export default function Location2Balance({ onBookNow }: Location2BalanceProps) {
         className="Balance-cta relative z-4 flex w-full items-center gap-2 md:gap-2.5 lg:gap-5"
       >
         <img
-          src={ctaIcon}
+          src={ctaIconMobile}
           alt=""
-          className="size-8 shrink-0 md:size-[3.5rem] lg:size-[8.75rem]"
+          className="Cta-icon-wrap h-8 w-21 shrink-0 md:hidden"
         />
-        <span className="font-manrope text-[1.875rem] font-semibold tracking-[-0.04em] text-dark md:text-[3.375rem] lg:text-[8.375rem] lg:tracking-[-0.06em]">
+        <img
+          src={ctaIconTablet}
+          alt=""
+          className="Cta-icon-wrap hidden h-14 w-45 shrink-0 md:block lg:hidden"
+        />
+        <div className="Cta-icon-wrap hidden items-center lg:flex lg:flex-1">
+          <img src={ctaIconDesktop} alt="" className="size-35 shrink-0" />
+        </div>
+        <span className="font-manrope text-[1.875rem] leading-none font-semibold tracking-[-0.04em] text-dark md:text-[3.375rem] lg:text-[8.375rem] lg:tracking-[-0.06em]">
           Request Access
         </span>
       </a>

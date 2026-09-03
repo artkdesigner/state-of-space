@@ -30,20 +30,20 @@ export default function Location2History() {
         </p>
       </div>
 
-      <div className="History-part-3 flex shrink-0 flex-col gap-4 pt-30 font-manrope text-[1rem] tracking-[-0.02em] text-dark md:w-[24.25rem] md:gap-5 md:pt-2.5 lg:w-[38.75rem] lg:gap-5 lg:pt-30 lg:text-[1.75rem]">
-        <p className="leading-[1.1] font-medium">
+      <div className="History-part-3 flex shrink-0 flex-col items-start gap-4 pt-30 font-manrope text-[1rem] tracking-[-0.02em] text-dark md:h-full md:w-[24.25rem] md:justify-center md:gap-5 md:py-2.5 lg:w-[51.25rem] lg:gap-5 lg:py-30 lg:text-[1.75rem]">
+        <p className="leading-[1.1] font-medium lg:w-[38.75rem]">
           The architecture blends into the terrain rather than standing apart.
           Materials are selected for texture, thermal balance, and continuity
           with the island landscape, reinforcing physical grounding.
         </p>
         <div className="History-part-3-sub-wrap flex flex-col gap-2 text-[0.875rem] tracking-[-0.01em] text-dark/60 md:flex-row md:gap-2.5 lg:gap-5 lg:text-[1.125rem]">
-          <p className="w-[18.75rem] leading-[1.3] font-medium md:w-auto lg:w-[25rem]">
+          <p className="w-[18.75rem] leading-[1.3] font-medium md:w-auto md:flex-1 lg:w-[25rem] lg:flex-none">
             The Pool serves as the retreat&rsquo;s central element — a still
             body of water designed for slow immersion and sensory recalibration.
             Its temperature and depth are carefully adjusted to support
             relaxation without excess stimulation.
           </p>
-          <p className="w-[18.75rem] leading-[1.3] font-medium md:w-auto lg:w-[25rem]">
+          <p className="w-[18.75rem] leading-[1.3] font-medium md:w-auto md:flex-1 lg:w-[25rem] lg:flex-none">
             The Herbarium and kitchen extend this restorative logic — fresh
             island botanicals and plant-forward, locally sourced meals are
             curated to provide steady nourishment and balanced energy throughout
