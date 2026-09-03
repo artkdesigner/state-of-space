@@ -1,3 +1,5 @@
+import { useEffect, useState } from 'react'
+
 function NavLogo({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 48 48" fill="none" className={className}>
@@ -12,21 +14,62 @@ function NavLogo({ className }: { className?: string }) {
 const LEFT_LINKS = ['Experience', 'Spaces', 'About']
 const RIGHT_LINKS = ['Blog', 'Contact', 'Book now']
 
+/** Тема навбара по секции, под которой он сейчас проходит. */
+const SECTION_THEMES: { id: string; theme: 'dark' | 'light' }[] = [
+  { id: 'hero', theme: 'dark' },
+  { id: 'intro', theme: 'light' },
+  { id: 'location1', theme: 'light' },
+  { id: 'cliff', theme: 'dark' },
+  { id: 'qualities', theme: 'dark' },
+]
+
+const THEME_CLASS = {
+  dark: 'text-dark',
+  light: 'text-light',
+}
+
 type NavBarProps = {
   onBookNow: () => void
 }
 
 export default function NavBar({ onBookNow }: NavBarProps) {
+  const [theme, setTheme] = useState<'dark' | 'light'>('dark')
+
+  useEffect(() => {
+    const themeById = new Map(
+      SECTION_THEMES.map(({ id, theme }) => [id, theme]),
+    )
+    const sections = SECTION_THEMES.map(({ id }) =>
+      document.getElementById(id),
+    ).filter((el): el is HTMLElement => el !== null)
+
+    /** rootMargin схлопывает зону наблюдения в линию у самого верха
+     * вьюпорта — секция считается активной, пока её граница проходит
+     * через эту линию. */
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            const sectionTheme = themeById.get(entry.target.id)
+            if (sectionTheme) setTheme(sectionTheme)
+          }
+        }
+      },
+      { rootMargin: '0px 0px -100% 0px', threshold: 0 },
+    )
+
+    sections.forEach((section) => observer.observe(section))
+
+    return () => observer.disconnect()
+  }, [])
+
+  const themeClass = THEME_CLASS[theme]
+
   return (
     <>
-      {/* Desktop: белый текст + mix-blend-difference даёт автоконтраст на любом
-          фоне под навбаром (приём из nordhaus.css). КРИТИЧНО: mix-blend-mode
-          и position:fixed должны быть на ОДНОМ и том же элементе — если
-          fixed стоит на обёртке, а blend на дочернем div, блендинг перестаёт
-          видеть контент страницы, как только она становится скроллящейся
-          (проверено эмпирически на этом же проекте). Поэтому здесь два
-          независимых fixed-хедера, а не один хедер с двумя внутренними div. */}
-      <header className="Nav fixed inset-x-0 top-0 z-50 hidden items-center justify-between p-5 font-manrope text-white mix-blend-difference lg:flex">
+      <header
+        className={`Nav fixed inset-x-0 top-0 z-50 hidden items-center justify-between p-5 font-manrope transition-colors duration-500 lg:flex ${themeClass}`}
+      >
         {LEFT_LINKS.map((label) => (
           <button
             key={label}
@@ -53,7 +96,9 @@ export default function NavBar({ onBookNow }: NavBarProps) {
         ))}
       </header>
 
-      <header className="Nav fixed inset-x-2.5 top-2.5 z-50 flex h-10 items-center font-manrope text-white mix-blend-difference md:h-12 lg:hidden">
+      <header
+        className={`Nav fixed inset-x-2.5 top-2.5 z-50 flex h-10 items-center font-manrope transition-colors duration-500 md:h-12 lg:hidden ${themeClass}`}
+      >
         <a
           href="#hero"
           className="Nav-logo absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
