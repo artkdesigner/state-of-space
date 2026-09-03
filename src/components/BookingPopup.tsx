@@ -78,19 +78,25 @@ export default function BookingPopup({ open, onClose }: BookingPopupProps) {
 
   return (
     <div
-      className="Popup fixed inset-0 z-100 bg-[rgba(0,0,0,0.7)] lg:backdrop-blur-[1.25rem]"
+      className="Popup fixed inset-0 z-100"
       role="dialog"
       aria-modal="true"
       aria-label="Booking form"
     >
-      <div className="Popup-inner flex size-full items-stretch">
+      <div
+        className={`Popup-backdrop absolute inset-0 hidden bg-[rgba(0,0,0,0.7)] transition-opacity duration-500 md:block lg:backdrop-blur-[1.25rem] ${
+          visible ? 'opacity-100' : 'opacity-0'
+        }`}
+      />
+
+      <div className="Popup-inner relative flex size-full items-stretch">
         <button
           type="button"
           onClick={onClose}
           aria-label="Close"
-          className="Popup-close hidden flex-1 cursor-pointer text-light md:block"
+          className="Popup-close relative hidden flex-1 cursor-pointer text-light md:block"
         >
-          <CloseIcon className="ml-5 mt-231 size-20 lg:ml-9.75 lg:mt-229.5 lg:size-25.75" />
+          <CloseIcon className="absolute bottom-5 left-5 size-20 lg:bottom-14.75 lg:left-9.75 lg:size-25.75" />
         </button>
 
         <div
