@@ -90,9 +90,9 @@ export default function BookingPopup({ open, onClose }: BookingPopupProps) {
           type="button"
           onClick={onClose}
           aria-label="Close"
-          className="Popup-close hidden flex-1 cursor-pointer flex-col items-start justify-end pb-2.75 text-light md:flex"
+          className="Popup-close hidden flex-1 cursor-pointer text-light md:block"
         >
-          <CloseIcon className="size-15 lg:size-49.5" />
+          <CloseIcon className="ml-2.5 mt-[58.9556rem] size-[8.8388rem] lg:mt-[54.4375rem] lg:-ml-[0.5619rem] lg:size-49.5" />
         </button>
 
         <div
@@ -163,7 +163,7 @@ export default function BookingPopup({ open, onClose }: BookingPopupProps) {
             >
               Apply Now
             </button>
-            <CtaArrowIcon className="size-10.5 shrink-0 md:size-13 lg:size-22" />
+            <CtaArrowIcon className="size-10.5 shrink-0 md:size-[5.2303rem] lg:size-[8.7172rem]" />
           </div>
         </div>
       </div>
