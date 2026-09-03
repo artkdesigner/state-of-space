@@ -20,23 +20,61 @@ export default function CapacitySection() {
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
       >
+        <defs>
+          <linearGradient
+            id="capacityCircle3GradientMobile"
+            x1="387.957"
+            y1="97.8437"
+            x2="201.598"
+            y2="435.522"
+            gradientUnits="userSpaceOnUse"
+          >
+            <stop offset="0.131846" stopColor="#F5F2EC" />
+            <stop offset="0.5" stopColor="#544F4C" />
+            <stop offset="0.906408" stopColor="#F5F2EC" />
+          </linearGradient>
+          <linearGradient
+            id="capacityCircle2GradientMobile"
+            x1="177.447"
+            y1="97.9506"
+            x2="363.79"
+            y2="435.636"
+            gradientUnits="userSpaceOnUse"
+          >
+            <stop offset="0.131846" stopColor="#F5F2EC" />
+            <stop offset="0.5" stopColor="#544F4C" />
+            <stop offset="0.906408" stopColor="#F5F2EC" />
+          </linearGradient>
+          <linearGradient
+            id="capacityCircle1GradientMobile"
+            x1="282.599"
+            y1="71.0461"
+            x2="282.599"
+            y2="448.979"
+            gradientUnits="userSpaceOnUse"
+          >
+            <stop offset="0.131846" stopColor="#F5F2EC" />
+            <stop offset="0.5" stopColor="#544F4C" />
+            <stop offset="0.906408" stopColor="#F5F2EC" />
+          </linearGradient>
+        </defs>
         <path
           className={`${ROTATE} animate-[spin-slow_55s_linear_infinite]`}
-          d="M248.381 80.3611C312.038 70.0712 381.889 83.0216 434.027 129.057C474.407 164.71 492.848 203.63 495.381 242.414C497.914 281.202 484.536 319.879 461.228 355.045C408.75 434.222 300.692 484.187 188.554 427.861C75.7161 371.183 52.0783 253.302 99.9895 171.051C127.292 124.181 184.719 90.652 248.381 80.3611Z"
-          stroke="#33302F"
-          strokeOpacity="0.3"
+          d="M248.511 80.5995C312.127 70.3201 381.921 83.2585 434.014 129.236C474.369 164.854 492.784 203.72 495.313 242.437C497.843 281.163 484.482 319.79 461.187 354.923C408.748 434.011 300.792 483.902 188.754 427.648C75.9958 371.032 52.3922 253.295 100.253 171.162C127.517 124.375 184.883 90.8809 248.511 80.5995Z"
+          stroke="url(#capacityCircle3GradientMobile)"
+          strokeOpacity="0.8"
         />
         <path
           className={`${ROTATE} animate-[spin-slow-reverse_40s_linear_infinite]`}
-          d="M98.3189 201.084C117.221 145.217 160.772 95.5638 227.5 75.9758C279.18 60.8052 324.083 64.7528 361.716 81.3621C399.355 97.9738 429.745 127.261 452.371 162.805C503.315 242.837 501.801 353.285 398.45 415.923C294.454 478.951 172.912 441.227 117.024 363.372C85.1763 319.007 79.4151 256.956 98.3189 201.084Z"
-          stroke="#33302F"
-          strokeOpacity="0.3"
+          d="M98.6052 201.164C117.495 145.356 161.012 95.7681 227.675 76.2067C279.319 61.0523 324.172 64.9996 361.755 81.5804C399.347 98.1655 429.712 127.412 452.327 162.924C503.237 242.873 501.71 353.166 398.46 415.719C294.548 478.672 173.117 440.992 117.283 363.242C85.4779 318.953 79.7121 256.983 98.6052 201.164Z"
+          stroke="url(#capacityCircle2GradientMobile)"
+          strokeOpacity="0.8"
         />
         <path
           className={`${ROTATE} animate-[spin-slow_47.5s_linear_infinite]`}
-          d="M164.089 122.087C208.832 83.1107 270.289 61.1399 334.707 75.9365C384.599 87.3966 418.931 112.049 440.7 144.121C462.473 176.198 471.693 215.716 471.324 256.926C470.493 349.717 411.108 443.751 294.328 448.542C176.819 453.362 98.1274 363.44 93.8037 270.176C91.34 217.03 119.342 161.067 164.089 122.087Z"
-          stroke="#33302F"
-          strokeOpacity="0.3"
+          d="M164.313 122.278C209.025 83.3436 270.425 61.4064 334.776 76.1819C384.631 87.6291 418.919 112.248 440.659 144.263C462.404 176.287 471.621 215.752 471.252 256.925C470.421 349.62 411.085 443.51 294.427 448.294C177.022 453.108 98.406 363.303 94.0866 270.165C91.6263 217.112 119.593 161.219 164.313 122.278Z"
+          stroke="url(#capacityCircle1GradientMobile)"
+          strokeOpacity="0.8"
         />
       </svg>
 
@@ -47,23 +85,61 @@ export default function CapacitySection() {
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
       >
+        <defs>
+          <linearGradient
+            id="capacityCircle3GradientTablet"
+            x1="671.544"
+            y1="169.345"
+            x2="349.019"
+            y2="753.82"
+            gradientUnits="userSpaceOnUse"
+          >
+            <stop offset="0.131846" stopColor="#F5F2EC" />
+            <stop offset="0.5" stopColor="#544F4C" />
+            <stop offset="0.906408" stopColor="#F5F2EC" />
+          </linearGradient>
+          <linearGradient
+            id="capacityCircle2GradientTablet"
+            x1="307.156"
+            y1="169.53"
+            x2="629.653"
+            y2="754.018"
+            gradientUnits="userSpaceOnUse"
+          >
+            <stop offset="0.131846" stopColor="#F5F2EC" />
+            <stop offset="0.5" stopColor="#544F4C" />
+            <stop offset="0.906408" stopColor="#F5F2EC" />
+          </linearGradient>
+          <linearGradient
+            id="capacityCircle1GradientTablet"
+            x1="489.172"
+            y1="122.964"
+            x2="489.172"
+            y2="777.079"
+            gradientUnits="userSpaceOnUse"
+          >
+            <stop offset="0.131846" stopColor="#F5F2EC" />
+            <stop offset="0.5" stopColor="#544F4C" />
+            <stop offset="0.906408" stopColor="#F5F2EC" />
+          </linearGradient>
+        </defs>
         <path
           className={`${ROTATE} animate-[spin-slow_55s_linear_infinite]`}
-          d="M429.942 139.165C540.11 121.356 660.996 143.769 751.226 223.438C821.11 285.142 853.022 352.495 857.405 419.61C861.787 486.732 838.636 553.667 798.298 614.527C707.477 751.553 520.474 838.02 326.409 740.543C131.127 642.454 90.2229 438.447 173.136 296.108C220.382 215 319.762 156.975 429.942 139.165Z"
-          stroke="#33302F"
-          strokeOpacity="0.3"
+          d="M430.115 139.151C540.328 121.345 661.262 143.754 751.529 223.416C821.442 285.114 853.366 352.461 857.75 419.569C862.135 486.686 838.974 553.614 798.62 614.468C707.763 751.482 520.685 837.941 326.541 740.473C131.179 642.393 90.2593 438.404 173.206 296.079C220.471 214.979 319.891 156.96 430.115 139.151Z"
+          stroke="url(#capacityCircle3GradientTablet)"
+          strokeOpacity="0.8"
         />
         <path
           className={`${ROTATE} animate-[spin-slow-reverse_40s_linear_infinite]`}
-          d="M170.249 348.084C202.963 251.399 278.333 165.47 393.81 131.572C483.25 105.317 560.957 112.149 626.08 140.891C691.213 169.638 743.806 220.321 782.964 281.837C871.132 420.344 868.509 611.482 689.652 719.881C509.675 828.959 299.335 763.673 202.616 628.939C147.505 552.166 137.532 444.781 170.249 348.084Z"
-          stroke="#33302F"
-          strokeOpacity="0.3"
+          d="M170.324 348.052C203.05 251.375 278.452 165.454 393.976 131.559C483.451 105.307 561.189 112.139 626.339 140.878C691.498 169.622 744.112 220.301 783.286 281.81C871.489 420.305 868.865 611.423 689.936 719.812C509.886 828.88 299.461 763.6 202.704 628.879C147.57 552.114 137.594 444.739 170.324 348.052Z"
+          stroke="url(#capacityCircle2GradientTablet)"
+          strokeOpacity="0.8"
         />
         <path
           className={`${ROTATE} animate-[spin-slow_47.5s_linear_infinite]`}
-          d="M284.065 211.378C361.5 143.924 467.857 105.903 579.336 131.51C665.68 151.343 725.09 194.004 762.762 249.504C800.439 305.012 816.398 373.403 815.759 444.725C814.32 605.315 711.547 768.043 509.454 776.333C306.094 784.675 169.911 629.057 162.429 467.656C158.165 375.69 206.623 278.839 284.065 211.378Z"
-          stroke="#33302F"
-          strokeOpacity="0.3"
+          d="M284.182 211.358C361.647 143.91 468.046 105.893 579.57 131.497C665.95 151.328 725.384 193.986 763.07 249.48C800.763 304.983 816.728 373.367 816.089 444.681C814.65 605.256 711.837 767.969 509.661 776.258C306.219 784.6 169.982 628.995 162.496 467.611C158.231 375.654 206.708 278.813 284.182 211.358Z"
+          stroke="url(#capacityCircle1GradientTablet)"
+          strokeOpacity="0.8"
         />
       </svg>
 

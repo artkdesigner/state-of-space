@@ -21,7 +21,7 @@ export default function LocationCard({
   return (
     <div className="Location relative z-2 flex w-89.5 flex-col items-center gap-20 md:w-110 md:gap-30 lg:w-auto lg:gap-40">
       <div className="Location-top flex min-h-95 w-75 max-w-75 min-w-75 flex-col items-center justify-center gap-10 overflow-hidden rounded-[7.5rem] bg-[rgba(33,31,30,0.3)] p-6 text-center backdrop-blur-[1.25rem] md:min-h-120 md:w-90 md:max-w-90 md:min-w-90 md:rounded-[8.75rem] md:px-7.5 md:py-15 lg:min-h-137.5 lg:w-110 lg:max-w-110 lg:min-w-110 lg:rounded-[11.25rem] lg:px-15 lg:py-30">
-        <p className="Location-top-title w-full font-manrope text-[1.75rem] leading-[1.2] font-semibold tracking-[-0.03em] text-light md:w-75 lg:w-75 lg:text-[2.625rem] lg:tracking-[-0.04em]">
+        <p className="Location-top-title w-full font-manrope text-[1.75rem] leading-[1.2] font-semibold tracking-[-0.03em] text-light md:w-75 md:text-[2.25rem] lg:w-75 lg:text-[2.625rem] lg:tracking-[-0.04em]">
           {quote}
         </p>
 
