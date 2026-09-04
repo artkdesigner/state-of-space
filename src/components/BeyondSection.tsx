@@ -139,7 +139,7 @@ export default function BeyondSection() {
         Usual Life
       </p>
 
-      <div className="Beyond-carousel absolute left-1/2 top-1/2 size-[30rem] -translate-x-1/2 -translate-y-1/2 md:size-[59rem] lg:top-30 lg:size-[118rem] lg:translate-y-0">
+      <div className="Beyond-carousel absolute left-1/2 top-1/2 size-[23.125rem] -translate-x-1/2 -translate-y-1/2 md:size-[59rem] lg:top-30 lg:size-[118rem] lg:translate-y-0">
         <div
           className="Beyond-carousel-spin absolute inset-0"
           style={{ transform: `rotate(${rotation}deg)` }}
@@ -158,7 +158,7 @@ export default function BeyondSection() {
                 }}
               >
                 <div
-                  className="absolute overflow-hidden rounded-[0.9375rem] lg:rounded-[1.8388rem]"
+                  className="absolute overflow-hidden rounded-[0.3125rem] md:rounded-[0.9375rem] lg:rounded-[1.8388rem]"
                   style={{
                     top: '50%',
                     left: '50%',
