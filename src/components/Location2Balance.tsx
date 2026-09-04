@@ -24,7 +24,7 @@ export default function Location2Balance({ onBookNow }: Location2BalanceProps) {
   return (
     <div
       ref={containerRef}
-      className="Location2-balance relative isolate flex min-h-[45rem] flex-col justify-between gap-15 p-2.5 md:h-dvh md:min-h-0 md:w-[47rem] md:shrink-0 md:justify-between md:gap-0 lg:w-[120rem] lg:p-5"
+      className="Location2-balance relative isolate flex min-h-[45rem] flex-col justify-between gap-15 p-2.5 md:h-dvh md:min-h-0 md:w-dvw md:shrink-0 md:justify-between md:gap-0 lg:w-[120rem] lg:p-5"
     >
       <img
         ref={setCursorRef(0)}
@@ -83,7 +83,7 @@ export default function Location2Balance({ onBookNow }: Location2BalanceProps) {
         <div className="Cta-icon-wrap hidden items-center lg:flex lg:flex-1">
           <img src={ctaIconDesktop} alt="" className="size-35 shrink-0" />
         </div>
-        <span className="font-manrope text-[1.875rem] leading-none font-semibold tracking-[-0.04em] text-dark md:text-[3.375rem] lg:text-[8.375rem] lg:tracking-[-0.06em]">
+        <span className="font-manrope text-[1.875rem] leading-none font-semibold tracking-[-0.04em] text-dark md:w-127 md:text-[3.375rem] lg:w-auto lg:text-[8.375rem] lg:tracking-[-0.06em]">
           Request Access
         </span>
       </a>

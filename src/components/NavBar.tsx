@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { scrollToHash } from '../lib/scroll'
+import NavMenu from './NavMenu'
 
-function NavLogo({ className }: { className?: string }) {
+export function NavLogo({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 48 48" fill="none" className={className}>
       <path
@@ -26,6 +27,7 @@ const SECTION_THEMES: { id: string; theme: 'dark' | 'light' }[] = [
   { id: 'capacity', theme: 'dark' },
   { id: 'presence', theme: 'dark' },
   { id: 'location3', theme: 'dark' },
+  { id: 'residence', theme: 'light' },
   { id: 'advantages', theme: 'dark' },
 ]
 
@@ -40,6 +42,7 @@ type NavBarProps = {
 
 export default function NavBar({ onBookNow }: NavBarProps) {
   const [theme, setTheme] = useState<'dark' | 'light'>('dark')
+  const [menuOpen, setMenuOpen] = useState(false)
 
   useEffect(() => {
     const themeById = new Map(
@@ -132,11 +135,18 @@ export default function NavBar({ onBookNow }: NavBarProps) {
 
         <button
           type="button"
-          className="Nav-menu-btn ml-auto whitespace-nowrap text-[0.875rem] font-medium tracking-[-0.03em] md:text-[1.125rem]"
+          onClick={() => setMenuOpen(true)}
+          className="Nav-menu-btn ml-auto cursor-pointer whitespace-nowrap text-[0.875rem] font-medium tracking-[-0.03em] md:text-[1.125rem]"
         >
           Menu
         </button>
       </header>
+
+      <NavMenu
+        open={menuOpen}
+        onClose={() => setMenuOpen(false)}
+        onBookNow={onBookNow}
+      />
     </>
   )
 }

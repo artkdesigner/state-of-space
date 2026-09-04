@@ -50,7 +50,7 @@ const PILLARS: Pillar[] = [
 function PillarCard({ pillar }: { pillar: Pillar }) {
   return (
     <div
-      className={`Pillars-card flex shrink-0 flex-col items-center justify-center gap-2.5 ${pillar.tight ? 'lg:gap-2.5' : 'lg:gap-5'}`}
+      className={`Pillars-card flex shrink-0 flex-col items-center justify-center gap-2.5 md:gap-4 ${pillar.tight ? 'lg:gap-2.5' : 'lg:gap-5'}`}
     >
       <div className="Pillars-card-number-wrap flex size-10 shrink-0 items-center justify-center rounded-full border border-dark/30 lg:size-15">
         <p className="font-manrope text-xs text-dark/60 md:text-sm lg:text-[1.125rem]">
@@ -94,7 +94,7 @@ export default function Location2Pillars() {
           src={img2}
           alt="Still pool at The Island Retreat reflecting the surrounding pines"
           loading="lazy"
-          className="absolute right-0 bottom-0 h-52 w-38.75 max-w-none rounded-md object-cover md:h-37.5 md:w-27.5 lg:h-92.5 lg:w-67.5 lg:rounded-[1.875rem]"
+          className="absolute right-0 bottom-0 h-52 w-38.75 max-w-none rounded-md object-cover md:h-37.5 md:w-27.5 md:rounded-[0.6529rem] lg:h-92.5 lg:w-67.5 lg:rounded-[1.875rem]"
         />
         <img
           src={img1}
@@ -118,7 +118,7 @@ export default function Location2Pillars() {
           src={img4}
           alt="Locally sourced meal served at The Island Retreat"
           loading="lazy"
-          className="absolute top-0 left-[14.375rem] h-[9.625rem] w-[calc(100%-14.375rem)] max-w-none rounded-md object-cover md:top-[-1.25rem] md:left-[9.3125rem] md:h-[6.25rem] md:w-[calc(100%-9.3125rem)] lg:top-[-3.75rem] lg:left-[19.6875rem] lg:h-[12.875rem] lg:w-[11.875rem] lg:rounded-[1.875rem]"
+          className="absolute top-0 left-[14.375rem] h-[9.625rem] w-[calc(100%-14.375rem)] max-w-none rounded-md object-cover md:top-[-1.25rem] md:left-[9.3125rem] md:h-[6.25rem] md:w-[calc(100%-9.3125rem)] md:rounded-[0.75rem] lg:top-[-3.75rem] lg:left-[19.6875rem] lg:h-[12.875rem] lg:w-[11.875rem] lg:rounded-[1.875rem]"
         />
       </div>
 

@@ -24,7 +24,8 @@ export default function MoveSection() {
     const trigger = ScrollTrigger.create({
       trigger: section,
       start: 'top top',
-      end: () => '+=' + (window.innerHeight * CARDS.length - window.innerHeight * 0.5),
+      end: () =>
+        '+=' + (window.innerHeight * CARDS.length - window.innerHeight * 0.5),
       pin: true,
       scrub: true,
       onUpdate: (self) => {
