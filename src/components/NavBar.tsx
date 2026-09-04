@@ -37,22 +37,30 @@ type NavBarProps = {
 
 export default function NavBar({ onBookNow }: NavBarProps) {
   const [theme, setTheme] = useState<'dark' | 'light'>('dark')
+  const [hidden, setHidden] = useState(false)
 
   useEffect(() => {
     const themeById = new Map(
       SECTION_THEMES.map(({ id, theme }) => [id, theme]),
     )
-    const sections = SECTION_THEMES.map(({ id }) =>
-      document.getElementById(id),
-    ).filter((el): el is HTMLElement => el !== null)
+    const trackedIds = [...SECTION_THEMES.map(({ id }) => id), 'footer']
+    const sections = trackedIds
+      .map((id) => document.getElementById(id))
+      .filter((el): el is HTMLElement => el !== null)
 
     /** rootMargin схлопывает зону наблюдения в линию у самого верха
      * вьюпорта — секция считается активной, пока её граница проходит
-     * через эту линию. */
+     * через эту линию. Footer несёт собственную копию навигации, поэтому
+     * над ним глобальный Nav прячется — иначе они дублируются. */
     const observer = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
           if (entry.isIntersecting) {
+            if (entry.target.id === 'footer') {
+              setHidden(true)
+              continue
+            }
+            setHidden(false)
             const sectionTheme = themeById.get(entry.target.id)
             if (sectionTheme) setTheme(sectionTheme)
           }
@@ -67,11 +75,12 @@ export default function NavBar({ onBookNow }: NavBarProps) {
   }, [])
 
   const themeClass = THEME_CLASS[theme]
+  const hiddenClass = hidden ? 'opacity-0 pointer-events-none' : ''
 
   return (
     <>
       <header
-        className={`Nav fixed inset-x-0 top-0 z-50 hidden items-center justify-between p-5 font-manrope transition-colors duration-500 lg:flex ${themeClass}`}
+        className={`Nav fixed inset-x-0 top-0 z-50 hidden items-center justify-between p-5 font-manrope transition-[color,opacity] duration-500 lg:flex ${themeClass} ${hiddenClass}`}
       >
         {LEFT_LINKS.map((label) => (
           <button
@@ -100,7 +109,7 @@ export default function NavBar({ onBookNow }: NavBarProps) {
       </header>
 
       <header
-        className={`Nav fixed inset-x-2.5 top-2.5 z-50 flex h-10 items-center font-manrope transition-colors duration-500 md:h-12 lg:hidden ${themeClass}`}
+        className={`Nav fixed inset-x-2.5 top-2.5 z-50 flex h-10 items-center font-manrope transition-[color,opacity] duration-500 md:h-12 lg:hidden ${themeClass} ${hiddenClass}`}
       >
         <a
           href="#hero"
