@@ -83,7 +83,7 @@ export default function Location2Balance({ onBookNow }: Location2BalanceProps) {
         <div className="Cta-icon-wrap hidden items-center lg:flex lg:flex-1">
           <img src={ctaIconDesktop} alt="" className="size-35 shrink-0" />
         </div>
-        <span className="font-manrope text-[1.875rem] leading-none font-semibold tracking-[-0.04em] text-dark md:w-127 md:text-[3.375rem] lg:w-auto lg:text-[8.375rem] lg:tracking-[-0.06em]">
+        <span className="w-[14.3593rem] font-manrope text-[1.875rem] leading-none font-semibold tracking-[-0.04em] text-dark md:w-127 md:text-[3.375rem] lg:w-auto lg:text-[8.375rem] lg:tracking-[-0.06em]">
           Request Access
         </span>
       </a>

@@ -50,7 +50,7 @@ const PILLARS: Pillar[] = [
 function PillarCard({ pillar }: { pillar: Pillar }) {
   return (
     <div
-      className={`Pillars-card flex shrink-0 flex-col items-center justify-center gap-2.5 md:gap-4 ${pillar.tight ? 'lg:gap-2.5' : 'lg:gap-5'}`}
+      className={`Pillars-card flex shrink-0 flex-col items-center justify-center gap-5 md:gap-4 ${pillar.tight ? 'lg:gap-2.5' : 'lg:gap-5'}`}
     >
       <div className="Pillars-card-number-wrap flex size-10 shrink-0 items-center justify-center rounded-full border border-dark/30 lg:size-15">
         <p className="font-manrope text-xs text-dark/60 md:text-sm lg:text-[1.125rem]">

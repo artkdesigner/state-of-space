@@ -61,9 +61,9 @@ export default function ResidenceSection() {
       <div className="Residence-top relative w-full">
         <div
           ref={pinRef}
-          className="Residence-top-pin relative flex h-dvh flex-col overflow-hidden md:justify-center lg:justify-normal"
+          className="Residence-top-pin relative flex h-dvh flex-col justify-center overflow-hidden lg:justify-normal"
         >
-          <div className="Residence-top-horizontal relative flex w-full flex-1 items-center md:h-105 md:flex-none lg:h-auto lg:flex-1">
+          <div className="Residence-top-horizontal relative flex w-full h-55 flex-none items-center md:h-105 lg:h-auto lg:flex-1">
             <h2
               ref={trackRef}
               className="Residence-top-title whitespace-nowrap pl-5 pr-5 font-manrope text-[3.125rem] font-light leading-none tracking-[-0.125rem] text-light/60 md:text-[6.25rem] md:tracking-[-0.25rem] lg:text-[15.625rem] lg:tracking-[-0.625rem]"
