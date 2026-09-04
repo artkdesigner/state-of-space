@@ -92,9 +92,12 @@ export default function NavBar({ onBookNow }: NavBarProps) {
           </button>
         ))}
 
-        <a href="#hero" className="Nav-logo shrink-0">
-          <NavLogo className="size-12" />
-        </a>
+        {/* Занимает место в потоке наравне с остальными ссылками, чтобы
+         * гэпы между ними не менялись, но сам логотип не рисует — реальный
+         * логотип наложен абсолютом по центру ниже, т.к. justify-between
+         * центрирует его только по гэпам, а не по пикселям (сумма ширин
+         * текста слева и справа разная — лого визуально уезжало). */}
+        <span className="Nav-logo-spacer size-12 shrink-0" aria-hidden />
 
         {RIGHT_LINKS.map((label) => (
           <button
@@ -106,6 +109,13 @@ export default function NavBar({ onBookNow }: NavBarProps) {
             {label}
           </button>
         ))}
+
+        <a
+          href="#hero"
+          className="Nav-logo absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+        >
+          <NavLogo className="size-12" />
+        </a>
       </header>
 
       <header
