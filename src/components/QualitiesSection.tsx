@@ -67,7 +67,7 @@ export default function QualitiesSection() {
         </div>
       </div>
 
-      <div className="Qualities-numbers flex w-full flex-col items-start justify-end gap-5 px-2.5 pb-2.5 font-manrope font-medium md:flex-row md:items-end md:gap-2.5 md:px-2.5 md:pb-2.5 lg:gap-5 lg:p-5">
+      <div className="Qualities-numbers flex w-full flex-col items-start justify-end gap-5 px-2.5 pb-2.5 font-manrope font-medium md:flex-row md:items-end md:gap-2.5 md:px-2.5 md:pb-2.5 lg:gap-5 lg:px-5 lg:pt-5 lg:pb-10">
         <div className="Qualities-numbers-left flex w-full items-start gap-2 md:w-60.75 md:flex-col md:items-start md:gap-2.5 lg:w-153.25 lg:gap-5">
           <p className="w-27.25 text-[0.875rem] leading-[1.3] tracking-[-0.01em] text-dark/60 md:w-full md:text-dark lg:text-[1.125rem]">
             Hours to enter the state

@@ -127,7 +127,7 @@ export default function AdvantagesSection() {
                       src={icon}
                       alt=""
                       aria-hidden
-                      className="h-6 w-7 shrink-0 origin-left md:h-10 md:w-11.5 lg:h-17.5 lg:w-20"
+                      className="h-6 w-7 max-w-none shrink-0 origin-left md:h-10 md:w-11.5 lg:h-17.5 lg:w-20"
                       style={{
                         transform: `scale(${isCurrent ? 1 : 0})`,
                         opacity: isCurrent ? 1 : 0.3,

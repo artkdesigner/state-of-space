@@ -1,4 +1,5 @@
-import { useEffect, useRef } from 'react'
+import { useRef } from 'react'
+import { useCursorImageTrail } from '../lib/cursorImageTrail'
 import ctaIcon from '../assets/drift/cta-icon.svg'
 import ctaIconMd from '../assets/drift/cta-icon-md.svg'
 import ctaIconLg from '../assets/drift/cta-icon-lg.svg'
@@ -8,55 +9,16 @@ import cursor3 from '../assets/drift/cursor3.webp'
 
 const CURSOR_IMAGES = [cursor1, cursor2, cursor3]
 
-/** Скорость притяжения каждой картинки к курсору — разная, чтобы получился шлейф. */
-const LERP_SPEEDS = [0.12, 0.09, 0.15]
-
-/** Центр веера картинок в покое (десктоп, px от Drift), см. Figma-координаты ниже. */
-const CENTROID = { x: 979, y: 586.33 }
-
 type DriftSectionProps = {
   onBookNow: () => void
 }
 
 export default function DriftSection({ onBookNow }: DriftSectionProps) {
   const sectionRef = useRef<HTMLElement>(null)
-  const cursorRefs = useRef<(HTMLDivElement | null)[]>([])
-
-  useEffect(() => {
-    const section = sectionRef.current
-    if (!section) return
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
-    if (!window.matchMedia('(min-width: 62rem)').matches) return
-
-    const current = CURSOR_IMAGES.map(() => ({ x: 0, y: 0 }))
-    const target = { x: 0, y: 0 }
-
-    const onMove = (e: MouseEvent) => {
-      const rect = section.getBoundingClientRect()
-      target.x = e.clientX - rect.left - CENTROID.x
-      target.y = e.clientY - rect.top - CENTROID.y
-    }
-    section.addEventListener('mousemove', onMove)
-
-    let raf = 0
-    const tick = () => {
-      cursorRefs.current.forEach((el, i) => {
-        if (!el) return
-        const c = current[i]
-        const speed = LERP_SPEEDS[i]
-        c.x += (target.x - c.x) * speed
-        c.y += (target.y - c.y) * speed
-        el.style.transform = `translate3d(${c.x}px, ${c.y}px, 0)`
-      })
-      raf = requestAnimationFrame(tick)
-    }
-    raf = requestAnimationFrame(tick)
-
-    return () => {
-      section.removeEventListener('mousemove', onMove)
-      cancelAnimationFrame(raf)
-    }
-  }, [])
+  const setCursorRef = useCursorImageTrail<HTMLDivElement>(
+    sectionRef,
+    CURSOR_IMAGES.length,
+  )
 
   return (
     <section
@@ -69,10 +31,8 @@ export default function DriftSection({ onBookNow }: DriftSectionProps) {
       </h2>
 
       <div
-        ref={(el) => {
-          cursorRefs.current[0] = el
-        }}
-        className="Drift-cursor-img absolute left-[4.25rem] top-[24.3125rem] w-25 h-[8.0625rem] overflow-hidden rounded-[0.75rem] md:left-[11.875rem] md:top-[28.375rem] md:h-[11.25rem] md:w-35 md:rounded-[1.875rem] lg:left-[49.5625rem] lg:top-[32.8125rem]"
+        ref={setCursorRef(0)}
+        className="Drift-cursor-img pointer-events-none absolute left-[4.25rem] top-[24.3125rem] w-25 h-[8.0625rem] overflow-hidden rounded-[0.75rem] opacity-100 transition-opacity duration-500 md:left-[11.875rem] md:top-[28.375rem] md:h-[11.25rem] md:w-35 md:rounded-[1.875rem] lg:left-0 lg:top-0 lg:opacity-0"
       >
         <img
           src={CURSOR_IMAGES[0]}
@@ -82,10 +42,8 @@ export default function DriftSection({ onBookNow }: DriftSectionProps) {
       </div>
 
       <div
-        ref={(el) => {
-          cursorRefs.current[1] = el
-        }}
-        className="Drift-cursor-img absolute left-[8.625rem] top-[20.3125rem] w-25 h-[8.0625rem] overflow-hidden rounded-[0.75rem] md:left-[19.125rem] md:top-[24.375rem] md:h-[11.25rem] md:w-35 md:rounded-[1.875rem] lg:left-[56.8125rem] lg:top-[28.8125rem]"
+        ref={setCursorRef(1)}
+        className="Drift-cursor-img pointer-events-none absolute left-[8.625rem] top-[20.3125rem] w-25 h-[8.0625rem] overflow-hidden rounded-[0.75rem] opacity-100 transition-opacity duration-500 md:left-[19.125rem] md:top-[24.375rem] md:h-[11.25rem] md:w-35 md:rounded-[1.875rem] lg:left-0 lg:top-0 lg:opacity-0"
       >
         <img
           src={CURSOR_IMAGES[1]}
@@ -95,10 +53,8 @@ export default function DriftSection({ onBookNow }: DriftSectionProps) {
       </div>
 
       <div
-        ref={(el) => {
-          cursorRefs.current[2] = el
-        }}
-        className="Drift-cursor-img absolute left-[13.8125rem] top-[22.9375rem] w-25 h-[8.0625rem] overflow-hidden rounded-[0.75rem] md:left-[26.375rem] md:top-[27rem] md:h-[11.25rem] md:w-35 md:rounded-[1.875rem] lg:left-[64.0625rem] lg:top-[31.4375rem]"
+        ref={setCursorRef(2)}
+        className="Drift-cursor-img pointer-events-none absolute left-[13.8125rem] top-[22.9375rem] w-25 h-[8.0625rem] overflow-hidden rounded-[0.75rem] opacity-100 transition-opacity duration-500 md:left-[26.375rem] md:top-[27rem] md:h-[11.25rem] md:w-35 md:rounded-[1.875rem] lg:left-0 lg:top-0 lg:opacity-0"
       >
         <img
           src={CURSOR_IMAGES[2]}
