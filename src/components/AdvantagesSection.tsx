@@ -14,7 +14,7 @@ import img10 from '../assets/advantages/10-buoyancy.webp'
 import img11 from '../assets/advantages/11-reflection2.webp'
 
 /** Доля 100vh скролла, за которую активный пункт сменяется на следующий. */
-const STEP_VH = 0.1
+const STEP_VH = 0.2
 
 const ITEMS = [
   { title: 'Reflection', image: img1 },
@@ -32,11 +32,13 @@ const ITEMS = [
 
 export default function AdvantagesSection() {
   const sectionRef = useRef<HTMLElement>(null)
+  const trackRef = useRef<HTMLDivElement>(null)
   const [activeIndex, setActiveIndex] = useState(0)
 
   useEffect(() => {
     const section = sectionRef.current
-    if (!section) return
+    const track = trackRef.current
+    if (!section || !track) return
 
     const trigger = ScrollTrigger.create({
       trigger: section,
@@ -45,10 +47,17 @@ export default function AdvantagesSection() {
       pin: true,
       scrub: true,
       onUpdate: (self) => {
-        const index = Math.min(
+        // Позиция трека следует за скроллом непрерывно, кадр в кадр (без
+        // CSS-transition) — иначе при быстром скролле дискретные прыжки
+        // индекса и независимый по времени transition конкурируют друг
+        // с другом и получается дёрганно.
+        const progress = Math.min(
           ITEMS.length - 1,
-          Math.floor(self.progress * ITEMS.length),
+          self.progress * ITEMS.length,
         )
+        track.style.transform = `translateY(calc(-1 * (${progress} + 0.5) * var(--item-step)))`
+
+        const index = Math.round(progress)
         setActiveIndex((prev) => (prev === index ? prev : index))
       },
     })
@@ -70,14 +79,14 @@ export default function AdvantagesSection() {
           />
           <div
             aria-hidden
-            className="Advantages-blur.bottom absolute inset-x-0 bottom-0 z-2 h-10 bg-gradient-to-t from-[#081e45] to-[rgba(8,30,69,0)] backdrop-blur-[0.9375rem] md:h-15 lg:h-35"
+            className="Advantages-blur.bottom absolute inset-x-0 bottom-0 z-2 h-10 bg-gradient-to-t from-[#081e45] to-[rgba(8,30,69,0)] backdrop-blur-[0.9375rem] [mask-image:linear-gradient(to_top,black,transparent)] [-webkit-mask-image:linear-gradient(to_top,black,transparent)] md:h-15 lg:h-35"
           />
 
           <div
+            ref={trackRef}
             className="Advantages-track absolute inset-x-0 top-1/2 flex flex-col gap-2.5 [--item-step:2.5rem] md:[--item-step:4rem] lg:[--item-step:9rem]"
             style={{
-              transform: `translateY(calc(-1 * (${activeIndex} + 0.5) * var(--item-step)))`,
-              transition: 'transform 0.6s cubic-bezier(0.16, 1, 0.3, 1)',
+              transform: 'translateY(calc(-0.5 * var(--item-step)))',
             }}
           >
             {ITEMS.map((item, i) => {
@@ -97,7 +106,11 @@ export default function AdvantagesSection() {
                       src={icon}
                       alt=""
                       aria-hidden
-                      className="h-6 w-7 shrink-0 md:h-10 md:w-11.5 lg:h-17.5 lg:w-20"
+                      className={`h-6 w-7 shrink-0 origin-left transition-[transform,opacity] duration-500 ease-out md:h-10 md:w-11.5 lg:h-17.5 lg:w-20 ${
+                        isCurrent
+                          ? 'scale-100 opacity-100'
+                          : 'scale-0 opacity-30'
+                      }`}
                     />
                   </div>
                   <p className="leading-none">{item.title}</p>
