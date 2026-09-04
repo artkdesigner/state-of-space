@@ -13,6 +13,9 @@ import img9 from '../assets/advantages/9-horizon.webp'
 import img10 from '../assets/advantages/10-buoyancy.webp'
 import img11 from '../assets/advantages/11-reflection2.webp'
 
+/** Доля 100vh скролла, за которую активный пункт сменяется на следующий. */
+const STEP_VH = 0.1
+
 const ITEMS = [
   { title: 'Reflection', image: img1 },
   { title: 'Flow', image: img2 },
@@ -38,7 +41,7 @@ export default function AdvantagesSection() {
     const trigger = ScrollTrigger.create({
       trigger: section,
       start: 'top top',
-      end: () => '+=' + window.innerHeight * ITEMS.length,
+      end: () => '+=' + window.innerHeight * STEP_VH * ITEMS.length,
       pin: true,
       scrub: true,
       onUpdate: (self) => {
@@ -63,7 +66,7 @@ export default function AdvantagesSection() {
         <div className="Advantages-left relative flex-1 overflow-hidden rounded-[0.625rem] bg-gradient-to-b from-blue to-[#081e45] px-5 lg:rounded-[1.875rem] lg:px-15">
           <div
             aria-hidden
-            className="Advantages-blur.top absolute inset-x-0 top-0 z-2 h-10 bg-gradient-to-t from-[rgba(8,30,69,0)] to-[#081e45] md:h-15 lg:h-35"
+            className="Advantages-blur.top absolute inset-x-0 top-0 z-2 h-10 bg-gradient-to-t from-[rgba(8,30,69,0)] to-[#081e45] backdrop-blur-[0.9375rem] md:h-15 lg:h-35"
           />
           <div
             aria-hidden
@@ -86,14 +89,14 @@ export default function AdvantagesSection() {
                     isCurrent ? 'text-light' : 'text-light/30'
                   }`}
                 >
-                  {isCurrent && (
-                    <img
-                      src={icon}
-                      alt=""
-                      aria-hidden
-                      className="Advantages-item-icon h-6 w-7 shrink-0 md:h-10 md:w-11.5 lg:h-17.5 lg:w-20"
-                    />
-                  )}
+                  <img
+                    src={icon}
+                    alt=""
+                    aria-hidden
+                    className={`Advantages-item-icon h-6 w-7 shrink-0 transition-[transform,opacity] duration-500 ease-out md:h-10 md:w-11.5 lg:h-17.5 lg:w-20 ${
+                      isCurrent ? 'scale-100 opacity-100' : 'scale-0 opacity-0'
+                    }`}
+                  />
                   <p className="leading-none">{item.title}</p>
                 </div>
               )
