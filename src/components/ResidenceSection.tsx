@@ -66,7 +66,7 @@ export default function ResidenceSection() {
           <div className="Residence-top-horizontal relative flex w-full flex-1 items-center">
             <h2
               ref={trackRef}
-              className="Residence-top-title whitespace-nowrap pl-5 font-manrope text-[3.125rem] font-light leading-none tracking-[-0.125rem] text-light/60 md:text-[6.25rem] md:tracking-[-0.25rem] lg:pl-5 lg:text-[15.625rem] lg:tracking-[-0.625rem]"
+              className="Residence-top-title whitespace-nowrap pl-5 pr-5 font-manrope text-[3.125rem] font-light leading-none tracking-[-0.125rem] text-light/60 md:text-[6.25rem] md:tracking-[-0.25rem] lg:text-[15.625rem] lg:tracking-[-0.625rem]"
             >
               The Water Residence where time slows
             </h2>
@@ -116,9 +116,19 @@ export default function ResidenceSection() {
             system on the ocean
           </p>
           <p className="Residence-bottom-header-title pl-30 font-manrope text-[1.25rem] font-semibold leading-[1.2] tracking-[-0.0375rem] md:pl-0 md:text-[1.875rem] md:tracking-[-0.05625rem] lg:w-[79.375rem] lg:text-[3.75rem] lg:tracking-[-0.1125rem]">
-            A residence shaped by water, horizon, and uninterrupted space.
-            Designed for autonomous living, where movement replaces schedules
-            and time unfolds naturally.
+            {/* На tablet в макете нет ни отступа, ни разрыва — предложения
+             * текут одним абзацем. На mobile/desktop каждое предложение —
+             * отдельная "строка" со своим paragraph-indent (обычный CSS
+             * text-indent не переживает `<br>` внутри одного `<p>`, поэтому
+             * это два block-элемента, а не один текст с `<br>`, как ошибочно
+             * отдаёт генератор кода Figma). */}
+            <span className="indent-[4.6875rem] block md:inline md:indent-0 lg:block lg:indent-[20.625rem]">
+              A residence shaped by water, horizon, and uninterrupted space.
+            </span>{' '}
+            <span className="indent-[4.6875rem] block md:inline md:indent-0 lg:block lg:indent-[20.625rem]">
+              Designed for autonomous living, where movement replaces schedules
+              and time unfolds naturally.
+            </span>
           </p>
         </div>
 
