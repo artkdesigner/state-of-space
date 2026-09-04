@@ -14,6 +14,7 @@ import ResidenceSection from '../components/ResidenceSection'
 import AdvantagesSection from '../components/AdvantagesSection'
 import BeyondSection from '../components/BeyondSection'
 import MoveSection from '../components/MoveSection'
+import DriftSection from '../components/DriftSection'
 import BookingPopup from '../components/BookingPopup'
 
 export default function HomePage() {
@@ -37,6 +38,7 @@ export default function HomePage() {
         <AdvantagesSection />
         <BeyondSection />
         <MoveSection />
+        <DriftSection />
       </main>
       <BookingPopup open={bookingOpen} onClose={() => setBookingOpen(false)} />
     </>
