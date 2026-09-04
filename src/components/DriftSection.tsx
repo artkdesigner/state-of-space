@@ -32,7 +32,7 @@ export default function DriftSection({ onBookNow }: DriftSectionProps) {
 
       <div
         ref={setCursorRef(0)}
-        className="Drift-cursor-img pointer-events-none absolute left-[4.25rem] top-[24.3125rem] w-25 h-[8.0625rem] overflow-hidden rounded-[0.75rem] opacity-100 transition-opacity duration-500 md:left-[11.875rem] md:top-[28.375rem] md:h-[11.25rem] md:w-35 md:rounded-[1.875rem] lg:left-0 lg:top-0 lg:opacity-0"
+        className="Drift-cursor-img pointer-events-none absolute left-[4.25rem] top-[24.3125rem] w-25 h-[8.0625rem] overflow-hidden rounded-[0.75rem] opacity-100 transition-[opacity,scale] duration-700 ease-out md:left-[11.875rem] md:top-[28.375rem] md:h-[11.25rem] md:w-35 md:rounded-[1.875rem] lg:left-0 lg:top-0 lg:opacity-0 lg:scale-75"
       >
         <img
           src={CURSOR_IMAGES[0]}
@@ -43,7 +43,7 @@ export default function DriftSection({ onBookNow }: DriftSectionProps) {
 
       <div
         ref={setCursorRef(1)}
-        className="Drift-cursor-img pointer-events-none absolute left-[8.625rem] top-[20.3125rem] w-25 h-[8.0625rem] overflow-hidden rounded-[0.75rem] opacity-100 transition-opacity duration-500 md:left-[19.125rem] md:top-[24.375rem] md:h-[11.25rem] md:w-35 md:rounded-[1.875rem] lg:left-0 lg:top-0 lg:opacity-0"
+        className="Drift-cursor-img pointer-events-none absolute left-[8.625rem] top-[20.3125rem] w-25 h-[8.0625rem] overflow-hidden rounded-[0.75rem] opacity-100 transition-[opacity,scale] duration-700 ease-out md:left-[19.125rem] md:top-[24.375rem] md:h-[11.25rem] md:w-35 md:rounded-[1.875rem] lg:left-0 lg:top-0 lg:opacity-0 lg:scale-75"
       >
         <img
           src={CURSOR_IMAGES[1]}
@@ -54,7 +54,7 @@ export default function DriftSection({ onBookNow }: DriftSectionProps) {
 
       <div
         ref={setCursorRef(2)}
-        className="Drift-cursor-img pointer-events-none absolute left-[13.8125rem] top-[22.9375rem] w-25 h-[8.0625rem] overflow-hidden rounded-[0.75rem] opacity-100 transition-opacity duration-500 md:left-[26.375rem] md:top-[27rem] md:h-[11.25rem] md:w-35 md:rounded-[1.875rem] lg:left-0 lg:top-0 lg:opacity-0"
+        className="Drift-cursor-img pointer-events-none absolute left-[13.8125rem] top-[22.9375rem] w-25 h-[8.0625rem] overflow-hidden rounded-[0.75rem] opacity-100 transition-[opacity,scale] duration-700 ease-out md:left-[26.375rem] md:top-[27rem] md:h-[11.25rem] md:w-35 md:rounded-[1.875rem] lg:left-0 lg:top-0 lg:opacity-0 lg:scale-75"
       >
         <img
           src={CURSOR_IMAGES[2]}
@@ -86,7 +86,7 @@ export default function DriftSection({ onBookNow }: DriftSectionProps) {
             className="hidden lg:block lg:size-35"
           />
         </div>
-        <span className="cta-title font-manrope text-[1.875rem] leading-none font-semibold tracking-[-0.075rem] text-dark md:text-[3.375rem] md:tracking-[-0.135rem] lg:text-[8.375rem] lg:tracking-[-0.5025rem]">
+        <span className="cta-title font-manrope text-[1.875rem] leading-none font-semibold tracking-[-0.075rem] text-dark md:text-[3.375rem] md:tracking-[-0.135rem] lg:w-[79.375rem] lg:text-[8.375rem] lg:tracking-[-0.5025rem]">
           Request Access
         </span>
       </a>

@@ -35,3 +35,20 @@ export function initSmoothScroll() {
 export function getLenis() {
   return lenis
 }
+
+/**
+ * Плавный скролл к якорю (клик по лого и т.п.) — обычный `<a href="#id">`
+ * прыгает мгновенно, в обход Lenis. Если Lenis не инициализирован
+ * (prefers-reduced-motion) — нативный scrollIntoView с behavior: smooth.
+ */
+export function scrollToHash(hash: string) {
+  const instance = getLenis()
+  if (instance) {
+    instance.scrollTo(hash, {
+      duration: 1.5,
+      easing: (t: number) => 1 - Math.pow(1 - t, 3),
+    })
+    return
+  }
+  document.querySelector(hash)?.scrollIntoView({ behavior: 'smooth' })
+}

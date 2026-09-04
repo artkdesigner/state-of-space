@@ -36,11 +36,16 @@ export function useCursorImageTrail<T extends HTMLElement>(
     const showAt = (i: number, x: number, y: number) => {
       const el = itemRefs.current[i]
       if (!el) return
+      // Позиция — мгновенным прыжком (это новое появление, не перелёт с
+      // прошлого места), а плавность даёт отдельное CSS-свойство `scale` —
+      // оно анимируется независимо от `transform`, который держит позицию.
       el.style.transform = `translate3d(${x - el.offsetWidth / 2}px, ${y - el.offsetHeight / 2}px, 0)`
       el.style.opacity = '1'
+      el.style.scale = '1'
       window.clearTimeout(hideTimers[i])
       hideTimers[i] = window.setTimeout(() => {
         el.style.opacity = '0'
+        el.style.scale = '0.85'
       }, visibleDuration)
     }
 

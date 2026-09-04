@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { scrollToHash } from '../lib/scroll'
 
 function NavLogo({ className }: { className?: string }) {
   return (
@@ -105,6 +106,10 @@ export default function NavBar({ onBookNow }: NavBarProps) {
 
         <a
           href="#hero"
+          onClick={(e) => {
+            e.preventDefault()
+            scrollToHash('#hero')
+          }}
           className="Nav-logo absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
         >
           <NavLogo className="size-12" />
@@ -116,6 +121,10 @@ export default function NavBar({ onBookNow }: NavBarProps) {
       >
         <a
           href="#hero"
+          onClick={(e) => {
+            e.preventDefault()
+            scrollToHash('#hero')
+          }}
           className="Nav-logo absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
         >
           <NavLogo className="size-10 md:size-12" />

@@ -14,7 +14,7 @@ import img10 from '../assets/advantages/10-buoyancy.webp'
 import img11 from '../assets/advantages/11-reflection2.webp'
 
 /** Доля 100vh скролла, за которую активный пункт сменяется на следующий. */
-const STEP_VH = 0.2
+const STEP_VH = 0.4
 
 const ITEMS = [
   { title: 'Reflection', image: img1 },

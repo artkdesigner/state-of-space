@@ -1,4 +1,5 @@
 import footerLogo from '../assets/footer-logo.svg'
+import { scrollToHash } from '../lib/scroll'
 
 const NAV_LINKS = [
   'Experience',
@@ -32,7 +33,14 @@ export default function FooterSection({ onBookNow }: FooterSectionProps) {
         ))}
       </nav>
 
-      <a href="#hero" className="Footer-logo size-20 shrink-0 md:size-25">
+      <a
+        href="#hero"
+        onClick={(e) => {
+          e.preventDefault()
+          scrollToHash('#hero')
+        }}
+        className="Footer-logo size-20 shrink-0 md:size-25"
+      >
         <img
           src={footerLogo}
           alt="State of Space"
