@@ -33,6 +33,8 @@ const ITEMS = [
 export default function AdvantagesSection() {
   const sectionRef = useRef<HTMLElement>(null)
   const trackRef = useRef<HTMLDivElement>(null)
+  const slotRefs = useRef<(HTMLDivElement | null)[]>([])
+  const iconRefs = useRef<(HTMLImageElement | null)[]>([])
   const [activeIndex, setActiveIndex] = useState(0)
 
   useEffect(() => {
@@ -47,15 +49,28 @@ export default function AdvantagesSection() {
       pin: true,
       scrub: true,
       onUpdate: (self) => {
-        // Позиция трека следует за скроллом непрерывно, кадр в кадр (без
-        // CSS-transition) — иначе при быстром скролле дискретные прыжки
-        // индекса и независимый по времени transition конкурируют друг
-        // с другом и получается дёрганно.
+        // Позиция трека и раскрытие иконки следуют за скроллом непрерывно,
+        // кадр в кадр (без CSS-transition) — иначе при быстром скролле
+        // дискретные прыжки индекса и независимый по времени transition
+        // конкурируют друг с другом и получается дёрганно/мгновенно.
         const progress = Math.min(
           ITEMS.length - 1,
           self.progress * ITEMS.length,
         )
         track.style.transform = `translateY(calc(-1 * (${progress} + 0.5) * var(--item-step)))`
+
+        ITEMS.forEach((_, i) => {
+          // 1 ровно на активном пункте, плавно гаснет к 0 за один шаг
+          // до/после него — тот же приём, что и для позиции трека.
+          const closeness = Math.max(0, 1 - Math.abs(progress - i))
+          const slot = slotRefs.current[i]
+          const iconEl = iconRefs.current[i]
+          if (slot) slot.style.width = `calc(${closeness} * var(--icon-slot))`
+          if (iconEl) {
+            iconEl.style.transform = `scale(${closeness})`
+            iconEl.style.opacity = String(0.3 + 0.7 * closeness)
+          }
+        })
 
         const index = Math.round(progress)
         setActiveIndex((prev) => (prev === index ? prev : index))
@@ -72,7 +87,7 @@ export default function AdvantagesSection() {
       className="Advantages relative flex h-dvh w-full items-center justify-center overflow-hidden bg-light"
     >
       <div className="Advantages-pin flex h-full w-full flex-col gap-2.5 p-2.5 lg:grid lg:grid-cols-2 lg:gap-5 lg:p-5">
-        <div className="Advantages-left relative flex-1 overflow-hidden rounded-[0.625rem] bg-gradient-to-b from-blue to-[#081e45] px-5 lg:rounded-[1.875rem] lg:px-15">
+        <div className="Advantages-left relative flex-1 overflow-hidden rounded-[0.625rem] bg-gradient-to-b from-blue to-[#081e45] lg:rounded-[1.875rem]">
           <div
             aria-hidden
             className="Advantages-blur.top absolute inset-x-0 top-0 z-2 h-10 bg-gradient-to-t from-[rgba(8,30,69,0)] to-[#081e45] md:h-15 lg:h-35"
@@ -84,7 +99,7 @@ export default function AdvantagesSection() {
 
           <div
             ref={trackRef}
-            className="Advantages-track absolute inset-x-0 top-1/2 flex flex-col gap-2.5 [--item-step:2.5rem] md:[--item-step:4rem] lg:[--item-step:9rem]"
+            className="Advantages-track absolute inset-x-0 top-1/2 flex flex-col gap-2.5 px-5 [--item-step:2.5rem] md:[--item-step:4rem] lg:px-15 lg:[--item-step:9rem]"
             style={{
               transform: 'translateY(calc(-0.5 * var(--item-step)))',
             }}
@@ -99,18 +114,24 @@ export default function AdvantagesSection() {
                   }`}
                 >
                   <div
-                    className="Advantages-item-icon-slot shrink-0 overflow-hidden transition-[width] duration-500 ease-out"
+                    ref={(el) => {
+                      slotRefs.current[i] = el
+                    }}
+                    className="Advantages-item-icon-slot shrink-0 overflow-hidden"
                     style={{ width: isCurrent ? 'var(--icon-slot)' : '0px' }}
                   >
                     <img
+                      ref={(el) => {
+                        iconRefs.current[i] = el
+                      }}
                       src={icon}
                       alt=""
                       aria-hidden
-                      className={`h-6 w-7 shrink-0 origin-left transition-[transform,opacity] duration-500 ease-out md:h-10 md:w-11.5 lg:h-17.5 lg:w-20 ${
-                        isCurrent
-                          ? 'scale-100 opacity-100'
-                          : 'scale-0 opacity-30'
-                      }`}
+                      className="h-6 w-7 shrink-0 origin-left md:h-10 md:w-11.5 lg:h-17.5 lg:w-20"
+                      style={{
+                        transform: `scale(${isCurrent ? 1 : 0})`,
+                        opacity: isCurrent ? 1 : 0.3,
+                      }}
                     />
                   </div>
                   <p className="leading-none">{item.title}</p>
