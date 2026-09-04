@@ -160,15 +160,15 @@ export default function BookingPopup({ open, onClose }: BookingPopupProps) {
             </form>
           </div>
 
-          <div className="Popup-cta flex w-full items-center justify-between">
-            <button
-              type="submit"
-              className="Popup-cta-title cursor-pointer whitespace-nowrap font-manrope text-[2.125rem] font-semibold leading-none tracking-[-0.06em] text-dark md:text-[4.1875rem] lg:text-[8.375rem]"
-            >
+          <button
+            type="submit"
+            className="Popup-cta flex w-full cursor-pointer items-center justify-between"
+          >
+            <span className="Popup-cta-title whitespace-nowrap font-manrope text-[2.125rem] font-semibold leading-none tracking-[-0.06em] text-dark md:text-[4.1875rem] lg:text-[8.375rem]">
               Apply Now
-            </button>
+            </span>
             <CtaArrowIcon className="size-10.5 shrink-0 md:size-[5.2303rem] lg:size-[8.7172rem]" />
-          </div>
+          </button>
         </div>
       </div>
     </div>

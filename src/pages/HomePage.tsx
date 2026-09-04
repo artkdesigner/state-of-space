@@ -39,7 +39,7 @@ export default function HomePage() {
         <AdvantagesSection />
         <BeyondSection />
         <MoveSection />
-        <DriftSection />
+        <DriftSection onBookNow={() => setBookingOpen(true)} />
       </main>
       <FooterSection onBookNow={() => setBookingOpen(true)} />
       <BookingPopup open={bookingOpen} onClose={() => setBookingOpen(false)} />

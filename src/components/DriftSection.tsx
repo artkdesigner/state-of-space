@@ -14,7 +14,11 @@ const LERP_SPEEDS = [0.12, 0.09, 0.15]
 /** Центр веера картинок в покое (десктоп, px от Drift), см. Figma-координаты ниже. */
 const CENTROID = { x: 979, y: 586.33 }
 
-export default function DriftSection() {
+type DriftSectionProps = {
+  onBookNow: () => void
+}
+
+export default function DriftSection({ onBookNow }: DriftSectionProps) {
   const sectionRef = useRef<HTMLElement>(null)
   const cursorRefs = useRef<(HTMLDivElement | null)[]>([])
 
@@ -103,8 +107,15 @@ export default function DriftSection() {
         />
       </div>
 
-      <div className="cta relative z-4 flex w-full items-start gap-2 md:items-end md:gap-2.5 lg:gap-5">
-        <div className="cta-icon-wrap flex w-21 shrink-0 items-center md:w-45 lg:w-[36.875rem]">
+      <a
+        href="#booking"
+        onClick={(e) => {
+          e.preventDefault()
+          onBookNow()
+        }}
+        className="cta relative z-4 flex w-full items-start gap-2 md:items-end md:gap-2.5 lg:gap-5"
+      >
+        <div className="cta-icon-wrap flex flex-1 shrink-0 items-center">
           <img src={ctaIcon} alt="" aria-hidden className="size-8 md:hidden" />
           <img
             src={ctaIconMd}
@@ -119,13 +130,10 @@ export default function DriftSection() {
             className="hidden lg:block lg:size-35"
           />
         </div>
-        <a
-          href="#"
-          className="cta-title font-manrope text-[1.875rem] leading-none font-semibold tracking-[-0.075rem] text-dark md:text-[3.375rem] md:tracking-[-0.135rem] lg:text-[8.375rem] lg:tracking-[-0.5025rem]"
-        >
+        <span className="cta-title font-manrope text-[1.875rem] leading-none font-semibold tracking-[-0.075rem] text-dark md:text-[3.375rem] md:tracking-[-0.135rem] lg:text-[8.375rem] lg:tracking-[-0.5025rem]">
           Request Access
-        </a>
-      </div>
+        </span>
+      </a>
     </section>
   )
 }
