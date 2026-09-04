@@ -66,7 +66,7 @@ export default function AdvantagesSection() {
         <div className="Advantages-left relative flex-1 overflow-hidden rounded-[0.625rem] bg-gradient-to-b from-blue to-[#081e45] px-5 lg:rounded-[1.875rem] lg:px-15">
           <div
             aria-hidden
-            className="Advantages-blur.top absolute inset-x-0 top-0 z-2 h-10 bg-gradient-to-t from-[rgba(8,30,69,0)] to-[#081e45] backdrop-blur-[0.9375rem] md:h-15 lg:h-35"
+            className="Advantages-blur.top absolute inset-x-0 top-0 z-2 h-10 bg-gradient-to-t from-[rgba(8,30,69,0)] to-[#081e45] md:h-15 lg:h-35"
           />
           <div
             aria-hidden
