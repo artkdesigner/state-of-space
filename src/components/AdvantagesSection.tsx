@@ -85,18 +85,21 @@ export default function AdvantagesSection() {
               return (
                 <div
                   key={i}
-                  className={`Advantages-item flex items-center gap-5 whitespace-nowrap font-manrope text-[1.875rem] leading-none font-semibold tracking-[-0.075rem] transition-colors duration-500 md:text-[3.375rem] md:tracking-[-0.135rem] lg:gap-10 lg:text-[8.375rem] lg:tracking-[-0.5025rem] ${
+                  className={`Advantages-item flex items-center whitespace-nowrap font-manrope text-[1.875rem] leading-none font-semibold tracking-[-0.075rem] transition-colors duration-500 [--icon-slot:3rem] md:text-[3.375rem] md:tracking-[-0.135rem] md:[--icon-slot:4.125rem] lg:text-[8.375rem] lg:tracking-[-0.5025rem] lg:[--icon-slot:7.5rem] ${
                     isCurrent ? 'text-light' : 'text-light/30'
                   }`}
                 >
-                  <img
-                    src={icon}
-                    alt=""
-                    aria-hidden
-                    className={`Advantages-item-icon h-6 w-7 shrink-0 transition-[transform,opacity] duration-500 ease-out md:h-10 md:w-11.5 lg:h-17.5 lg:w-20 ${
-                      isCurrent ? 'scale-100 opacity-100' : 'scale-0 opacity-0'
-                    }`}
-                  />
+                  <div
+                    className="Advantages-item-icon-slot shrink-0 overflow-hidden transition-[width] duration-500 ease-out"
+                    style={{ width: isCurrent ? 'var(--icon-slot)' : '0px' }}
+                  >
+                    <img
+                      src={icon}
+                      alt=""
+                      aria-hidden
+                      className="h-6 w-7 shrink-0 md:h-10 md:w-11.5 lg:h-17.5 lg:w-20"
+                    />
+                  </div>
                   <p className="leading-none">{item.title}</p>
                 </div>
               )
