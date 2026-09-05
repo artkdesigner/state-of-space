@@ -40,8 +40,9 @@ html {
   }
 }
 
-@media screen and (max-width: 30rem) {
-  /* ≤480px — Mobile */
+@media screen and (max-width: 47.9375rem) {
+  /* ≤767px — Mobile (граница совпадает с Tailwind md: 48rem/768px, а не
+     с неиспользуемым в компонентах --breakpoint-sm) */
   html {
     font-size: 4.10256vw; /* 16px при 390px (Mobile) */
   }

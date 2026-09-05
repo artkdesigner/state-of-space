@@ -24,7 +24,7 @@ export default function Location2Balance({ onBookNow }: Location2BalanceProps) {
   return (
     <div
       ref={containerRef}
-      className="Location2-balance relative isolate flex min-h-[45rem] flex-col justify-between gap-15 p-2.5 md:h-dvh md:min-h-0 md:w-dvw md:shrink-0 md:justify-between md:gap-0 lg:w-[120rem] lg:p-5"
+      className="Location2-balance relative isolate flex h-dvh flex-col justify-between gap-15 p-2.5 md:w-dvw md:shrink-0 md:justify-between md:gap-0 lg:w-[120rem] lg:p-5"
     >
       <img
         ref={setCursorRef(0)}

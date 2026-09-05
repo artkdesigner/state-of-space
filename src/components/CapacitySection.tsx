@@ -6,7 +6,7 @@ export default function CapacitySection() {
       id="capacity"
       className="Capacity relative flex min-h-dvh flex-col items-center justify-center overflow-hidden bg-light px-2.5"
     >
-      <p className="Capacity-title relative z-1 w-75 text-center font-manrope text-[1.25rem] font-semibold leading-[1.2] tracking-[-0.15em] text-dark md:w-[40.75rem] md:text-[1.875rem] md:tracking-[-0.03em] lg:w-150 lg:text-[1.75rem] lg:font-medium lg:tracking-[-0.0714em]">
+      <p className="Capacity-title relative z-1 w-75 text-center font-manrope text-[1.25rem] font-semibold leading-[1.2] tracking-[-0.03em] text-dark md:w-[40.75rem] md:text-[1.875rem] md:tracking-[-0.03em] lg:w-150 lg:text-[1.75rem] lg:font-medium lg:tracking-[-0.0714em]">
         What remains is not a feeling, but a capacity.
         <br className="hidden md:block" />
         The capacity to focus without tension, to think without overload, and to

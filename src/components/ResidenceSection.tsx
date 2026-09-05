@@ -44,7 +44,7 @@ export default function ResidenceSection() {
     const trigger = ScrollTrigger.create({
       trigger: pin,
       start: 'top top',
-      end: () => '+=' + getDistance(),
+      end: () => '+=' + getDistance() * 2,
       pin: true,
       scrub: true,
       invalidateOnRefresh: true,

@@ -108,7 +108,7 @@ export default function NavMenu({ open, onClose, onBookNow }: NavMenuProps) {
         ))}
       </div>
 
-      <div className="Nav-menu-footer relative flex w-full flex-col items-start gap-2.5 rounded-[2.5rem] bg-overlay/30 p-6 backdrop-blur-[1.25rem] md:p-7.5">
+      <div className="Nav-menu-footer relative flex w-92.5 flex-col items-start gap-2.5 rounded-[2.5rem] bg-overlay/30 p-6 backdrop-blur-[1.25rem] md:w-90 md:p-7.5">
         <span className="font-manrope text-[0.75rem] font-semibold tracking-[-0.0075rem] text-light/60 md:text-[0.875rem] md:tracking-[-0.00875rem]">
           Booking
         </span>
