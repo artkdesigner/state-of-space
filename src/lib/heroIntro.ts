@@ -12,7 +12,7 @@ import { reduceMotion } from './anim'
 const NAV_DURATION = 0.6
 const NAV_EASE = 'power3.out'
 
-const IMG_DURATION = 1.2
+const IMG_DURATION = 2.4
 const IMG_EASE = 'power2.out'
 /** Hero-img стартует, когда навбар долетел до места. */
 const IMG_DELAY = NAV_DURATION
