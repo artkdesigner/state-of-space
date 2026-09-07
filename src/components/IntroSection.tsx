@@ -1,37 +1,44 @@
 import introLogo from '../assets/intro-logo.svg'
+import { Reveal } from '../lib/anim'
 
 export default function IntroSection() {
   return (
     <section
       id="intro"
-      className="Intro flex min-h-dvh flex-col items-center justify-between bg-brown px-2.5 py-15 text-light lg:px-5 lg:py-30"
+      className="Intro relative flex min-h-dvh flex-col items-center justify-between bg-brown px-2.5 py-15 text-light motion-safe:z-[45] motion-safe:-mt-[24vh] lg:px-5 lg:py-30"
     >
-      <h2 className="Intro-title mx-auto max-w-[94rem] text-center font-manrope text-[1.25rem] font-semibold leading-[1.2] tracking-[-0.03em] md:text-[1.875rem] lg:text-[3.75rem]">
-        Live a unique experience inspired by the natural rhythm of the ocean. An
-        experience where the important thing is not a change of scenery, but the
-        inner sensation.
-      </h2>
+      <Reveal effect="fade-up" trigger="in-view">
+        <h2 className="Intro-title mx-auto max-w-[94rem] text-center font-manrope text-[1.25rem] font-semibold leading-[1.2] tracking-[-0.03em] md:text-[1.875rem] lg:text-[3.75rem]">
+          Live a unique experience inspired by the natural rhythm of the ocean.
+          An experience where the important thing is not a change of scenery,
+          but the inner sensation.
+        </h2>
+      </Reveal>
 
-      <img
-        src={introLogo}
-        alt="State of Space"
-        className="Intro-logo size-25"
-      />
+      <Reveal effect="fade-up" trigger="in-view">
+        <img
+          src={introLogo}
+          alt="State of Space"
+          className="Intro-logo size-25"
+        />
+      </Reveal>
 
-      <div className="Intro-bottom-wrap grid w-full grid-cols-1 items-start gap-5 font-manrope text-[0.875rem] font-medium leading-[1.3] tracking-[-0.01em] text-light/60 md:grid-cols-[10.75rem_1fr_10.75rem] lg:grid-cols-[1fr_37.75rem_1fr] lg:gap-0 lg:text-[1.125rem]">
-        <p className="Intro-bottom-title order-1 whitespace-nowrap text-center md:order-none md:text-left">
-          Ocean Space
-        </p>
-        <p className="Intro-bottom-sub order-3 text-center md:order-none">
-          Inspired by ocean landscapes and minimalist architecture, the project
-          examines how spatial design influences focus, perception, and
-          cognitive balance. Natural elements are used intentionally - to
-          simplify, slow down, and clarify experience.
-        </p>
-        <p className="Intro-bottom-year order-2 whitespace-nowrap text-center md:order-none md:text-right">
-          2026
-        </p>
-      </div>
+      <Reveal effect="fade-up" trigger="in-view" className="w-full">
+        <div className="Intro-bottom-wrap grid w-full grid-cols-1 items-start gap-5 font-manrope text-[0.875rem] font-medium leading-[1.3] tracking-[-0.01em] text-light/60 md:grid-cols-[10.75rem_1fr_10.75rem] lg:grid-cols-[1fr_37.75rem_1fr] lg:gap-0 lg:text-[1.125rem]">
+          <p className="Intro-bottom-title order-1 whitespace-nowrap text-center md:order-none md:text-left">
+            Ocean Space
+          </p>
+          <p className="Intro-bottom-sub order-3 text-center md:order-none">
+            Inspired by ocean landscapes and minimalist architecture, the
+            project examines how spatial design influences focus, perception,
+            and cognitive balance. Natural elements are used intentionally - to
+            simplify, slow down, and clarify experience.
+          </p>
+          <p className="Intro-bottom-year order-2 whitespace-nowrap text-center md:order-none md:text-right">
+            2026
+          </p>
+        </div>
+      </Reveal>
     </section>
   )
 }

@@ -1,11 +1,21 @@
 import gsap from 'gsap'
-import { useLayoutEffect, useRef } from 'react'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { useEffect, useLayoutEffect, useRef } from 'react'
 import heroPortrait from '../assets/hero-portrait-b.webp'
 import { reduceMotion, SplitChars } from '../lib/anim'
 import { HERO_INTRO, typeReveal } from '../lib/heroIntro'
 
+/** Скролл дозарастания Hero-img до fullscreen — см. «Скролл-переход
+ * Hero → Intro» ниже. */
+const GROW_VH = 2
+/** Мёртвый буфер после роста — сюда «наезжает» Intro (см. IntroSection). */
+const BUFFER_VH = 1
+const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3)
+
 export default function HeroSection() {
+  const sectionRef = useRef<HTMLElement>(null)
   const imgRef = useRef<HTMLSpanElement>(null)
+  const zoomRef = useRef<HTMLSpanElement>(null)
   const textLeftRef = useRef<HTMLSpanElement>(null)
   const textRightRef = useRef<HTMLSpanElement>(null)
   const subtitleRef = useRef<HTMLParagraphElement>(null)
@@ -62,11 +72,84 @@ export default function HeroSection() {
     }
   }, [])
 
+  /* Скролл-переход Hero → Intro (см. покадровую сцену «Hero to Intro» в
+   * Figma): Hero-img растёт из центра до диаметра max(100vw, 100vh) —
+   * fixed-оверлей поверх статичного Hero-img (не участвует в grid-layout,
+   * поэтому рост не сдвигает Hero-text-left/right). Border-radius уходит
+   * к 0 после того, как диаметр проходит min(100vw, 100vh) — иначе видна
+   * дуга круга поверх fullscreen-кадра. Hero-text-left/right и
+   * Hero-subtitle не исчезают и не двигаются — только блюрятся и
+   * перекрываются растущим оверлеем. IntroSection «наезжает» на буфер
+   * BUFFER_VH снизу (см. -mt там). */
+  useEffect(() => {
+    const section = sectionRef.current
+    const zoom = zoomRef.current
+    const img = imgRef.current
+    const textLeft = textLeftRef.current
+    const textRight = textRightRef.current
+    const subtitle = subtitleRef.current
+    if (!section || !zoom || !img || !textLeft || !textRight || !subtitle) {
+      return
+    }
+    if (reduceMotion()) return
+
+    const restingDiameter = img.offsetWidth
+
+    const trigger = ScrollTrigger.create({
+      trigger: section,
+      start: 'top top',
+      end: () => '+=' + window.innerHeight * (GROW_VH + BUFFER_VH),
+      pin: true,
+      scrub: true,
+      onLeave: () => {
+        zoom.style.opacity = '0'
+      },
+      onUpdate: (self) => {
+        const growProgress = Math.min(
+          1,
+          self.progress / (GROW_VH / (GROW_VH + BUFFER_VH)),
+        )
+        const smallerDim = Math.min(window.innerWidth, window.innerHeight)
+        const largerDim = Math.max(window.innerWidth, window.innerHeight)
+        const diameter =
+          restingDiameter +
+          (largerDim - restingDiameter) * easeOutCubic(growProgress)
+
+        zoom.style.opacity = growProgress > 0 ? '1' : '0'
+        zoom.style.width = `${diameter}px`
+        zoom.style.height = `${diameter}px`
+        zoom.style.borderRadius =
+          diameter <= smallerDim
+            ? '50%'
+            : `${Math.max(0, 50 - (50 * (diameter - smallerDim)) / (largerDim - smallerDim))}%`
+
+        const blur = `blur(${growProgress * 16}px)`
+        textLeft.style.filter = blur
+        textRight.style.filter = blur
+        subtitle.style.filter = blur
+      },
+    })
+
+    return () => {
+      trigger.kill()
+      zoom.style.opacity = '0'
+    }
+  }, [])
+
   return (
     <section
       id="hero"
+      ref={sectionRef}
       className="Hero relative flex min-h-dvh flex-col items-center justify-center border-b border-dark bg-light p-2.5 lg:p-5"
     >
+      <span
+        ref={zoomRef}
+        aria-hidden="true"
+        className="Hero-img-zoom pointer-events-none fixed left-1/2 top-1/2 z-40 block -translate-x-1/2 -translate-y-1/2 overflow-hidden opacity-0"
+      >
+        <img src={heroPortrait} alt="" className="size-full object-cover" />
+      </span>
+
       <h1 className="grid w-full grid-cols-1 items-center justify-items-center gap-5 font-manrope font-semibold uppercase leading-none tracking-[-0.04em] text-dark md:gap-10 lg:grid-cols-[1fr_auto_1fr] lg:gap-0">
         <span
           ref={textLeftRef}
