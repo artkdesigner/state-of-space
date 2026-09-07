@@ -8,6 +8,7 @@ import {
   type CSSProperties,
   type ReactElement,
   type ReactNode,
+  type RefObject,
 } from 'react'
 
 /*
@@ -51,14 +52,21 @@ const OFFSET: Record<RevealEffect, (distance: number) => string> = {
 const EASE_OUT = 'cubic-bezier(0.16, 1, 0.3, 1)'
 
 export function useInView<T extends Element = HTMLElement>(
-  opts: { once?: boolean; amount?: number } = {},
+  opts: {
+    once?: boolean
+    amount?: number
+    /** Наблюдать за другим элементом вместо возвращаемого `ref` — например
+     * за целой секцией, чтобы триггерить по её прогрессу появления, а не
+     * по видимости самого анимируемого (маленького) элемента. */
+    watch?: RefObject<Element | null>
+  } = {},
 ) {
-  const { once = true, amount = 0.2 } = opts
+  const { once = true, amount = 0.2, watch } = opts
   const ref = useRef<T>(null)
   const [inView, setInView] = useState(false)
 
   useEffect(() => {
-    const el = ref.current
+    const el = watch ? watch.current : ref.current
     if (!el) return
     const io = new IntersectionObserver(
       ([entry]) => {
@@ -73,7 +81,7 @@ export function useInView<T extends Element = HTMLElement>(
     )
     io.observe(el)
     return () => io.disconnect()
-  }, [once, amount])
+  }, [once, amount, watch])
 
   return [ref, inView] as const
 }
@@ -87,6 +95,11 @@ type RevealProps = {
   /** сдвиг для slide-эффектов, px. */
   distance?: number
   once?: boolean
+  /** порог IntersectionObserver, доля 0..1 (дефолт 0.2). */
+  amount?: number
+  /** наблюдать за прогрессом появления другого элемента (например
+   * секции-обёртки) вместо самого анимируемого. */
+  watch?: RefObject<Element | null>
   className?: string
   style?: CSSProperties
   children: ReactNode
@@ -99,11 +112,13 @@ export function Reveal({
   duration = 600,
   distance = 24,
   once = true,
+  amount,
+  watch,
   className,
   style,
   children,
 }: RevealProps) {
-  const [ref, inView] = useInView<HTMLDivElement>({ once })
+  const [ref, inView] = useInView<HTMLDivElement>({ once, amount, watch })
   const [loaded, setLoaded] = useState(false)
   useEffect(() => setLoaded(true), [])
 

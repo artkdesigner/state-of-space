@@ -29,6 +29,7 @@ const CROSSFADE = 0.28
 
 /** Smoothstep — тот же диапазон, что и линейная интерполяция, но мягче на краях. */
 const smoothstep = (t: number) => t * t * (3 - 2 * t)
+const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3)
 
 type Location1SectionProps = {
   onBookNow: () => void
@@ -43,8 +44,17 @@ export default function Location1Section({ onBookNow }: Location1SectionProps) {
     slideEls.current[index] = el
   }
 
+  /* Слайдер-кроссфейд Location1 (см. ниже) заодно подтягивает Cliff
+   * вверх на -100vh (margin-top 0 → -100vh, полностью скрыто под
+   * непрозрачным запиненным Location1 — не видно до самого перехода).
+   * Без этого Cliff-пин (CliffSection.tsx, переход Location1 → Cliff)
+   * включался бы только на СВОЁМ natural 'top top', а Location1 к тому
+   * моменту уже почти целиком уезжает обычным скроллом (он ровно 1 экран
+   * высотой) — тот же приём, что подтягивает Intro во время Hero и
+   * Location1 во время Intro (см. HeroSection.tsx, IntroSection.tsx). */
   useEffect(() => {
     const section = sectionRef.current
+    const cliff = document.getElementById('cliff')
     if (!section) return
 
     const trigger = ScrollTrigger.create({
@@ -53,6 +63,7 @@ export default function Location1Section({ onBookNow }: Location1SectionProps) {
       end: () => '+=' + window.innerHeight * SLIDE_COUNT,
       pin: true,
       scrub: true,
+      onLeave: () => ScrollTrigger.refresh(),
       onUpdate: (self) => {
         const progress = self.progress
 
@@ -72,10 +83,15 @@ export default function Location1Section({ onBookNow }: Location1SectionProps) {
           Math.floor(progress * SLIDE_COUNT),
         )
         setActiveIndex((prev) => (prev === index ? prev : index))
+
+        if (cliff) cliff.style.marginTop = `${-easeOutCubic(progress) * 100}vh`
       },
     })
 
-    return () => trigger.kill()
+    return () => {
+      trigger.kill()
+      if (cliff) cliff.style.marginTop = ''
+    }
   }, [])
 
   return (

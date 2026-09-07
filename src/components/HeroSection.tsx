@@ -10,6 +10,8 @@ import { setNavTheme } from './NavBar'
  * вьюпорта — см. «Скролл-переход Hero → Intro» ниже. */
 const PIN_VH = 2
 const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3)
+/** Брейкпоинт Desktop (`lg`, --breakpoint-lg: 62rem в src/index.css). */
+const LG_BREAKPOINT = 992
 
 export default function HeroSection() {
   const sectionRef = useRef<HTMLElement>(null)
@@ -75,10 +77,12 @@ export default function HeroSection() {
    * Figma): Hero-img растёт из центра до диаметра max(100vw, 100vh) —
    * fixed-оверлей поверх статичного Hero-img (не участвует в grid-layout,
    * поэтому рост не сдвигает Hero-text-left/right). Border-radius уходит
-   * к 0 после того, как диаметр проходит min(100vw, 100vh) — иначе видна
-   * дуга круга поверх fullscreen-кадра; ровно с этого момента (та же
-   * cover-прогрессия) Intro начинает наезжать на Hero снизу через
-   * margin-top, и навбар перекрашивается в светлый. Hero-text-left/right
+   * к 0 только после того, как диаметр (= ширина/высота квадратного
+   * оверлея) проходит 100vw на десктопе (lg, ≥992px) и 100vh на планшете
+   * и мобилке — до этого момента остаётся полным кругом. Intro начинает
+   * наезжать на Hero снизу через margin-top и навбар перекрашивается в
+   * светлый по отдельной, более ранней cover-прогрессии — момент min
+   * (100vw, 100vh). Hero-text-left/right
    * и Hero-subtitle не исчезают и не двигаются — только блюрятся и
    * перекрываются растущим оверлеем.
    *
@@ -121,6 +125,13 @@ export default function HeroSection() {
       scrub: true,
       onLeave: () => {
         zoom.style.opacity = '0'
+        /* Собственный pin Intro ('top top' в IntroSection) кэшируется при
+         * монтировании, пока marginTop у intro ещё 0 — без refresh здесь
+         * его стартовая точка не учитывает финальный сдвиг на -100vh,
+         * из-за чего Intro не фиксируется вовремя и продолжает уезжать
+         * вверх вместе со скроллом. См. аналогичный комментарий и refresh
+         * в IntroSection.tsx для перехода Intro → Location1. */
+        ScrollTrigger.refresh()
       },
       onUpdate: (self) => {
         const progress = self.progress
@@ -138,7 +149,19 @@ export default function HeroSection() {
           diameter <= smallerDim
             ? 0
             : Math.min(1, (diameter - smallerDim) / (largerDim - smallerDim))
-        zoom.style.borderRadius = `${(1 - coverProgress) * 50}%`
+
+        const radiusStart =
+          window.innerWidth >= LG_BREAKPOINT
+            ? window.innerWidth
+            : window.innerHeight
+        const radiusProgress =
+          diameter <= radiusStart
+            ? 0
+            : Math.min(
+                1,
+                (diameter - radiusStart) / (largerDim - radiusStart || 1),
+              )
+        zoom.style.borderRadius = `${(1 - radiusProgress) * 50}%`
 
         if (intro) {
           intro.style.zIndex = '45'
