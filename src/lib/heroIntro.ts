@@ -19,17 +19,19 @@ const IMG_DELAY = NAV_DURATION
 
 /** Hero-text-left стартует на 30% прогресса Hero-img (см. фрейм 3 сцены). */
 const TEXT_LEFT_START_RATIO = 0.3
-/** Hero-text-right стартует, когда левый текст напечатан на 40%. */
-const TEXT_RIGHT_START_RATIO = 0.4
+/** Hero-text-left печатается целиком за 40% длительности Hero-img. */
+const TEXT_LEFT_DURATION_RATIO = 0.4
 
-/** Момент, когда Hero-img докрастает до 100% — общий финиш для img/text. */
+/** Момент, когда Hero-img докрастает до 100% — общий финиш для img/text-right. */
 const HERO_END = IMG_DELAY + IMG_DURATION
 
 const TEXT_LEFT_DELAY = IMG_DELAY + TEXT_LEFT_START_RATIO * IMG_DURATION
-const TEXT_LEFT_DURATION = HERO_END - TEXT_LEFT_DELAY
+const TEXT_LEFT_DURATION = TEXT_LEFT_DURATION_RATIO * IMG_DURATION
 
-const TEXT_RIGHT_DELAY =
-  TEXT_LEFT_DELAY + TEXT_RIGHT_START_RATIO * TEXT_LEFT_DURATION
+/** Hero-text-right стартует только когда Hero-text-left уже допечатан
+ * целиком (последовательно, не параллельно), и заканчивает вместе с
+ * Hero-img. */
+const TEXT_RIGHT_DELAY = TEXT_LEFT_DELAY + TEXT_LEFT_DURATION
 const TEXT_RIGHT_DURATION = HERO_END - TEXT_RIGHT_DELAY
 
 /** Hero-subtitle выезжает снизу только после того, как img/text закончили. */
