@@ -1,4 +1,7 @@
-import { useEffect, useState } from 'react'
+import gsap from 'gsap'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { reduceMotion } from '../lib/anim'
+import { HERO_INTRO } from '../lib/heroIntro'
 import { scrollToHash } from '../lib/scroll'
 import NavMenu from './NavMenu'
 
@@ -44,6 +47,36 @@ type NavBarProps = {
 export default function NavBar({ onBookNow }: NavBarProps) {
   const [theme, setTheme] = useState<'dark' | 'light'>('dark')
   const [menuOpen, setMenuOpen] = useState(false)
+  const desktopHeaderRef = useRef<HTMLElement>(null)
+  const mobileHeaderRef = useRef<HTMLElement>(null)
+
+  /* Интро: навбар приезжает сверху — см. src/lib/heroIntro.ts.
+   * useLayoutEffect, чтобы скрытое стартовое состояние применилось до
+   * первой отрисовки, без вспышки полностью видимого навбара. */
+  useLayoutEffect(() => {
+    const headers = [desktopHeaderRef.current, mobileHeaderRef.current].filter(
+      (el): el is HTMLElement => el !== null,
+    )
+    if (headers.length === 0) return
+
+    if (reduceMotion()) {
+      gsap.set(headers, { yPercent: 0 })
+      return
+    }
+
+    const tween = gsap.fromTo(
+      headers,
+      { yPercent: -100 },
+      {
+        yPercent: 0,
+        duration: HERO_INTRO.nav.duration,
+        ease: HERO_INTRO.nav.ease,
+      },
+    )
+    return () => {
+      tween.kill()
+    }
+  }, [])
 
   useEffect(() => {
     const themeById = new Map(
@@ -78,6 +111,7 @@ export default function NavBar({ onBookNow }: NavBarProps) {
   return (
     <>
       <header
+        ref={desktopHeaderRef}
         className={`Nav fixed inset-x-0 top-0 z-50 hidden items-center justify-between p-5 font-manrope transition-colors duration-500 lg:flex ${themeClass}`}
       >
         {LEFT_LINKS.map((label) => (
@@ -121,6 +155,7 @@ export default function NavBar({ onBookNow }: NavBarProps) {
       </header>
 
       <header
+        ref={mobileHeaderRef}
         className={`Nav fixed inset-x-2.5 top-2.5 z-50 flex h-10 items-center font-manrope transition-colors duration-500 md:h-12 lg:hidden ${themeClass}`}
       >
         <a

@@ -24,7 +24,7 @@ import {
   дополнительно прыгает сразу к финальному значению.
 */
 
-const reduceMotion = () =>
+export const reduceMotion = () =>
   typeof window !== 'undefined' &&
   window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
 
@@ -132,6 +132,27 @@ export function Reveal({
     >
       {children}
     </div>
+  )
+}
+
+/**
+ * Разбивает текст на посимвольные `span`'ы (класс `Hero-text-span`,
+ * `opacity: 0` изначально) для побуквенного reveal через GSAP — см.
+ * `src/lib/heroIntro.ts`. Полный текст остаётся доступен screen-reader'ам
+ * через отдельный `sr-only` span, посимвольные — `aria-hidden`.
+ */
+export function SplitChars({ text }: { text: string }) {
+  return (
+    <>
+      <span className="sr-only">{text}</span>
+      <span aria-hidden="true">
+        {[...text].map((char, i) => (
+          <span key={i} className="Hero-text-span inline-block opacity-0">
+            {char === ' ' ? ' ' : char}
+          </span>
+        ))}
+      </span>
+    </>
   )
 }
 
