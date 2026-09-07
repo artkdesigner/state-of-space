@@ -4,12 +4,11 @@ import { useEffect, useLayoutEffect, useRef } from 'react'
 import heroPortrait from '../assets/hero-portrait-b.webp'
 import { reduceMotion, SplitChars } from '../lib/anim'
 import { HERO_INTRO, typeReveal } from '../lib/heroIntro'
+import { setNavTheme } from './NavBar'
 
-/** Скролл дозарастания Hero-img до fullscreen — см. «Скролл-переход
- * Hero → Intro» ниже. */
-const GROW_VH = 2
-/** Мёртвый буфер после роста — сюда «наезжает» Intro (см. IntroSection). */
-const BUFFER_VH = 1
+/** Скролл-дистанция дозарастания Hero-img до fullscreen, в высотах
+ * вьюпорта — см. «Скролл-переход Hero → Intro» ниже. */
+const PIN_VH = 2
 const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3)
 
 export default function HeroSection() {
@@ -77,10 +76,14 @@ export default function HeroSection() {
    * fixed-оверлей поверх статичного Hero-img (не участвует в grid-layout,
    * поэтому рост не сдвигает Hero-text-left/right). Border-radius уходит
    * к 0 после того, как диаметр проходит min(100vw, 100vh) — иначе видна
-   * дуга круга поверх fullscreen-кадра. Hero-text-left/right и
-   * Hero-subtitle не исчезают и не двигаются — только блюрятся и
-   * перекрываются растущим оверлеем. IntroSection «наезжает» на буфер
-   * BUFFER_VH снизу (см. -mt там). */
+   * дуга круга поверх fullscreen-кадра; ровно с этого момента (та же
+   * cover-прогрессия) Intro начинает наезжать на Hero снизу через
+   * margin-top, и навбар перекрашивается в светлый. Hero-text-left/right
+   * и Hero-subtitle не исчезают и не двигаются — только блюрятся и
+   * перекрываются растущим оверлеем. Создаётся с задержкой после
+   * load-интро (см. ниже), иначе GSAP-пиннинг Hero (первая секция —
+   * условие пина выполняется сразу при монтировании) конфликтует с
+   * ещё идущим scale-твином Hero-img. */
   useEffect(() => {
     const section = sectionRef.current
     const zoom = zoomRef.current
@@ -93,46 +96,67 @@ export default function HeroSection() {
     }
     if (reduceMotion()) return
 
-    const restingDiameter = img.offsetWidth
+    let trigger: ScrollTrigger | undefined
+    const introDelayMs =
+      (HERO_INTRO.subtitle.delay + HERO_INTRO.subtitle.duration) * 1000 + 200
 
-    const trigger = ScrollTrigger.create({
-      trigger: section,
-      start: 'top top',
-      end: () => '+=' + window.innerHeight * (GROW_VH + BUFFER_VH),
-      pin: true,
-      scrub: true,
-      onLeave: () => {
-        zoom.style.opacity = '0'
-      },
-      onUpdate: (self) => {
-        const growProgress = Math.min(
-          1,
-          self.progress / (GROW_VH / (GROW_VH + BUFFER_VH)),
-        )
-        const smallerDim = Math.min(window.innerWidth, window.innerHeight)
-        const largerDim = Math.max(window.innerWidth, window.innerHeight)
-        const diameter =
-          restingDiameter +
-          (largerDim - restingDiameter) * easeOutCubic(growProgress)
+    const timer = window.setTimeout(() => {
+      const restingDiameter = img.offsetWidth
+      const intro = document.getElementById('intro')
 
-        zoom.style.opacity = growProgress > 0 ? '1' : '0'
-        zoom.style.width = `${diameter}px`
-        zoom.style.height = `${diameter}px`
-        zoom.style.borderRadius =
-          diameter <= smallerDim
-            ? '50%'
-            : `${Math.max(0, 50 - (50 * (diameter - smallerDim)) / (largerDim - smallerDim))}%`
+      trigger = ScrollTrigger.create({
+        trigger: section,
+        start: 'top top',
+        end: () => '+=' + window.innerHeight * PIN_VH,
+        pin: true,
+        scrub: true,
+        onLeave: () => {
+          zoom.style.opacity = '0'
+        },
+        onUpdate: (self) => {
+          const progress = self.progress
+          const smallerDim = Math.min(window.innerWidth, window.innerHeight)
+          const largerDim = Math.max(window.innerWidth, window.innerHeight)
+          const diameter =
+            restingDiameter +
+            (largerDim - restingDiameter) * easeOutCubic(progress)
 
-        const blur = `blur(${growProgress * 16}px)`
-        textLeft.style.filter = blur
-        textRight.style.filter = blur
-        subtitle.style.filter = blur
-      },
-    })
+          zoom.style.opacity = progress > 0 ? '1' : '0'
+          zoom.style.width = `${diameter}px`
+          zoom.style.height = `${diameter}px`
+
+          const coverProgress =
+            diameter <= smallerDim
+              ? 0
+              : Math.min(
+                  1,
+                  (diameter - smallerDim) / (largerDim - smallerDim),
+                )
+          zoom.style.borderRadius = `${(1 - coverProgress) * 50}%`
+
+          if (intro) {
+            intro.style.zIndex = '45'
+            intro.style.marginTop = `${-coverProgress * 100}vh`
+          }
+          setNavTheme(coverProgress > 0 ? 'light' : 'dark')
+
+          const blur = `blur(${progress * 16}px)`
+          textLeft.style.filter = blur
+          textRight.style.filter = blur
+          subtitle.style.filter = blur
+        },
+      })
+    }, introDelayMs)
 
     return () => {
-      trigger.kill()
+      window.clearTimeout(timer)
+      trigger?.kill()
       zoom.style.opacity = '0'
+      const intro = document.getElementById('intro')
+      if (intro) {
+        intro.style.zIndex = ''
+        intro.style.marginTop = ''
+      }
     }
   }, [])
 

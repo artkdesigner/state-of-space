@@ -19,10 +19,11 @@ export function NavLogo({ className }: { className?: string }) {
 const LEFT_LINKS = ['Experience', 'Spaces', 'About']
 const RIGHT_LINKS = ['Blog', 'Contact', 'Book now']
 
-/** Тема навбара по секции, под которой он сейчас проходит. */
+/** Тема навбара по секции, под которой он сейчас проходит. `intro`
+ * сюда не входит — переход hero→intro скролл-driven (см. HeroSection),
+ * тему на этом участке ставит `setNavTheme`, не этот наблюдатель. */
 const SECTION_THEMES: { id: string; theme: 'dark' | 'light' }[] = [
   { id: 'hero', theme: 'dark' },
-  { id: 'intro', theme: 'light' },
   { id: 'location1', theme: 'light' },
   { id: 'cliff', theme: 'dark' },
   { id: 'qualities', theme: 'dark' },
@@ -44,11 +45,25 @@ type NavBarProps = {
   onBookNow: () => void
 }
 
+/** Императивный сеттер темы навбара для скролл-driven переходов, которые
+ * не вписываются в SECTION_THEMES (см. HeroSection → Intro). */
+let externalSetTheme: ((theme: 'dark' | 'light') => void) | null = null
+export function setNavTheme(theme: 'dark' | 'light') {
+  externalSetTheme?.(theme)
+}
+
 export default function NavBar({ onBookNow }: NavBarProps) {
   const [theme, setTheme] = useState<'dark' | 'light'>('dark')
   const [menuOpen, setMenuOpen] = useState(false)
   const desktopHeaderRef = useRef<HTMLElement>(null)
   const mobileHeaderRef = useRef<HTMLElement>(null)
+
+  useEffect(() => {
+    externalSetTheme = setTheme
+    return () => {
+      externalSetTheme = null
+    }
+  }, [])
 
   /* Интро: навбар приезжает сверху — см. src/lib/heroIntro.ts.
    * useLayoutEffect, чтобы скрытое стартовое состояние применилось до

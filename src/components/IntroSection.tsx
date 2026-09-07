@@ -5,7 +5,7 @@ export default function IntroSection() {
   return (
     <section
       id="intro"
-      className="Intro relative flex min-h-dvh flex-col items-center justify-between bg-brown px-2.5 py-15 text-light motion-safe:z-[45] motion-safe:-mt-[24vh] lg:px-5 lg:py-30"
+      className="Intro relative flex min-h-dvh flex-col items-center justify-between bg-brown px-2.5 py-15 text-light lg:px-5 lg:py-30"
     >
       <Reveal effect="fade-up" trigger="in-view">
         <h2 className="Intro-title mx-auto max-w-[94rem] text-center font-manrope text-[1.25rem] font-semibold leading-[1.2] tracking-[-0.03em] md:text-[1.875rem] lg:text-[3.75rem]">
