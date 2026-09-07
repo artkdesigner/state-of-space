@@ -1,10 +1,72 @@
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { useEffect, useRef } from 'react'
 import introLogo from '../assets/intro-logo.svg'
-import { Reveal } from '../lib/anim'
+import { Reveal, reduceMotion } from '../lib/anim'
+
+/** Скролл-дистанция наезда Location1 на Intro, в высотах вьюпорта. */
+const PIN_VH = 2
+/** Доля прогресса, за которую контент Intro успевает потускнеть —
+ * по сцене «Intro to Location1» это происходит намного раньше, чем
+ * Location1 поднимается даже на треть экрана. */
+const FADE_RATIO = 0.15
+const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3)
 
 export default function IntroSection() {
+  const sectionRef = useRef<HTMLElement>(null)
+
+  /* Скролл-переход Intro → Location1 (см. покадровую сцену в Figma):
+   * Location1 наезжает снизу через margin-top (0 → -100vh) с закруглённым
+   * верхним краем (border-radius), который распрямляется по мере подъёма
+   * — тот же приём, что и рост Hero-img в HeroSection. Контент Intro
+   * тускнеет (opacity+blur на самой секции, не на детях — чтобы не
+   * конфликтовать с их собственным Reveal) в первые 15% прогресса.
+   * ScrollTrigger.refresh() в onLeave — обязателен: у Location1Section
+   * свой pin ('top top'), GSAP кэширует его стартовую позицию при
+   * монтировании (margin ещё 0); без refresh он сработает на 100vh
+   * позже фактического появления секции в кадре. */
+  useEffect(() => {
+    const section = sectionRef.current
+    const location1 = document.getElementById('location1')
+    if (!section || !location1) return
+    if (reduceMotion()) return
+
+    const trigger = ScrollTrigger.create({
+      trigger: section,
+      start: 'top top',
+      end: () => '+=' + window.innerHeight * PIN_VH,
+      pin: true,
+      scrub: true,
+      onLeave: () => ScrollTrigger.refresh(),
+      onUpdate: (self) => {
+        const rise = easeOutCubic(self.progress)
+
+        location1.style.zIndex = '46'
+        location1.style.marginTop = `${-rise * 100}vh`
+        const radius = (1 - rise) * 45
+        location1.style.borderTopLeftRadius = `${radius}vw`
+        location1.style.borderTopRightRadius = `${radius}vw`
+
+        const fade = Math.min(1, self.progress / FADE_RATIO)
+        section.style.opacity = String(1 - fade * 0.7)
+        section.style.filter = `blur(${fade * 6}px)`
+      },
+    })
+
+    return () => {
+      trigger.kill()
+      location1.style.zIndex = ''
+      location1.style.marginTop = ''
+      location1.style.borderTopLeftRadius = ''
+      location1.style.borderTopRightRadius = ''
+      section.style.opacity = ''
+      section.style.filter = ''
+    }
+  }, [])
+
   return (
     <section
       id="intro"
+      ref={sectionRef}
       className="Intro relative flex min-h-dvh flex-col items-center justify-between bg-brown px-2.5 py-15 text-light lg:px-5 lg:py-30"
     >
       <Reveal effect="fade-up" trigger="in-view">

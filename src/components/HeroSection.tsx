@@ -80,10 +80,23 @@ export default function HeroSection() {
    * cover-прогрессия) Intro начинает наезжать на Hero снизу через
    * margin-top, и навбар перекрашивается в светлый. Hero-text-left/right
    * и Hero-subtitle не исчезают и не двигаются — только блюрятся и
-   * перекрываются растущим оверлеем. Создаётся с задержкой после
-   * load-интро (см. ниже), иначе GSAP-пиннинг Hero (первая секция —
-   * условие пина выполняется сразу при монтировании) конфликтует с
-   * ещё идущим scale-твином Hero-img. */
+   * перекрываются растущим оверлеем.
+   *
+   * Создаётся сразу при монтировании (без задержки — так же, как во
+   * всех остальных pin-секциях сайта): любая задержка сдвигает момент
+   * появления спейсера Hero во времени, и все НИЖЕ идущие секции,
+   * измеряющие свой 'top top' раньше (при монтировании), закэшируют
+   * стартовую позицию без учёта этого спейсера. ScrollTrigger.refresh()
+   * эту позицию для уже созданных pin-триггеров не пересчитывает
+   * (проверено эмпирически), так что рассинхронизация не лечится
+   * постфактум — её нельзя допускать вовсе.
+   *
+   * `progress` при создании триггера (когда 'top top' уже выполнено на
+   * скролле 0, что для первой секции — сразу) не строго 0, а исчезающе
+   * малое положительное число (погрешность измерения) — поэтому пороги
+   * ниже на `> EPSILON`, а не `> 0`, иначе оверлей мгновенно становится
+   * полностью видимым в размере покоя и перекрывает ещё идущую
+   * load-анимацию scale Hero-img. */
   useEffect(() => {
     const section = sectionRef.current
     const zoom = zoomRef.current
@@ -96,63 +109,53 @@ export default function HeroSection() {
     }
     if (reduceMotion()) return
 
-    let trigger: ScrollTrigger | undefined
-    const introDelayMs =
-      (HERO_INTRO.subtitle.delay + HERO_INTRO.subtitle.duration) * 1000 + 200
+    const EPSILON = 0.005
+    const restingDiameter = img.offsetWidth
+    const intro = document.getElementById('intro')
 
-    const timer = window.setTimeout(() => {
-      const restingDiameter = img.offsetWidth
-      const intro = document.getElementById('intro')
+    const trigger = ScrollTrigger.create({
+      trigger: section,
+      start: 'top top',
+      end: () => '+=' + window.innerHeight * PIN_VH,
+      pin: true,
+      scrub: true,
+      onLeave: () => {
+        zoom.style.opacity = '0'
+      },
+      onUpdate: (self) => {
+        const progress = self.progress
+        const smallerDim = Math.min(window.innerWidth, window.innerHeight)
+        const largerDim = Math.max(window.innerWidth, window.innerHeight)
+        const diameter =
+          restingDiameter +
+          (largerDim - restingDiameter) * easeOutCubic(progress)
 
-      trigger = ScrollTrigger.create({
-        trigger: section,
-        start: 'top top',
-        end: () => '+=' + window.innerHeight * PIN_VH,
-        pin: true,
-        scrub: true,
-        onLeave: () => {
-          zoom.style.opacity = '0'
-        },
-        onUpdate: (self) => {
-          const progress = self.progress
-          const smallerDim = Math.min(window.innerWidth, window.innerHeight)
-          const largerDim = Math.max(window.innerWidth, window.innerHeight)
-          const diameter =
-            restingDiameter +
-            (largerDim - restingDiameter) * easeOutCubic(progress)
+        zoom.style.opacity = progress > EPSILON ? '1' : '0'
+        zoom.style.width = `${diameter}px`
+        zoom.style.height = `${diameter}px`
 
-          zoom.style.opacity = progress > 0 ? '1' : '0'
-          zoom.style.width = `${diameter}px`
-          zoom.style.height = `${diameter}px`
+        const coverProgress =
+          diameter <= smallerDim
+            ? 0
+            : Math.min(1, (diameter - smallerDim) / (largerDim - smallerDim))
+        zoom.style.borderRadius = `${(1 - coverProgress) * 50}%`
 
-          const coverProgress =
-            diameter <= smallerDim
-              ? 0
-              : Math.min(
-                  1,
-                  (diameter - smallerDim) / (largerDim - smallerDim),
-                )
-          zoom.style.borderRadius = `${(1 - coverProgress) * 50}%`
+        if (intro) {
+          intro.style.zIndex = '45'
+          intro.style.marginTop = `${-coverProgress * 100}vh`
+        }
+        setNavTheme(coverProgress > EPSILON ? 'light' : 'dark')
 
-          if (intro) {
-            intro.style.zIndex = '45'
-            intro.style.marginTop = `${-coverProgress * 100}vh`
-          }
-          setNavTheme(coverProgress > 0 ? 'light' : 'dark')
-
-          const blur = `blur(${progress * 16}px)`
-          textLeft.style.filter = blur
-          textRight.style.filter = blur
-          subtitle.style.filter = blur
-        },
-      })
-    }, introDelayMs)
+        const blur = `blur(${progress * 16}px)`
+        textLeft.style.filter = blur
+        textRight.style.filter = blur
+        subtitle.style.filter = blur
+      },
+    })
 
     return () => {
-      window.clearTimeout(timer)
-      trigger?.kill()
+      trigger.kill()
       zoom.style.opacity = '0'
-      const intro = document.getElementById('intro')
       if (intro) {
         intro.style.zIndex = ''
         intro.style.marginTop = ''
