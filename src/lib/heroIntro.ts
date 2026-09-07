@@ -9,7 +9,7 @@ import { reduceMotion } from './anim'
   синхронизация — через общие delay/duration, а не единый GSAP timeline.
 */
 
-const NAV_DURATION = 0.6
+const NAV_DURATION = 1.2
 const NAV_EASE = 'power3.out'
 
 const IMG_DURATION = 2.4

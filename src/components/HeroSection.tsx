@@ -6,15 +6,13 @@ import { reduceMotion, SplitChars } from '../lib/anim'
 import { HERO_INTRO, typeReveal } from '../lib/heroIntro'
 import { setNavTheme } from './NavBar'
 
-/** Скролл-дистанция роста Hero-img (circle → fullscreen square), в
- * высотах вьюпорта — см. «Скролл-переход Hero → Intro» ниже. */
-const PIN_VH_GROW = 2
-/** Скролл-дистанция распрямления border-radius (после того как рост
- * закончен), в высотах вьюпорта. */
-const PIN_VH_UNWIND = 1
-const TOTAL_PIN_VH = PIN_VH_GROW + PIN_VH_UNWIND
-/** Доля общего прогресса пина, за которую заканчивается рост диаметра. */
-const GROW_FRACTION = PIN_VH_GROW / TOTAL_PIN_VH
+/** Скролл-дистанция роста Hero-img, в высотах вьюпорта — см.
+ * «Скролл-переход Hero → Intro» ниже. */
+const PIN_VH = 2
+/** Доля от финального диаметра (max(100vw, 100vh)), после которой
+ * border-radius начинает распрямляться — растёт диаметр при этом без
+ * остановки до самого конца. */
+const RADIUS_START_FRACTION = 0.8
 
 const clamp = (v: number, min = 0, max = 1) => Math.min(max, Math.max(min, v))
 const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3)
@@ -80,23 +78,20 @@ export default function HeroSection() {
   }, [])
 
   /* Скролл-переход Hero → Intro (см. покадровую сцену «Hero to Intro» в
-   * Figma): Hero-img растёт из центра — fixed-оверлей поверх статичного
-   * Hero-img (не участвует в grid-layout, поэтому рост не сдвигает
-   * Hero-text-left/right). Две последовательные фазы вместо одной:
-   * 1) рост (PIN_VH_GROW): диаметр 0 → max(100vw, 100vh), border-radius
-   *    остаётся 50% (полный круг) весь этот отрезок;
-   * 2) распрямление (PIN_VH_UNWIND, доп. 100vh): диаметр больше не растёт,
-   *    border-radius уходит 50% → 0%. Раздельные фазы — иначе распрямление
-   *    пришлось бы триггерить по «диаметр достиг 100vw/100vh», а рост и
-   *    так останавливается ровно на этом значении (max(vw,vh) на десктопе
-   *    == vw, на мобилке/планшете == vh) — окно получалось бы нулевой
-   *    ширины, и распрямление было бы не видно (сразу прямые углы).
+   * Figma): Hero-img растёт из центра до диаметра max(100vw, 100vh) —
+   * fixed-оверлей поверх статичного Hero-img (не участвует в grid-layout,
+   * поэтому рост не сдвигает Hero-text-left/right). Диаметр растёт
+   * непрерывно весь пин, без остановок; border-radius начинает уходить
+   * 50% → 0% только в последние 20% этого роста (после
+   * RADIUS_START_FRACTION от финального диаметра) — раньше пробовали
+   * отдельную фазу «рост, потом стоп-кадр на распрямление», но диаметр
+   * замирал и скролл ощущался как залипание с резким скачком в конце;
+   * так распрямление идёт одновременно с хвостом роста, без остановки.
    * Intro начинает наезжать на Hero снизу через margin-top и навбар
-   * перекрашивается в светлый ровно по фазе 2 (той же прогрессии, что и
-   * распрямление radius) — то есть на 100vh позже, чем раньше, когда это
-   * было завязано на рост. Hero-text-left/right и Hero-subtitle не
-   * исчезают и не двигаются — только блюрятся и перекрываются растущим
-   * оверлеем (блюр — по прогрессу всего пина целиком, обе фазы).
+   * перекрашивается в светлый по той же прогрессии распрямления —
+   * оба заканчиваются ровно к концу пина. Hero-text-left/right и
+   * Hero-subtitle не исчезают и не двигаются — только блюрятся и
+   * перекрываются растущим оверлеем.
    *
    * Создаётся сразу при монтировании (без задержки — так же, как во
    * всех остальных pin-секциях сайта): любая задержка сдвигает момент
@@ -132,7 +127,7 @@ export default function HeroSection() {
     const trigger = ScrollTrigger.create({
       trigger: section,
       start: 'top top',
-      end: () => '+=' + window.innerHeight * TOTAL_PIN_VH,
+      end: () => '+=' + window.innerHeight * PIN_VH,
       pin: true,
       scrub: true,
       onLeave: () => {
@@ -149,17 +144,17 @@ export default function HeroSection() {
         const progress = self.progress
         const largerDim = Math.max(window.innerWidth, window.innerHeight)
 
-        const growLocal = clamp(progress / GROW_FRACTION)
         const diameter =
           restingDiameter +
-          (largerDim - restingDiameter) * easeOutCubic(growLocal)
+          (largerDim - restingDiameter) * easeOutCubic(progress)
 
         zoom.style.opacity = progress > EPSILON ? '1' : '0'
         zoom.style.width = `${diameter}px`
         zoom.style.height = `${diameter}px`
 
+        const sizeRatio = diameter / largerDim
         const unwindEase = easeOutCubic(
-          clamp((progress - GROW_FRACTION) / (1 - GROW_FRACTION)),
+          clamp((sizeRatio - RADIUS_START_FRACTION) / (1 - RADIUS_START_FRACTION)),
         )
         zoom.style.borderRadius = `${(1 - unwindEase) * 50}%`
 
