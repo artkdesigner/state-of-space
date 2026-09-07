@@ -142,8 +142,8 @@ export function Reveal({
  * через отдельный `sr-only` span, посимвольные — `aria-hidden`.
  */
 /** `a` кернится заметно теснее соседних букв — маргин вдвое больше. */
-const CHAR_MARGIN = '-ml-10 md:-ml-1 lg:-ml-[0.46875rem]'
-const CHAR_MARGIN_A = '-ml-20 md:-ml-2 lg:-ml-[0.9375rem]'
+const CHAR_MARGIN = '-ml-1 md:-ml-1 lg:-ml-[0.46875rem]'
+const CHAR_MARGIN_A = '-ml-2 md:-ml-2 lg:-ml-[0.9375rem]'
 
 export function SplitChars({ text }: { text: string }) {
   return (
