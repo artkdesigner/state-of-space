@@ -51,6 +51,11 @@ export const HERO_INTRO = {
   },
 }
 
+/** Момент, когда вся интро-цепочка (nav → img/text → subtitle)
+ * полностью доиграла — на это время блокируется скролл (см. App.tsx). */
+export const HERO_INTRO_DURATION_MS =
+  (SUBTITLE_DELAY + SUBTITLE_DURATION) * 1000
+
 /**
  * Побуквенный reveal детей с классом `Hero-text-span` внутри `container` —
  * укладывается ровно в `duration`, стартует через `delay`. При

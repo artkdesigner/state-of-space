@@ -2,9 +2,18 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useEffect, useRef } from 'react'
 import introLogo from '../assets/intro-logo.svg'
 import { Reveal, reduceMotion } from '../lib/anim'
+import { INTRO_PIN_VH, heroPinEnd } from '../lib/scrollChain'
 
-/** Скролл-дистанция наезда Location1 на Intro, в высотах вьюпорта. */
-const PIN_VH = 2
+/** Скролл-дистанция наезда Location1 на Intro, в высотах вьюпорта. Общий
+ * источник с HeroSection.tsx (см. src/lib/scrollChain.ts). */
+const PIN_VH = INTRO_PIN_VH
+/** Доля прогресса наезда (`rise`), после которой скруглённый край
+ * Location1 начинает распрямляться — до этого момента остаётся
+ * максимально скруглённым, чтобы распрямление не начиналось слишком
+ * рано (пока секция ещё едва показалась). */
+const RADIUS_START_FRACTION = 0.5
+
+const clamp = (v: number, min = 0, max = 1) => Math.min(max, Math.max(min, v))
 const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3)
 
 export default function IntroSection() {
@@ -13,12 +22,19 @@ export default function IntroSection() {
   /* Скролл-переход Intro → Location1 (см. покадровую сцену в Figma):
    * Location1 наезжает снизу через margin-top (0 → -100vh) с закруглённым
    * верхним краем (border-radius), который распрямляется по мере подъёма
-   * — тот же приём, что и рост Hero-img в HeroSection. Intro при этом
-   * остаётся на месте без изменений (никакого fade/blur — в макете его нет).
-   * ScrollTrigger.refresh() в onLeave — обязателен: у Location1Section
-   * свой pin ('top top'), GSAP кэширует его стартовую позицию при
-   * монтировании (margin ещё 0); без refresh он сработает на 100vh
-   * позже фактического появления секции в кадре. */
+   * (но только начиная с RADIUS_START_FRACTION — раньше распрямление
+   * стартовало сразу, ощущалось слишком рано) — тот же приём, что и рост
+   * Hero-img в HeroSection. Intro при этом остаётся на месте без изменений
+   * (никакого fade/blur — в макете его нет).
+   *
+   * `start` — не 'top top', а точная позиция скролла (конец пина Hero,
+   * см. src/lib/scrollChain.ts), а не натуральная позиция Intro. При
+   * 'top top' GSAP кэширует стартовую позицию при монтировании (margin
+   * секции-триггера ещё 0) и пересчитывает её через
+   * ScrollTrigger.refresh() в onLeave предыдущего шага — но при быстром
+   * скролле (флик) этот refresh иногда не успевает сработать до того, как
+   * скролл уже проехал границу, и секция «телепортируется» вместо
+   * плавного пина. Абсолютная позиция не зависит от кэша вообще. */
   useEffect(() => {
     const section = sectionRef.current
     const location1 = document.getElementById('location1')
@@ -27,8 +43,8 @@ export default function IntroSection() {
 
     const trigger = ScrollTrigger.create({
       trigger: section,
-      start: 'top top',
-      end: () => '+=' + window.innerHeight * PIN_VH,
+      start: heroPinEnd,
+      end: () => heroPinEnd() + window.innerHeight * PIN_VH,
       pin: true,
       scrub: true,
       onLeave: () => ScrollTrigger.refresh(),
@@ -37,7 +53,11 @@ export default function IntroSection() {
 
         location1.style.zIndex = '46'
         location1.style.marginTop = `${-rise * 100}vh`
-        const radius = (1 - rise) * 45
+
+        const unwind = easeOutCubic(
+          clamp((rise - RADIUS_START_FRACTION) / (1 - RADIUS_START_FRACTION)),
+        )
+        const radius = (1 - unwind) * 45
         location1.style.borderTopLeftRadius = `${radius}vw`
         location1.style.borderTopRightRadius = `${radius}vw`
       },
@@ -58,7 +78,12 @@ export default function IntroSection() {
       ref={sectionRef}
       className="Intro relative flex min-h-dvh flex-col items-center justify-between bg-brown px-2.5 py-15 text-light lg:px-5 lg:py-30"
     >
-      <Reveal effect="fade-up" trigger="in-view" watch={sectionRef} amount={0.5}>
+      <Reveal
+        effect="fade-up"
+        trigger="in-view"
+        watch={sectionRef}
+        amount={0.5}
+      >
         <h2 className="Intro-title mx-auto max-w-[94rem] text-center font-manrope text-[1.25rem] font-semibold leading-[1.2] tracking-[-0.03em] md:text-[1.875rem] lg:text-[3.75rem]">
           Live a unique experience inspired by the natural rhythm of the ocean.
           An experience where the important thing is not a change of scenery,
@@ -66,7 +91,12 @@ export default function IntroSection() {
         </h2>
       </Reveal>
 
-      <Reveal effect="fade-up" trigger="in-view" watch={sectionRef} amount={0.75}>
+      <Reveal
+        effect="fade-up"
+        trigger="in-view"
+        watch={sectionRef}
+        amount={0.75}
+      >
         <img
           src={introLogo}
           alt="State of Space"

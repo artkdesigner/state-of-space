@@ -3,6 +3,7 @@ import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import LocationCard from './LocationCard'
 import LocationSlider from './LocationSlider'
+import { LOCATION1_PIN_VH, introPinEnd } from '../lib/scrollChain'
 import baseImg from '../assets/location1-slider-base.webp'
 import slide1 from '../assets/location1-slide-1.webp'
 import slide2 from '../assets/location1-slide-2.webp'
@@ -23,7 +24,9 @@ const SLIDES = [
   },
 ]
 
-const SLIDE_COUNT = 3
+/** Число слайдов — совпадает с LOCATION1_PIN_VH (см. scrollChain.ts):
+ * ровно 1 экран высоты скролла на слайд. */
+const SLIDE_COUNT = LOCATION1_PIN_VH
 /** Доля общего прогресса секции, за которую верхний слайд успевает уйти. */
 const CROSSFADE = 0.28
 /** Доля прогресса, за которую Location-карточка успевает проявиться из
@@ -58,8 +61,12 @@ export default function Location1Section({ onBookNow }: Location1SectionProps) {
    * Location1 во время Intro (см. HeroSection.tsx, IntroSection.tsx).
    * Location-карточка (LocationCard) проявляется из opacity: 0 в первые
    * CARD_FADE_IN прогресса — именно этого пина, который стартует ровно
-   * когда секция встала на своё место ('top top'), а не раньше во время
-   * наезда снизу. */
+   * когда секция встала на своё место, а не раньше во время наезда снизу.
+   *
+   * `start` — точная позиция скролла (конец пина Intro, см.
+   * src/lib/scrollChain.ts), а не 'top top': при 'top top' и быстром
+   * скролле (флик) секция телепортируется на нужную позицию вместо
+   * плавного пина — см. подробный комментарий в IntroSection.tsx. */
   useEffect(() => {
     const section = sectionRef.current
     const cliff = document.getElementById('cliff')
@@ -68,8 +75,8 @@ export default function Location1Section({ onBookNow }: Location1SectionProps) {
 
     const trigger = ScrollTrigger.create({
       trigger: section,
-      start: 'top top',
-      end: () => '+=' + window.innerHeight * SLIDE_COUNT,
+      start: introPinEnd,
+      end: () => introPinEnd() + window.innerHeight * SLIDE_COUNT,
       pin: true,
       scrub: true,
       onLeave: () => ScrollTrigger.refresh(),
@@ -94,9 +101,13 @@ export default function Location1Section({ onBookNow }: Location1SectionProps) {
         setActiveIndex((prev) => (prev === index ? prev : index))
 
         if (cliff) cliff.style.marginTop = `${-easeOutCubic(progress) * 100}vh`
+        // Линейно, без ease — так проявление ощущается напрямую
+        // привязанным к скроллу, а не рывком в начале и подвисанием в
+        // конце (задняя часть карточки — backdrop-blur, на нём это
+        // особенно заметно).
         if (card) {
           card.style.opacity = String(
-            easeOutCubic(gsap.utils.clamp(0, 1, progress / CARD_FADE_IN)),
+            gsap.utils.clamp(0, 1, progress / CARD_FADE_IN),
           )
         }
       },

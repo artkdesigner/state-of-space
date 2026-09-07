@@ -4,15 +4,19 @@ import { useEffect, useLayoutEffect, useRef } from 'react'
 import heroPortrait from '../assets/hero-portrait-b.webp'
 import { reduceMotion, SplitChars } from '../lib/anim'
 import { HERO_INTRO, typeReveal } from '../lib/heroIntro'
+import { HERO_PIN_VH } from '../lib/scrollChain'
 import { setNavTheme } from './NavBar'
 
 /** Скролл-дистанция роста Hero-img, в высотах вьюпорта — см.
- * «Скролл-переход Hero → Intro» ниже. */
-const PIN_VH = 2
+ * «Скролл-переход Hero → Intro» ниже. Общий источник с IntroSection.tsx
+ * (см. src/lib/scrollChain.ts) — оттуда следующий pin в цепочке берёт
+ * точную позицию конца этого пина. */
+const PIN_VH = HERO_PIN_VH
 /** Доля от финального диаметра (max(100vw, 100vh)), после которой
  * border-radius начинает распрямляться — растёт диаметр при этом без
- * остановки до самого конца. */
-const RADIUS_START_FRACTION = 0.8
+ * остановки до самого конца. Было 0.8 (окно 20% от роста), утроили окно
+ * до 60%, чтобы распрямление не ощущалось резким. */
+const RADIUS_START_FRACTION = 0.4
 
 const clamp = (v: number, min = 0, max = 1) => Math.min(max, Math.max(min, v))
 const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3)
@@ -154,7 +158,9 @@ export default function HeroSection() {
 
         const sizeRatio = diameter / largerDim
         const unwindEase = easeOutCubic(
-          clamp((sizeRatio - RADIUS_START_FRACTION) / (1 - RADIUS_START_FRACTION)),
+          clamp(
+            (sizeRatio - RADIUS_START_FRACTION) / (1 - RADIUS_START_FRACTION),
+          ),
         )
         zoom.style.borderRadius = `${(1 - unwindEase) * 50}%`
 
