@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { reduceMotion } from '../lib/anim'
+import { CLIFF_PIN_VH, location1PinEnd } from '../lib/scrollChain'
 import cliff1 from '../assets/cliff-1.webp'
 import cliff2 from '../assets/cliff-2.webp'
 import cliff3 from '../assets/cliff-3.webp'
@@ -13,9 +14,10 @@ const IMAGE_RADIUS =
 /** Скролл-дистанция наезда Location1 (Location1Section подтягивает Cliff
  * заранее, см. комментарий там), в высотах вьюпорта. */
 const LOCATION1_RECEDE_VH = 2
-/** Скролл-дистанция внутренней хореографии Cliff, в высотах вьюпорта. */
-const REVEAL_VH = 2
-const TOTAL_VH = LOCATION1_RECEDE_VH + REVEAL_VH
+/** Общая дистанция пина (LOCATION1_RECEDE_VH + REVEAL_VH внутренней
+ * хореографии Cliff) — источник истины в scrollChain.ts (следующий шаг
+ * цепочки, AboveSection, берёт от неё свою абсолютную стартовую позицию). */
+const TOTAL_VH = CLIFF_PIN_VH
 /** Граница между двумя фазами общего прогресса пина, 0..1. */
 const PHASE_BOUNDARY = LOCATION1_RECEDE_VH / TOTAL_VH
 
@@ -58,7 +60,12 @@ export default function CliffSection() {
    *    точно в центре обёртки (в Figma центры всех 5 фото в кадре 5
    *    совпадают с центром Cliff-img-wrap с точностью до пикселя).
    * Один тригger вместо двух отдельных пинов на одном элементе — GSAP не
-   * умеет чисто стекать два независимых pin:true на одном и том же узле. */
+   * умеет чисто стекать два независимых pin:true на одном и том же узле.
+   *
+   * `start` — точная позиция скролла (конец пина Location1-слайдера, см.
+   * src/lib/scrollChain.ts), а не 'top top': при 'top top' и быстром
+   * скролле (флик) секция телепортируется на нужную позицию вместо
+   * плавного пина — см. подробный комментарий в IntroSection.tsx. */
   useEffect(() => {
     const section = sectionRef.current
     const location1 = document.getElementById('location1')
@@ -90,9 +97,13 @@ export default function CliffSection() {
         img.style.transform = prevTransform
         return {
           dx:
-            wrapRect.left + wrapRect.width / 2 - (imgRect.left + imgRect.width / 2),
+            wrapRect.left +
+            wrapRect.width / 2 -
+            (imgRect.left + imgRect.width / 2),
           dy:
-            wrapRect.top + wrapRect.height / 2 - (imgRect.top + imgRect.height / 2),
+            wrapRect.top +
+            wrapRect.height / 2 -
+            (imgRect.top + imgRect.height / 2),
         }
       })
 
@@ -104,16 +115,24 @@ export default function CliffSection() {
 
     const trigger = ScrollTrigger.create({
       trigger: section,
-      start: 'top top',
-      end: () => '+=' + window.innerHeight * TOTAL_VH,
+      start: location1PinEnd,
+      end: () => location1PinEnd() + window.innerHeight * TOTAL_VH,
       pin: true,
       scrub: true,
       onLeave: () => ScrollTrigger.refresh(),
       onUpdate: (self) => {
         const p = self.progress
 
+        // Скругление растёт в обратную сторону тому, как оно распрямлялось
+        // при наезде на Intro (см. IntroSection.tsx) — только теперь на
+        // НИЖНИХ углах: секция уезжает вверх, верхний край сразу уходит
+        // за кадр, а нижний остаётся видимым дольше всех и закругляется
+        // по мере того как Location1 исчезает.
         const recede = easeOutCubic(clamp(p / PHASE_BOUNDARY))
         location1.style.marginTop = `${-recede * 100}vh`
+        const radius = recede * 45
+        location1.style.borderBottomLeftRadius = `${radius}vw`
+        location1.style.borderBottomRightRadius = `${radius}vw`
 
         const reveal = clamp((p - PHASE_BOUNDARY) / (1 - PHASE_BOUNDARY))
 
@@ -139,6 +158,8 @@ export default function CliffSection() {
       window.removeEventListener('resize', onResize)
       trigger.kill()
       location1.style.marginTop = ''
+      location1.style.borderBottomLeftRadius = ''
+      location1.style.borderBottomRightRadius = ''
       title.style.transform = ''
       subTitle.style.transform = ''
       descriptionWrap.style.transform = ''

@@ -23,7 +23,7 @@ export default function QualitiesSection() {
   return (
     <section
       id="qualities"
-      className="Qualities flex w-full flex-col items-center gap-15 bg-light lg:gap-30"
+      className="Qualities relative flex w-full flex-col items-center gap-15 bg-light lg:gap-30"
     >
       <div className="Qualities-top relative flex w-full flex-col items-start px-2.5 pt-15 md:flex-row md:items-end md:justify-center md:gap-4 md:px-2.5 md:pt-30 lg:flex-col lg:items-end lg:justify-center lg:gap-10 lg:px-5">
         <div className="Qualities-img-wrap absolute hidden overflow-hidden rounded-[0.75rem] left-2.5 top-78.5 h-39 w-29 md:block lg:left-5 lg:top-175 lg:h-100 lg:w-74.5 lg:rounded-[1.875rem]">
