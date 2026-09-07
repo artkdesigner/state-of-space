@@ -141,23 +141,26 @@ export function Reveal({
  * `src/lib/heroIntro.ts`. Полный текст остаётся доступен screen-reader'ам
  * через отдельный `sr-only` span, посимвольные — `aria-hidden`.
  */
-/** `a` кернится заметно теснее соседних букв — маргин вдвое больше. */
+/** `a`, и `t` сразу после `a`, кернятся заметно теснее — маргин вдвое больше. */
 const CHAR_MARGIN = '-ml-1 md:-ml-1 lg:-ml-[0.46875rem]'
-const CHAR_MARGIN_A = '-ml-2 md:-ml-2 lg:-ml-[0.9375rem]'
+const CHAR_MARGIN_WIDE = '-ml-2 md:-ml-2 lg:-ml-[0.9375rem]'
 
 export function SplitChars({ text }: { text: string }) {
   return (
     <>
       <span className="sr-only">{text}</span>
       <span aria-hidden="true">
-        {[...text].map((char, i) => (
-          <span
-            key={i}
-            className={`Hero-text-span inline-block opacity-0 ${i > 0 ? (char === 'a' ? CHAR_MARGIN_A : CHAR_MARGIN) : ''}`}
-          >
-            {char === ' ' ? ' ' : char}
-          </span>
-        ))}
+        {[...text].map((char, i) => {
+          const wide = char === 'a' || (char === 't' && text[i - 1] === 'a')
+          return (
+            <span
+              key={i}
+              className={`Hero-text-span inline-block opacity-0 ${i > 0 ? (wide ? CHAR_MARGIN_WIDE : CHAR_MARGIN) : ''}`}
+            >
+              {char === ' ' ? ' ' : char}
+            </span>
+          )
+        })}
       </span>
     </>
   )
