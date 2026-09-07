@@ -6,12 +6,18 @@ import { reduceMotion, SplitChars } from '../lib/anim'
 import { HERO_INTRO, typeReveal } from '../lib/heroIntro'
 import { setNavTheme } from './NavBar'
 
-/** Скролл-дистанция дозарастания Hero-img до fullscreen, в высотах
- * вьюпорта — см. «Скролл-переход Hero → Intro» ниже. */
-const PIN_VH = 2
+/** Скролл-дистанция роста Hero-img (circle → fullscreen square), в
+ * высотах вьюпорта — см. «Скролл-переход Hero → Intro» ниже. */
+const PIN_VH_GROW = 2
+/** Скролл-дистанция распрямления border-radius (после того как рост
+ * закончен), в высотах вьюпорта. */
+const PIN_VH_UNWIND = 1
+const TOTAL_PIN_VH = PIN_VH_GROW + PIN_VH_UNWIND
+/** Доля общего прогресса пина, за которую заканчивается рост диаметра. */
+const GROW_FRACTION = PIN_VH_GROW / TOTAL_PIN_VH
+
+const clamp = (v: number, min = 0, max = 1) => Math.min(max, Math.max(min, v))
 const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3)
-/** Брейкпоинт Desktop (`lg`, --breakpoint-lg: 62rem в src/index.css). */
-const LG_BREAKPOINT = 992
 
 export default function HeroSection() {
   const sectionRef = useRef<HTMLElement>(null)
@@ -74,17 +80,23 @@ export default function HeroSection() {
   }, [])
 
   /* Скролл-переход Hero → Intro (см. покадровую сцену «Hero to Intro» в
-   * Figma): Hero-img растёт из центра до диаметра max(100vw, 100vh) —
-   * fixed-оверлей поверх статичного Hero-img (не участвует в grid-layout,
-   * поэтому рост не сдвигает Hero-text-left/right). Border-radius уходит
-   * к 0 только после того, как диаметр (= ширина/высота квадратного
-   * оверлея) проходит 100vw на десктопе (lg, ≥992px) и 100vh на планшете
-   * и мобилке — до этого момента остаётся полным кругом. Intro начинает
-   * наезжать на Hero снизу через margin-top и навбар перекрашивается в
-   * светлый по отдельной, более ранней cover-прогрессии — момент min
-   * (100vw, 100vh). Hero-text-left/right
-   * и Hero-subtitle не исчезают и не двигаются — только блюрятся и
-   * перекрываются растущим оверлеем.
+   * Figma): Hero-img растёт из центра — fixed-оверлей поверх статичного
+   * Hero-img (не участвует в grid-layout, поэтому рост не сдвигает
+   * Hero-text-left/right). Две последовательные фазы вместо одной:
+   * 1) рост (PIN_VH_GROW): диаметр 0 → max(100vw, 100vh), border-radius
+   *    остаётся 50% (полный круг) весь этот отрезок;
+   * 2) распрямление (PIN_VH_UNWIND, доп. 100vh): диаметр больше не растёт,
+   *    border-radius уходит 50% → 0%. Раздельные фазы — иначе распрямление
+   *    пришлось бы триггерить по «диаметр достиг 100vw/100vh», а рост и
+   *    так останавливается ровно на этом значении (max(vw,vh) на десктопе
+   *    == vw, на мобилке/планшете == vh) — окно получалось бы нулевой
+   *    ширины, и распрямление было бы не видно (сразу прямые углы).
+   * Intro начинает наезжать на Hero снизу через margin-top и навбар
+   * перекрашивается в светлый ровно по фазе 2 (той же прогрессии, что и
+   * распрямление radius) — то есть на 100vh позже, чем раньше, когда это
+   * было завязано на рост. Hero-text-left/right и Hero-subtitle не
+   * исчезают и не двигаются — только блюрятся и перекрываются растущим
+   * оверлеем (блюр — по прогрессу всего пина целиком, обе фазы).
    *
    * Создаётся сразу при монтировании (без задержки — так же, как во
    * всех остальных pin-секциях сайта): любая задержка сдвигает момент
@@ -120,7 +132,7 @@ export default function HeroSection() {
     const trigger = ScrollTrigger.create({
       trigger: section,
       start: 'top top',
-      end: () => '+=' + window.innerHeight * PIN_VH,
+      end: () => '+=' + window.innerHeight * TOTAL_PIN_VH,
       pin: true,
       scrub: true,
       onLeave: () => {
@@ -135,39 +147,27 @@ export default function HeroSection() {
       },
       onUpdate: (self) => {
         const progress = self.progress
-        const smallerDim = Math.min(window.innerWidth, window.innerHeight)
         const largerDim = Math.max(window.innerWidth, window.innerHeight)
+
+        const growLocal = clamp(progress / GROW_FRACTION)
         const diameter =
           restingDiameter +
-          (largerDim - restingDiameter) * easeOutCubic(progress)
+          (largerDim - restingDiameter) * easeOutCubic(growLocal)
 
         zoom.style.opacity = progress > EPSILON ? '1' : '0'
         zoom.style.width = `${diameter}px`
         zoom.style.height = `${diameter}px`
 
-        const coverProgress =
-          diameter <= smallerDim
-            ? 0
-            : Math.min(1, (diameter - smallerDim) / (largerDim - smallerDim))
-
-        const radiusStart =
-          window.innerWidth >= LG_BREAKPOINT
-            ? window.innerWidth
-            : window.innerHeight
-        const radiusProgress =
-          diameter <= radiusStart
-            ? 0
-            : Math.min(
-                1,
-                (diameter - radiusStart) / (largerDim - radiusStart || 1),
-              )
-        zoom.style.borderRadius = `${(1 - radiusProgress) * 50}%`
+        const unwindEase = easeOutCubic(
+          clamp((progress - GROW_FRACTION) / (1 - GROW_FRACTION)),
+        )
+        zoom.style.borderRadius = `${(1 - unwindEase) * 50}%`
 
         if (intro) {
           intro.style.zIndex = '45'
-          intro.style.marginTop = `${-coverProgress * 100}vh`
+          intro.style.marginTop = `${-unwindEase * 100}vh`
         }
-        setNavTheme(coverProgress > EPSILON ? 'light' : 'dark')
+        setNavTheme(unwindEase > EPSILON ? 'light' : 'dark')
 
         const blur = `blur(${progress * 16}px)`
         textLeft.style.filter = blur

@@ -26,6 +26,9 @@ const SLIDES = [
 const SLIDE_COUNT = 3
 /** Доля общего прогресса секции, за которую верхний слайд успевает уйти. */
 const CROSSFADE = 0.28
+/** Доля прогресса, за которую Location-карточка успевает проявиться из
+ * прозрачности после того, как секция встала на место. */
+const CARD_FADE_IN = 0.2
 
 /** Smoothstep — тот же диапазон, что и линейная интерполяция, но мягче на краях. */
 const smoothstep = (t: number) => t * t * (3 - 2 * t)
@@ -37,6 +40,7 @@ type Location1SectionProps = {
 
 export default function Location1Section({ onBookNow }: Location1SectionProps) {
   const sectionRef = useRef<HTMLElement>(null)
+  const cardRef = useRef<HTMLDivElement>(null)
   const slideEls = useRef<(HTMLDivElement | null)[]>([])
   const [activeIndex, setActiveIndex] = useState(0)
 
@@ -51,10 +55,15 @@ export default function Location1Section({ onBookNow }: Location1SectionProps) {
    * включался бы только на СВОЁМ natural 'top top', а Location1 к тому
    * моменту уже почти целиком уезжает обычным скроллом (он ровно 1 экран
    * высотой) — тот же приём, что подтягивает Intro во время Hero и
-   * Location1 во время Intro (см. HeroSection.tsx, IntroSection.tsx). */
+   * Location1 во время Intro (см. HeroSection.tsx, IntroSection.tsx).
+   * Location-карточка (LocationCard) проявляется из opacity: 0 в первые
+   * CARD_FADE_IN прогресса — именно этого пина, который стартует ровно
+   * когда секция встала на своё место ('top top'), а не раньше во время
+   * наезда снизу. */
   useEffect(() => {
     const section = sectionRef.current
     const cliff = document.getElementById('cliff')
+    const card = cardRef.current
     if (!section) return
 
     const trigger = ScrollTrigger.create({
@@ -85,12 +94,18 @@ export default function Location1Section({ onBookNow }: Location1SectionProps) {
         setActiveIndex((prev) => (prev === index ? prev : index))
 
         if (cliff) cliff.style.marginTop = `${-easeOutCubic(progress) * 100}vh`
+        if (card) {
+          card.style.opacity = String(
+            easeOutCubic(gsap.utils.clamp(0, 1, progress / CARD_FADE_IN)),
+          )
+        }
       },
     })
 
     return () => {
       trigger.kill()
       if (cliff) cliff.style.marginTop = ''
+      if (card) card.style.opacity = ''
     }
   }, [])
 
@@ -101,6 +116,7 @@ export default function Location1Section({ onBookNow }: Location1SectionProps) {
       className="Location1 relative isolate flex h-dvh w-full flex-col items-center justify-end overflow-hidden px-2.5 pb-2.5 lg:px-5 lg:pt-30 lg:pb-5"
     >
       <LocationCard
+        ref={cardRef}
         activeIndex={activeIndex}
         onBookNow={onBookNow}
         quote="Height clears perception, form gathers focus, and silence restores clarity."
