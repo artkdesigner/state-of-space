@@ -147,7 +147,10 @@ export function SplitChars({ text }: { text: string }) {
       <span className="sr-only">{text}</span>
       <span aria-hidden="true">
         {[...text].map((char, i) => (
-          <span key={i} className="Hero-text-span inline-block opacity-0">
+          <span
+            key={i}
+            className={`Hero-text-span inline-block opacity-0 ${i > 0 ? '-ml-10 md:-ml-1 lg:-ml-[0.46875rem]' : ''}`}
+          >
             {char === ' ' ? ' ' : char}
           </span>
         ))}
