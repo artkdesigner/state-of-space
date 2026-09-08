@@ -1,3 +1,5 @@
+import type { Ref } from 'react'
+
 type Slide = {
   src: string
   alt: string
@@ -7,15 +9,20 @@ type LocationSliderProps = {
   baseSrc: string
   slides: Slide[]
   setSlideRef: (index: number) => (el: HTMLDivElement | null) => void
+  ref?: Ref<HTMLDivElement>
 }
 
 export default function LocationSlider({
   baseSrc,
   slides,
   setSlideRef,
+  ref,
 }: LocationSliderProps) {
   return (
-    <div className="Location-slider absolute inset-0 isolate flex flex-col items-center overflow-hidden">
+    <div
+      ref={ref}
+      className="Location-slider absolute inset-0 isolate flex flex-col items-center overflow-hidden"
+    >
       <img
         src={baseSrc}
         alt=""

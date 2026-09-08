@@ -44,6 +44,7 @@ type Location1SectionProps = {
 export default function Location1Section({ onBookNow }: Location1SectionProps) {
   const sectionRef = useRef<HTMLElement>(null)
   const cardRef = useRef<HTMLDivElement>(null)
+  const sliderRef = useRef<HTMLDivElement>(null)
   const slideEls = useRef<(HTMLDivElement | null)[]>([])
   const [activeIndex, setActiveIndex] = useState(0)
 
@@ -75,12 +76,40 @@ export default function Location1Section({ onBookNow }: Location1SectionProps) {
    * document flow въезжает снизу вверх и полностью её закрывает —
    * настоящий cover-переход, а не последовательная прокрутка. `start`
    * пина (`location1PinStart`) — это ровно тот момент, когда въезд
-   * закончился (Location1 уже целиком закрыла экран). */
+   * закончился (Location1 уже целиком закрыла экран).
+   *
+   * Пока идёт сам наезд (последний вьюпорт ПЕРЕД location1PinStart, ещё
+   * до пина — см. riseTrigger ниже), Location-slider раскруглятся: тот
+   * же приём, что у Hero-img (см. HeroSection.tsx) — `border-radius: 50%`
+   * на уже full-bleed (`absolute inset-0`) картинке с `overflow-hidden`
+   * даёт вписанный эллипс, а поскольку сама секция в этот момент только
+   * частично видна (въезжает снизу обычным document flow), на экране это
+   * выглядит как растущая снизу дуга — линейно к border-radius: 0% ровно
+   * к моменту, когда наезд завершён (см. покадровую сцену в Figma «Intro
+   * to Location1» 1..7). Location-карточка (LocationCard) в это время не
+   * трогается — она остаётся в opacity: 0 и проявляется отдельно, уже
+   * ПОСЛЕ наезда, в первые CARD_FADE_IN прогресса основного пина (см.
+   * ниже) — по той же покадровой сцене card остаётся невидимой даже на
+   * кадре, где наезд уже полностью завершён (радиус уже 0%), и
+   * появляется только на следующем. */
   useEffect(() => {
     const section = sectionRef.current
+    const slider = sliderRef.current
     const cliff = document.getElementById('cliff')
     const card = cardRef.current
-    if (!section) return
+    if (!section || !slider) return
+
+    slider.style.borderRadius = '50%'
+
+    const riseTrigger = ScrollTrigger.create({
+      trigger: section,
+      start: () => location1PinStart() - window.innerHeight,
+      end: location1PinStart,
+      scrub: true,
+      onUpdate: (self) => {
+        slider.style.borderRadius = `${(1 - self.progress) * 50}%`
+      },
+    })
 
     const trigger = ScrollTrigger.create({
       trigger: section,
@@ -130,7 +159,9 @@ export default function Location1Section({ onBookNow }: Location1SectionProps) {
     })
 
     return () => {
+      riseTrigger.kill()
       trigger.kill()
+      slider.style.borderRadius = ''
       if (cliff) cliff.style.marginTop = ''
       if (card) card.style.opacity = ''
     }
@@ -152,6 +183,7 @@ export default function Location1Section({ onBookNow }: Location1SectionProps) {
         nameLines={['The', 'Cliff Villa']}
       />
       <LocationSlider
+        ref={sliderRef}
         baseSrc={baseImg}
         slides={SLIDES}
         setSlideRef={setSlideRef}
