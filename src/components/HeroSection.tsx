@@ -149,14 +149,20 @@ export default function HeroSection() {
       scrub: true,
       onLeave: () => {
         zoom.style.opacity = '0'
-        /* Собственный pin Intro ('top top' в IntroSection) кэшируется при
-         * монтировании, пока marginTop у intro ещё 0 — без refresh здесь
-         * его стартовая точка не учитывает финальный сдвиг на -100vh,
-         * из-за чего Intro не фиксируется вовремя и продолжает уезжать
-         * вверх вместе со скроллом. См. аналогичный комментарий и refresh
-         * в IntroSection.tsx для перехода Intro → Location1. */
+        /* refresh() пересчитывает pin-spacer'ы (в т.ч. для секций дальше
+         * по странице, измеряющих свою позицию `getBoundingClientRect()`
+         * "вживую", а не по формуле из scrollChain.ts) — без него их
+         * абсолютные позиции остаются в "нетронутом" (pristine) состоянии
+         * до первого фактического прохода через этот пин. */
         ScrollTrigger.refresh()
       },
+      /* Симметрично onLeave — иначе при скролле назад-и-снова-вперёд
+       * (без выхода из пина Hero целиком) refresh() вызывается только на
+       * пересечении конца пина ВПЕРЁД, никогда на возврате в него назад,
+       * и последующий повторный проход вперёд использует не до конца
+       * актуализированное состояние (тот же класс проблем, что и
+       * "pristine vs exercised pin-spacer" — см. память проекта). */
+      onEnterBack: () => ScrollTrigger.refresh(),
       onUpdate: (self) => {
         const progress = self.progress
         const isDesktop = window.innerWidth >= DESKTOP_BREAKPOINT

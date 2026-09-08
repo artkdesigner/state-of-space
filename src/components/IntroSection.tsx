@@ -91,6 +91,11 @@ export default function IntroSection() {
       pin: true,
       scrub: true,
       onLeave: () => ScrollTrigger.refresh(),
+      /* Симметрично onLeave — иначе при скролле назад-и-снова-вперёд без
+       * выхода из пина целиком refresh() вызывается только на пересечении
+       * конца пина вперёд, никогда на возврате в него назад — см.
+       * аналогичный комментарий в HeroSection.tsx. */
+      onEnterBack: () => ScrollTrigger.refresh(),
       onUpdate: (self) => {
         const revealProgress = clamp(self.progress / REVEAL_FRACTION)
 
