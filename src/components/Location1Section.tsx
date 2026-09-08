@@ -176,12 +176,16 @@ export default function Location1Section({ onBookNow }: Location1SectionProps) {
 
         // Линейно, без ease — так проявление ощущается напрямую
         // привязанным к скроллу, а не рывком в начале и подвисанием в
-        // конце (задняя часть карточки — backdrop-blur, на нём это
-        // особенно заметно).
+        // конце. backdrop-blur на дочерних Location-top/Location-footer
+        // не интерполируется браузером вместе с opacity родителя (типовой
+        // артефакт backdrop-filter — он либо есть, либо ощутимо
+        // "подскакивает" на пороге видимости), поэтому радиус блюра тоже
+        // гоним вручную тем же прогрессом через --location-blur, от 0 до
+        // штатных 1.25rem.
         if (card) {
-          card.style.opacity = String(
-            gsap.utils.clamp(0, 1, progress / CARD_FADE_IN),
-          )
+          const cardT = gsap.utils.clamp(0, 1, progress / CARD_FADE_IN)
+          card.style.opacity = String(cardT)
+          card.style.setProperty('--location-blur', `${cardT * 1.25}rem`)
         }
       },
     })
@@ -190,7 +194,10 @@ export default function Location1Section({ onBookNow }: Location1SectionProps) {
       riseTrigger.kill()
       trigger.kill()
       slider.style.borderRadius = ''
-      if (card) card.style.opacity = ''
+      if (card) {
+        card.style.opacity = ''
+        card.style.removeProperty('--location-blur')
+      }
     }
   }, [])
 
