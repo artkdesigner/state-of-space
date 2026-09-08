@@ -30,6 +30,14 @@ const ABOVE_DISK_GROW_VH = 1.5
  * самопин Capacity, начинается сразу после самопина Above), в высотах
  * вьюпорта. */
 const CAPACITY_GROW_VH = 3
+/** Лишний вьюпорт поверх CAPACITY_GROW_VH, на который растянут пин
+ * capacityTrigger (см. ниже) — тот же приём, что у Hero-wrap/Intro-wrap
+ * (см. HeroSection.tsx/IntroSection.tsx/scrollChain.ts): держит Capacity
+ * приклеенной (уже полностью выросшей) ещё на всю дистанцию, пока
+ * Presence (см. PresenceSection.tsx, её статический `margin-top: -100vh`)
+ * въезжает снизу и полностью её закрывает — настоящий cover-переход, а
+ * не последовательная прокрутка. */
+const CAPACITY_FREEZE_VH = 1
 const TOTAL_REVEAL_VH = REVEAL_VH + THICKEN_VH + ABOVE_DISK_GROW_VH
 /** Границы фаз 1/2/3 внутри общего прогресса самопина Above, 0..1. */
 const REVEAL_BOUNDARY = REVEAL_VH / TOTAL_REVEAL_VH
@@ -291,16 +299,35 @@ export default function AboveSection() {
     // 100vw + одновременный рост opacity от 0 до 1. Самопин стартует РОВНО
     // там, где заканчивается мостик — её истинная натуральная позиция
     // (margin к этому моменту уже погашен до 0), и только на ней GSAP
-    // корректно заякорит pin на top:0 (проверено эмпирически).
+    // корректно заякорит pin на top:0 (проверено эмпирически). Пин длится
+    // (CAPACITY_GROW_VH + CAPACITY_FREEZE_VH) вьюпортов, а не просто
+    // CAPACITY_GROW_VH: сам рост (opacity/clip-path) доигрывает и
+    // замирает на 100% ровно к концу CAPACITY_GROW_VH (см. пересчёт
+    // прогресса в onUpdate), а последний CAPACITY_FREEZE_VH держит
+    // Capacity приклеенной уже полностью выросшей — именно в это время
+    // Presence (см. PresenceSection.tsx) наезжает поверх нее снизу и
+    // закрывает её. Без onLeave-refresh(): PresenceSection ниже вычисляет
+    // свою стартовую позицию через getBoundingClientRect (см. её
+    // riseCompleteStart, тот же приём, что recedeStart выше в этом
+    // файле) — ScrollTrigger.refresh() ровно в момент, когда Capacity
+    // отпускает пин, мог бы сам подвинуть scroll(), чтобы сохранить
+    // прогресс какого-то другого активного пина (см. подробный разбор
+    // этого класса багов в scrollChain.ts и памяти проекта), а Presence в
+    // этот самый момент как раз должна начинать собственный самопин —
+    // слишком рискованная точка для лишнего пересчёта.
     const capacityTrigger = ScrollTrigger.create({
       trigger: capacity,
       start: () => bridgeTrigger.end,
-      end: () => bridgeTrigger.end + window.innerHeight * CAPACITY_GROW_VH,
+      end: () =>
+        bridgeTrigger.end +
+        window.innerHeight * (CAPACITY_GROW_VH + CAPACITY_FREEZE_VH),
       pin: true,
       scrub: true,
-      onLeave: () => ScrollTrigger.refresh(),
       onUpdate: (self) => {
-        const grow = self.progress
+        const grow = clamp(
+          (self.progress * (CAPACITY_GROW_VH + CAPACITY_FREEZE_VH)) /
+            CAPACITY_GROW_VH,
+        )
         capacity.style.opacity = String(grow)
         const maskRadius = easeInCubic(grow) * (window.innerWidth / 2)
         capacity.style.clipPath = `circle(${maskRadius}px at 50% 50%)`

@@ -207,6 +207,18 @@ export default function CapacitySection() {
           strokeOpacity="0.8"
         />
       </svg>
+
+      {/* Затемнение Capacity во время наезда Presence — держится в
+          opacity: 0, PresenceSection.tsx поднимает его до 1 своим
+          riseTrigger (см. комментарий там), пока Presence не закрыла
+          собой уже половину экрана. z-[2]: выше Capacity-title (z-1),
+          чтобы затемнить и заголовок тоже (см. покадровую сцену в
+          Figma — заголовок остаётся частично читаемым сквозь 70%-ную
+          черноту, не пропадает под ней полностью). */}
+      <div
+        aria-hidden
+        className="Capacity-overlay pointer-events-none absolute inset-0 z-[2] bg-black/70 opacity-0"
+      />
     </section>
   )
 }
