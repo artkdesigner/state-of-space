@@ -24,6 +24,14 @@ const TITLE_WINDOW: [number, number] = [0, 0.5]
 const LOGO_WINDOW: [number, number] = [0.25, 0.75]
 const BOTTOM_WRAP_WINDOW: [number, number] = [0.5, 1]
 
+/** Reveal-триггер стартует раньше, чем сам wrap доезжает до 'top top' —
+ * на эту долю PIN_VH (в вьюпортах), т.е. ещё во время последней четверти
+ * наезда Intro на Hero. `end` остаётся прежним (натуральная точка
+ * `wrapTop + PIN_VH`, на неё завязан `location1PinStart` в
+ * scrollChain.ts) — сдвигается только начало, поэтому окна элементов
+ * растягиваются на (1 + EARLY_SHIFT) × PIN_VH вместо PIN_VH. */
+const EARLY_SHIFT = 0.25
+
 const clamp = (v: number, min = 0, max = 1) => Math.min(max, Math.max(min, v))
 const windowProgress = (p: number, [start, end]: [number, number]) =>
   clamp((p - start) / (end - start))
@@ -90,10 +98,18 @@ export default function IntroSection() {
       return
     }
 
+    // Абсолютная doc-flow позиция wrap (та же величина, что резолвит
+    // 'top top') — устойчива к скроллу, пока ничего не пинит wrap (см.
+    // riseCompleteStart в PresenceSection.tsx, тот же приём).
+    const wrapTop = () => {
+      const r = wrap.getBoundingClientRect()
+      return r.top + window.scrollY
+    }
+
     const trigger = ScrollTrigger.create({
       trigger: wrap,
-      start: 'top top',
-      end: () => '+=' + window.innerHeight * PIN_VH,
+      start: () => wrapTop() - window.innerHeight * PIN_VH * EARLY_SHIFT,
+      end: () => wrapTop() + window.innerHeight * PIN_VH,
       scrub: true,
       onUpdate: (self) => {
         const revealProgress = self.progress
