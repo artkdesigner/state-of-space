@@ -33,10 +33,19 @@ const THICKEN_VH = 2
 /** Скролл-дистанция роста Above-circle-wrap (фаза 3, ещё внутри самопина
  * Above), в высотах вьюпорта. */
 const ABOVE_DISK_GROW_VH = 1.5
-/** Скролл-дистанция роста круглой маски Capacity + её opacity (отдельный
- * самопин Capacity, начинается сразу после самопина Above), в высотах
- * вьюпорта. */
-const CAPACITY_GROW_VH = 3
+/** Скролл-дистанция роста круглой маски Capacity (радиус 0 → целевой) +
+ * её opacity (отдельный самопин Capacity, начинается сразу после самопина
+ * Above), в высотах вьюпорта. */
+const CAPACITY_RADIUS_GROW_VH = 2
+/** Скролл-дистанция распрямления маски следом за ростом — та же идея, что
+ * у Hero-img (см. HeroSection.tsx: GROWTH_PIN_VH/UNWIND_PIN_VH,
+ * `border-radius: 50% → 0%` уже на замороженном целевом диаметре):
+ * маска-круг Capacity, уже дошедшая до целевого диаметра, перестаёт
+ * расти и вместо этого «распрямляется» в прямоугольник, скругление углов
+ * линейно уходит 50% → 0% (opacity к этому моменту уже 100%, дальше не
+ * меняется — см. onUpdate). */
+const CAPACITY_UNWIND_VH = 1
+const CAPACITY_GROW_VH = CAPACITY_RADIUS_GROW_VH + CAPACITY_UNWIND_VH
 /** Лишний вьюпорт поверх CAPACITY_GROW_VH, на который растянут пин
  * capacityTrigger (см. ниже) — тот же приём, что у Hero-wrap/Intro-wrap
  * (см. HeroSection.tsx/IntroSection.tsx/scrollChain.ts): держит Capacity
@@ -49,6 +58,9 @@ const TOTAL_REVEAL_VH = REVEAL_VH + THICKEN_VH + ABOVE_DISK_GROW_VH
 /** Границы фаз 1/2/3 внутри общего прогресса самопина Above, 0..1. */
 const REVEAL_BOUNDARY = REVEAL_VH / TOTAL_REVEAL_VH
 const THICKEN_BOUNDARY = (REVEAL_VH + THICKEN_VH) / TOTAL_REVEAL_VH
+/** Граница между растом (радиус 0 → цель) и распрямлением маски Capacity
+ * внутри CAPACITY_GROW_VH, 0..1. */
+const CAPACITY_GROW_BOUNDARY = CAPACITY_RADIUS_GROW_VH / CAPACITY_GROW_VH
 
 /** Доля фазы 1, за которую Above-circle-wrap успевает проявиться из
  * прозрачности (см. покадровую сцену в Figma — заметно опережает оба
@@ -72,6 +84,13 @@ const LEFT_HIDE_END = 0.5
 const RIGHT_HIDE_START = LEFT_HIDE_END
 
 const ABOVE_GROW_SCALE = 1.8
+
+/** Нижняя граница Desktop-брейкпоинта (--breakpoint-lg = 62rem в
+ * src/index.css) — тот же порог и то же основание (100vw на Desktop,
+ * 100vh на Tablet/Mobile), что и у целевого диаметра Hero-img, см.
+ * DESKTOP_BREAKPOINT в HeroSection.tsx: маска Capacity растёт по
+ * аналогии с ним. */
+const DESKTOP_BREAKPOINT = 992
 
 const clamp = (v: number, min = 0, max = 1) => Math.min(max, Math.max(min, v))
 const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3)
@@ -311,25 +330,29 @@ export default function AboveSection() {
     })
 
     // Above-circle-wrap уже подрос (фаза c выше) — Capacity подхватывает
-    // рост визуально с того же места: растущая маска (clip-path) от 0 до
-    // 100vw + одновременный рост opacity от 0 до 1. Самопин стартует РОВНО
+    // рост визуально с того же места: растущая круглая маска (clip-path)
+    // + одновременный рост opacity от 0 до 1, а следом, уже на
+    // замороженном целевом диаметре, маска распрямляется в прямоугольник
+    // (round 50%-эквивалент → 0) — та же двухфазная идея, что у Hero-img
+    // (см. HeroSection.tsx: GROWTH_PIN_VH растит диаметр, UNWIND_PIN_VH
+    // распрямляет уже застывший border-radius). Самопин стартует РОВНО
     // там, где заканчивается мостик — её истинная натуральная позиция
     // (margin к этому моменту уже погашен до 0), и только на ней GSAP
     // корректно заякорит pin на top:0 (проверено эмпирически). Пин длится
     // (CAPACITY_GROW_VH + CAPACITY_FREEZE_VH) вьюпортов, а не просто
-    // CAPACITY_GROW_VH: сам рост (opacity/clip-path) доигрывает и
-    // замирает на 100% ровно к концу CAPACITY_GROW_VH (см. пересчёт
-    // прогресса в onUpdate), а последний CAPACITY_FREEZE_VH держит
-    // Capacity приклеенной уже полностью выросшей — именно в это время
-    // Presence (см. PresenceSection.tsx) наезжает поверх нее снизу и
-    // закрывает её. Без onLeave-refresh(): PresenceSection ниже вычисляет
-    // свою стартовую позицию через getBoundingClientRect (см. её
-    // riseCompleteStart, тот же приём, что recedeStart выше в этом
-    // файле) — ScrollTrigger.refresh() ровно в момент, когда Capacity
-    // отпускает пин, мог бы сам подвинуть scroll(), чтобы сохранить
-    // прогресс какого-то другого активного пина (см. подробный разбор
-    // этого класса багов в scrollChain.ts и памяти проекта), а Presence в
-    // этот самый момент как раз должна начинать собственный самопин —
+    // CAPACITY_GROW_VH: сам рост+распрямление доигрывает и замирает
+    // ровно к концу CAPACITY_GROW_VH (см. пересчёт прогресса в onUpdate),
+    // а последний CAPACITY_FREEZE_VH держит Capacity приклеенной уже
+    // полностью раскрытой — именно в это время Presence (см.
+    // PresenceSection.tsx) наезжает поверх нее снизу и закрывает её. Без
+    // onLeave-refresh(): PresenceSection ниже вычисляет свою стартовую
+    // позицию через getBoundingClientRect (см. её riseCompleteStart, тот
+    // же приём, что recedeStart выше в этом файле) —
+    // ScrollTrigger.refresh() ровно в момент, когда Capacity отпускает
+    // пин, мог бы сам подвинуть scroll(), чтобы сохранить прогресс
+    // какого-то другого активного пина (см. подробный разбор этого
+    // класса багов в scrollChain.ts и памяти проекта), а Presence в этот
+    // самый момент как раз должна начинать собственный самопин —
     // слишком рискованная точка для лишнего пересчёта.
     const capacityTrigger = ScrollTrigger.create({
       trigger: capacity,
@@ -344,9 +367,41 @@ export default function AboveSection() {
           (self.progress * (CAPACITY_GROW_VH + CAPACITY_FREEZE_VH)) /
             CAPACITY_GROW_VH,
         )
-        capacity.style.opacity = String(grow)
-        const maskRadius = easeInCubic(grow) * (window.innerWidth / 2)
-        capacity.style.clipPath = `circle(${maskRadius}px at 50% 50%)`
+
+        // Целевой диаметр — тот же порог/основание, что у Hero-img
+        // (100vw на Desktop, 100vh на Tablet/Mobile), выбранный так,
+        // чтобы квадрат такого размера при round:0 всегда перекрывал весь
+        // вьюпорт целиком (на широком Desktop квадрат со стороной 100vw
+        // выше экрана, на узком портретном Mobile — со стороной 100vh
+        // шире экрана).
+        const isDesktop = window.innerWidth >= DESKTOP_BREAKPOINT
+        const targetRadius =
+          (isDesktop ? window.innerWidth : window.innerHeight) / 2
+
+        // Радиус растёт только в первую CAPACITY_GROW_BOUNDARY долю —
+        // opacity привязана к этой же под-фазе и дальше не меняется.
+        const radiusGrow = clamp(grow / CAPACITY_GROW_BOUNDARY)
+        capacity.style.opacity = String(radiusGrow)
+        const boxRadius = easeInCubic(radiusGrow) * targetRadius
+
+        // Распрямление — во вторую под-фазу, линейно (без ease), тот же
+        // приём, что у border-radius в Hero-img.
+        const unwind = clamp(
+          (grow - CAPACITY_GROW_BOUNDARY) / (1 - CAPACITY_GROW_BOUNDARY),
+        )
+        const round = boxRadius * (1 - unwind)
+
+        // inset-бокс стороной 2×boxRadius, отцентрованный — при
+        // round == boxRadius (вся фаза роста, unwind ещё 0) это ровно
+        // окружность радиуса boxRadius, идентично прежнему
+        // `circle(boxRadius at 50% 50%)`; при round → 0 (распрямление) —
+        // обычный прямоугольник. Отрицательный inset (когда boxRadius
+        // уже больше половины соответствующей стороны вьюпорта) CSS сам
+        // клэмпит к границе элемента — маска просто перекрывает эту
+        // сторону целиком, ничего дополнительно считать не нужно.
+        const verticalInset = window.innerHeight / 2 - boxRadius
+        const horizontalInset = window.innerWidth / 2 - boxRadius
+        capacity.style.clipPath = `inset(${verticalInset}px ${horizontalInset}px round ${round}px)`
       },
     })
 
