@@ -7,22 +7,22 @@ import { HERO_INTRO, typeReveal } from '../lib/heroIntro'
 import { HERO_PIN_VH } from '../lib/scrollChain'
 import { setNavTheme } from './NavBar'
 
-/** Скролл-дистанция роста Hero-img, в высотах вьюпорта — см.
+/** Общая скролл-дистанция Hero-пина, в высотах вьюпорта — см.
  * «Скролл-переход Hero → Intro» ниже. Общий источник с IntroSection.tsx
  * (см. src/lib/scrollChain.ts) — оттуда следующий pin в цепочке берёт
- * точную позицию конца этого пина. */
+ * точную позицию конца этого пина. Состоит из GROWTH_PIN_VH + UNWIND_PIN_VH. */
 const PIN_VH = HERO_PIN_VH
-/** Доля от финального диаметра (max(100vw, 100vh)), после которой на
- * широких/квадратных экранах (100vw >= 100vh, largerDim = vw) начинает
- * распрямляться border-radius — растёт диаметр при этом без остановки до
- * самого конца. На таких экранах диаметр дорастает ровно до 100vw и без
- * этой доли ждать буквального «пересечения 100vw» было бы некуда (это и
- * есть финальный размер) — окно распрямления схлопнулось бы в ноль и круг
- * превращался бы в квадрат мгновенным скачком в последний момент. Было
- * 0.8 (окно 20% от роста), утроили окно до 60%, чтобы распрямление не
- * ощущалось резким. На портретных экранах (100vh > 100vw) вместо этой
- * доли используется буквальное пересечение 100vw — см. onUpdate ниже. */
-const RADIUS_START_FRACTION = 0.4
+/** Первая фаза пина: Hero-img растёт из центра до целевого диаметра. */
+const GROWTH_PIN_VH = 2
+/** Вторая фаза пина: диаметр заморожен, border-radius уходит 50% → 0%. */
+const UNWIND_PIN_VH = 1
+/** Доля общего прогресса пина (0..1), на которой заканчивается фаза роста
+ * и начинается фаза распрямления. */
+const GROWTH_FRACTION = GROWTH_PIN_VH / (GROWTH_PIN_VH + UNWIND_PIN_VH)
+/** Нижняя граница Desktop-брейкпоинта (--breakpoint-lg = 62rem в
+ * src/index.css) — на Desktop целевой диаметр Hero-img — 100vw, на
+ * Tablet/Mobile — 100vh. */
+const DESKTOP_BREAKPOINT = 992
 const clamp = (v: number, min = 0, max = 1) => Math.min(max, Math.max(min, v))
 const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3)
 
@@ -87,27 +87,24 @@ export default function HeroSection() {
   }, [])
 
   /* Скролл-переход Hero → Intro (см. покадровую сцену «Hero to Intro» в
-   * Figma): Hero-img растёт из центра до диаметра max(100vw, 100vh) —
-   * fixed-оверлей поверх статичного Hero-img (не участвует в grid-layout,
-   * поэтому рост не сдвигает Hero-text-left/right). Диаметр растёт
-   * непрерывно весь пин, без остановок; border-radius начинает уходить
-   * 50% → 0% только после того, как диаметр дорастёт до 100vw — на
-   * портретных экранах (vh > vw) это буквальный порог (раньше распрямление
-   * стартовало по доле от largerDim = vh и превращало круг в скруглённый
-   * квадрат ещё до того, как он покрыл ширину вьюпорта); на широких/квадратных
-   * экранах (vw >= vh, largerDim = vw) буквальный порог совпал бы с самим
-   * концом роста и не оставил бы окна для распрямления, поэтому там
-   * используется старая доля RADIUS_START_FRACTION от largerDim. В обоих
-   * случаях распрямление доходит до 0% ровно к концу роста (largerDim =
-   * max(vw, vh)) — раньше пробовали отдельную фазу «рост, потом стоп-кадр
-   * на распрямление», но диаметр замирал и скролл ощущался как залипание
-   * с резким скачком в конце; так распрямление идёт одновременно с
-   * хвостом роста, без остановки.
+   * Figma) — двухфазный пин на GROWTH_PIN_VH + UNWIND_PIN_VH:
+   * Фаза 1 (первые GROWTH_PIN_VH вьюпортов, GROWTH_FRACTION общего
+   * прогресса): Hero-img растёт из центра до целевого диаметра — fixed-
+   * оверлей поверх статичного Hero-img (не участвует в grid-layout,
+   * поэтому рост не сдвигает Hero-text-left/right). Целевой диаметр — 100vw
+   * на Desktop (>= DESKTOP_BREAKPOINT), 100vh на Tablet/Mobile — по
+   * заданию продукта картинка должна долетать ровно до ширины экрана на
+   * Desktop и до высоты экрана на более узких брейкпоинтах, а не до
+   * max(vw, vh), как раньше. border-radius всю эту фазу остаётся 50%
+   * (полный круг).
+   * Фаза 2 (последние UNWIND_PIN_VH вьюпортов): диаметр больше не растёт
+   * (заморожен на целевом значении), border-radius уходит 50% → 0%.
    * Intro начинает наезжать на Hero снизу через margin-top и навбар
-   * перекрашивается в светлый по той же прогрессии распрямления —
-   * оба заканчиваются ровно к концу пина. Hero-text-left/right и
-   * Hero-subtitle не исчезают и не двигаются — только блюрятся и
-   * перекрываются растущим оверлеем.
+   * перекрашивается в светлый по той же прогрессии распрямления — оба
+   * идут только во второй фазе и заканчиваются ровно к концу пина.
+   * Hero-text-left/right и Hero-subtitle не исчезают и не двигаются —
+   * только блюрятся и перекрываются растущим оверлеем в течение фазы 1
+   * (к её концу оверлей уже полностью их покрывает).
    *
    * Создаётся сразу при монтировании (без задержки — так же, как во
    * всех остальных pin-секциях сайта): любая задержка сдвигает момент
@@ -158,23 +155,24 @@ export default function HeroSection() {
       },
       onUpdate: (self) => {
         const progress = self.progress
-        const largerDim = Math.max(window.innerWidth, window.innerHeight)
+        const isDesktop = window.innerWidth >= DESKTOP_BREAKPOINT
+        const targetDiameter = isDesktop
+          ? window.innerWidth
+          : window.innerHeight
 
+        const growProgress = clamp(progress / GROWTH_FRACTION)
         const diameter =
           restingDiameter +
-          (largerDim - restingDiameter) * easeOutCubic(progress)
+          (targetDiameter - restingDiameter) * easeOutCubic(growProgress)
 
         zoom.style.opacity = progress > EPSILON ? '1' : '0'
         zoom.style.width = `${diameter}px`
         zoom.style.height = `${diameter}px`
 
-        const isPortrait = window.innerHeight > window.innerWidth
-        const unwindStart = isPortrait
-          ? window.innerWidth
-          : largerDim * RADIUS_START_FRACTION
-        const unwindEase = easeOutCubic(
-          clamp((diameter - unwindStart) / (largerDim - unwindStart)),
+        const unwindProgress = clamp(
+          (progress - GROWTH_FRACTION) / (1 - GROWTH_FRACTION),
         )
+        const unwindEase = easeOutCubic(unwindProgress)
         zoom.style.borderRadius = `${(1 - unwindEase) * 50}%`
 
         if (intro) {
@@ -183,7 +181,7 @@ export default function HeroSection() {
         }
         setNavTheme(unwindEase > EPSILON ? 'light' : 'dark')
 
-        const blur = `blur(${progress * 16}px)`
+        const blur = `blur(${growProgress * 16}px)`
         textLeft.style.filter = blur
         textRight.style.filter = blur
         subtitle.style.filter = blur

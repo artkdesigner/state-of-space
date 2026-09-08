@@ -17,8 +17,8 @@
  * скорости скролла, ни от текущего состояния margin.
  */
 
-/** Hero: рост Hero-img (см. HeroSection.tsx). */
-export const HERO_PIN_VH = 2
+/** Hero: рост + распрямление Hero-img (см. HeroSection.tsx). */
+export const HERO_PIN_VH = 3
 /** Intro: наезд Location1 (см. IntroSection.tsx). */
 export const INTRO_PIN_VH = 2
 /** Location1: слайдер-кроссфейд (см. Location1Section.tsx). */
