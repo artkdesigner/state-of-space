@@ -37,7 +37,7 @@ export default function IntroSection() {
 
   /* Скролл-переход внутри Intro (см. покадровую сцену в Figma). Intro —
    * `position: sticky; top: 0` внутри обёртки Intro-pin-wrap высотой
-   * (1 + PIN_VH) вьюпортов, сдвинутой на `margin-top: -100vh` — этот
+   * (2 + PIN_VH) вьюпортов, сдвинутой на `margin-top: -100vh` — этот
    * отрицательный margin утягивает документный верх Intro-wrap ровно на
    * 1 вьюпорт РАНЬШЕ, чем закончился бы Hero-pin-wrap "по прямому
    * потоку" — то есть ровно туда, где заканчивается собственная
@@ -58,12 +58,16 @@ export default function IntroSection() {
    * (Intro-title/Intro-logo/Intro-bottom-wrap slide-up + opacity, с
    * нахлёстом по TITLE_WINDOW/LOGO_WINDOW/BOTTOM_WRAP_WINDOW, линейно по
    * скроллу — нелинейный easing вместе с отдельными окнами создаёт
-   * ощущение «стоп-кадр → резкий скачок»). Как только скролл проходит эти
-   * PIN_VH вьюпортов, Intro отклеивается, и последний "свой" вьюпорт
-   * обёртки уходит на то, чтобы Intro естественно проскроллила прочь
-   * вверх, а Location1 (следующий сиблинг, с более высоким z-index) в это
-   * же время естественно наезжает на неё снизу — это уже старая
-   * последовательная (не cover) механика, её не трогали.
+   * ощущение «стоп-кадр → резкий скачок»). `(2 + PIN_VH)` вместо
+   * `(1 + PIN_VH)` — тот же приём, что у Hero-wrap (см. HeroSection.tsx):
+   * лишний вьюпорт держит Intro приклеенной (уже полностью раскрытой) ещё
+   * на всю дистанцию, пока Location1 (следующий сиблинг, подтянутый
+   * вверх своим собственным статическим `margin-top: -100vh`, см.
+   * Location1Section.tsx) въезжает снизу и полностью закрывает Intro —
+   * тот же настоящий cover-переход, что у Hero → Intro, а не
+   * последовательная прокрутка. Только после того как Location1 уже
+   * полностью закрыла экран, Intro отклеивается и естественно уезжает
+   * прочь — незаметно, под уже непрозрачной Location1.
    *
    * ScrollTrigger здесь без `pin: true` — он не трогает position/pin-
    * спейсеры вообще, только читает scroll и вызывает onUpdate, поэтому
@@ -123,7 +127,7 @@ export default function IntroSection() {
     <div
       ref={wrapRef}
       className="Intro-pin-wrap relative z-[45]"
-      style={{ height: `${(1 + PIN_VH) * 100}vh`, marginTop: '-100vh' }}
+      style={{ height: `${(2 + PIN_VH) * 100}vh`, marginTop: '-100vh' }}
     >
       <section
         id="intro"

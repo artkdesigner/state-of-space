@@ -3,7 +3,7 @@ import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import LocationCard from './LocationCard'
 import LocationSlider from './LocationSlider'
-import { LOCATION1_PIN_VH, introPinEnd } from '../lib/scrollChain'
+import { LOCATION1_PIN_VH, location1PinStart } from '../lib/scrollChain'
 import baseImg from '../assets/location1-slider-base.webp'
 import slide1 from '../assets/location1-slide-1.webp'
 import slide2 from '../assets/location1-slide-2.webp'
@@ -57,16 +57,25 @@ export default function Location1Section({ onBookNow }: Location1SectionProps) {
    * Без этого Cliff-пин (CliffSection.tsx, переход Location1 → Cliff)
    * включался бы только на СВОЁМ natural 'top top', а Location1 к тому
    * моменту уже почти целиком уезжает обычным скроллом (он ровно 1 экран
-   * высотой) — тот же приём, что подтягивает Intro во время Hero и
-   * Location1 во время Intro (см. HeroSection.tsx, IntroSection.tsx).
+   * высотой) — эта JS margin-cancellation (не тот же приём, что у самого
+   * Location1 ниже) не тронута, наезд Location1 → Cliff остался старым.
    * Location-карточка (LocationCard) проявляется из opacity: 0 в первые
    * CARD_FADE_IN прогресса — именно этого пина, который стартует ровно
    * когда секция встала на своё место, а не раньше во время наезда снизу.
    *
-   * `start` — точная позиция скролла (конец пина Intro, см.
+   * `start` — точная позиция скролла (`location1PinStart`, см.
    * src/lib/scrollChain.ts), а не 'top top': при 'top top' и быстром
    * скролле (флик) секция телепортируется на нужную позицию вместо
-   * плавного пина — см. подробный комментарий в IntroSection.tsx. */
+   * плавного пина — см. подробный комментарий в IntroSection.tsx.
+   * Сама секция при этом сдвинута статическим `margin-top: -100vh` (см.
+   * className ниже) — тот же приём, что подтягивает Intro во время Hero
+   * (см. HeroSection.tsx/IntroSection.tsx/scrollChain.ts): пока Intro
+   * ещё приклеена (её собственный `INTRO_PIN_VH` reveal уже доигран, но
+   * wrap держит её ещё 1 лишний вьюпорт), Location1 естественным
+   * document flow въезжает снизу вверх и полностью её закрывает —
+   * настоящий cover-переход, а не последовательная прокрутка. `start`
+   * пина (`location1PinStart`) — это ровно тот момент, когда въезд
+   * закончился (Location1 уже целиком закрыла экран). */
   useEffect(() => {
     const section = sectionRef.current
     const cliff = document.getElementById('cliff')
@@ -75,8 +84,8 @@ export default function Location1Section({ onBookNow }: Location1SectionProps) {
 
     const trigger = ScrollTrigger.create({
       trigger: section,
-      start: introPinEnd,
-      end: () => introPinEnd() + window.innerHeight * SLIDE_COUNT,
+      start: location1PinStart,
+      end: () => location1PinStart() + window.innerHeight * SLIDE_COUNT,
       pin: true,
       scrub: true,
       /* Раньше здесь вызывался ScrollTrigger.refresh() в onLeave (и
@@ -132,6 +141,7 @@ export default function Location1Section({ onBookNow }: Location1SectionProps) {
       id="location1"
       ref={sectionRef}
       className="Location1 relative isolate z-[46] flex h-dvh w-full flex-col items-center justify-end overflow-hidden px-2.5 pb-2.5 lg:px-5 lg:pt-30 lg:pb-5"
+      style={{ marginTop: '-100vh' }}
     >
       <LocationCard
         ref={cardRef}

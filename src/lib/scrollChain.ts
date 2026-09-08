@@ -17,22 +17,28 @@
  * создаёт pin-спейсеров и ничего не пересчитывает — обёртка вокруг
  * секции физически резервирует нужную высоту в потоке документа.
  *
- * Наезд Intro поверх Hero — настоящий cover-переход (Hero остаётся
- * неподвижной под наезжающей Intro, а не едет одновременно с ней): у
- * Hero-wrap на 1 вьюпорт больше высоты, чем нужно самой Hero (держит её
- * приклеенной, пока Intro въезжает), а Intro-wrap подтянут вверх
- * СТАТИЧЕСКИМ (заданным один раз в CSS, не пересчитываемым в JS)
- * `margin-top: -100vh`, чтобы её физический наезд начинался ровно там,
- * где заканчивается собственная анимация Hero. Это НЕ та же ловушка, что
- * в п. (2) выше — margin здесь константа, не завязан на
- * `ScrollTrigger.refresh()` и ни на что не пересчитывается на скролле,
- * поэтому не может "устареть". Наезд Location1 поверх Intro пока остался
- * старым — последовательным (естественный запас высоты обёртки, без
- * margin-трюка), см. ниже.
- *
- * Location1 и Cliff пока остаются на старом GSAP `pin: true` + margin-
- * cancellation (наезд следующей секции) — эту часть цепочки пользователь
+ * Наезд Intro поверх Hero и наезд Location1 поверх Intro — оба настоящие
+ * cover-переходы (выходящая секция остаётся неподвижной под наезжающей
+ * входящей, а не едет одновременно с ней): у выходящей секции wrap на
+ * 1 вьюпорт больше высоты, чем нужно ей самой (держит её приклеенной,
+ * пока входящая въезжает), а входящая (Intro-wrap / сам Location1)
+ * подтянута вверх СТАТИЧЕСКИМ (заданным один раз в CSS, не
+ * пересчитываемым в JS) `margin-top: -100vh`, чтобы её физический наезд
+ * начинался ровно там, где заканчивается собственная анимация выходящей.
+ * Это НЕ та же ловушка, что в п. (2) выше — margin здесь константа, не
+ * завязан на `ScrollTrigger.refresh()` и ни на что не пересчитывается на
+ * скролле, поэтому не может "устареть". Наезд Cliff поверх Location1
+ * пока остался старым — margin-cancellation в onUpdate GSAP-пина
+ * Location1 (см. Location1Section.tsx) — эту часть цепочки пользователь
  * не помечал как сломанную, трогать не стали.
+ *
+ * Location1 и Cliff пока остаются на старом GSAP `pin: true` (не
+ * `position: sticky`) — но margin-приём для ВХОДА в Location1 (снизу, со
+ * стороны Intro) работает и с GSAP pin:true: `start` пина — явная
+ * абсолютная формула (не `'top top'`), а "въезд снизу" ДО того, как пин
+ * включился — это просто обычное document-flow позиционирование самого
+ * `<section>`, на которое статический `margin-top` действует точно так
+ * же, как на любой другой блочный элемент.
  */
 
 /** Hero: рост + распрямление Hero-img, пока Hero-секция залипает вверху
@@ -45,9 +51,11 @@
  * разом, разрезанные пополам). */
 export const HERO_PIN_VH = 3
 /** Intro: побуквенный/поэлементный reveal, пока Intro-секция залипает
- * вверху (см. IntroSection.tsx). Наезд Location1 поверх Intro — уже
- * бесплатный последовательный (не cover), в последний 1 вьюпорт обёртки
- * Intro, а не часть INTRO_PIN_VH. */
+ * вверху (см. IntroSection.tsx). Intro-wrap, как и Hero-wrap, на
+ * 1 вьюпорт выше, чем "своя высота (1) + пин (INTRO_PIN_VH)" — держит
+ * Intro приклеенной (уже полностью раскрытой), пока Location1 (тоже
+ * подтянутый вверх своим `margin-top: -100vh`, см. Location1Section.tsx)
+ * въезжает снизу и закрывает её — тот же cover-переход, что у Hero. */
 export const INTRO_PIN_VH = 1
 /** Location1: слайдер-кроссфейд (см. Location1Section.tsx). */
 export const LOCATION1_PIN_VH = 3
@@ -61,18 +69,22 @@ export const CLIFF_PIN_VH = 4
  * здесь, но сама Intro-СЕКЦИЯ визуально въезжает на 1 вьюпорт раньше —
  * см. `margin-top` на Intro-wrap). */
 export const heroPinEnd = () => window.innerHeight * (2 + HERO_PIN_VH)
-/** Истинный конец обёртки Intro (= его собственная высота 1 vh + пин) —
- * ровно там, где по document flow начинается Location1. Location1
- * по-прежнему пинится через GSAP на этой абсолютной позиции.
- * `+ INTRO_PIN_VH` без "+1": Intro-wrap физически занимает
- * (1 + INTRO_PIN_VH) вьюпортов, но `margin-top: -100vh` утягивает этот
- * вьюпорт обратно, поэтому вклад Intro в document flow — ровно
- * INTRO_PIN_VH, не (1 + INTRO_PIN_VH); итоговая абсолютная позиция
- * Location1 не изменилась по сравнению с версией без margin (1 лишний
- * вьюпорт у Hero компенсирует ровно 1 вьюпорт margin у Intro). */
+/** Истинный конец обёртки Intro (= его собственная высота 1 vh + пин
+ * INTRO_PIN_VH + 1 лишний вьюпорт, тот же приём, что у heroPinEnd) —
+ * ровно там, где по document flow физически заканчивается Intro-wrap
+ * (Location1 начинается здесь "по умолчанию", но сама секция визуально
+ * въезжает на 1 вьюпорт раньше — см. `margin-top` на Location1). */
 export const introPinEnd = () =>
+  heroPinEnd() + window.innerHeight * (1 + INTRO_PIN_VH)
+/** Момент, когда Location1 полностью въехала и закрыла Intro — это и
+ * абсолютный `start` её GSAP-пина, и цель для её собственного
+ * `margin-top: -100vh` (см. Location1Section.tsx): `introPinEnd() -
+ * 1 вьюпорт`, т.е. ровно там, где заканчивается собственная PIN_VH-
+ * анимация Intro (Intro при этом остаётся приклеенной ещё этот
+ * последний вьюпорт intro-wrap, пока Location1 её закрывает). */
+export const location1PinStart = () =>
   heroPinEnd() + window.innerHeight * INTRO_PIN_VH
 export const location1PinEnd = () =>
-  introPinEnd() + window.innerHeight * LOCATION1_PIN_VH
+  location1PinStart() + window.innerHeight * LOCATION1_PIN_VH
 export const cliffPinEnd = () =>
   location1PinEnd() + window.innerHeight * CLIFF_PIN_VH
