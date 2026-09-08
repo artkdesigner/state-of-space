@@ -3,12 +3,19 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { reduceMotion } from '../lib/anim'
 import aboveBg from '../assets/above-bg.webp'
 
-const RING_RADIUS = 47.5
 /** Внешний край кольца — фиксирован всегда, толщина растёт только внутрь
- * (см. фазу thicken ниже). */
-const RING_OUTER = RING_RADIUS + 2.5
-/** Внутренний край кольца в состоянии покоя (толщина 5 — как в JSX). */
-const RING_INNER_RESTING = RING_RADIUS - 2.5
+ * (см. фазу thicken ниже). Радиус подобран так, чтобы влезать в SVG
+ * viewBox 0 0 100 100 (максимум 50). */
+const RING_OUTER = 50
+/** Толщина кольца в состоянии покоя — из самого SVG-ассета Above-circle-
+ * wrap в Figma (узел "Above to Capacity"): в исходном 600.5×600.5
+ * viewBox внешний радиус 300, внутренний 285, т.е. толщина 15 = 5% от
+ * радиуса. Тот же процент от RING_OUTER здесь. Раньше тут стояло 5
+ * (10% от радиуса, вдвое толще макета — багрепорт пользователя
+ * 2026-09-08). */
+const RING_STROKE_RESTING = RING_OUTER * 0.05
+const RING_RADIUS = RING_OUTER - RING_STROKE_RESTING / 2
+const RING_INNER_RESTING = RING_OUTER - RING_STROKE_RESTING
 const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS
 
 /** Скролл-дистанция наезда Qualities на Above, в высотах вьюпорта.
@@ -196,9 +203,18 @@ export default function AboveSection() {
       end: () => `+=${window.innerHeight * RECEDE_VH}`,
       scrub: true,
       onUpdate: (self) => {
-        const t = easeOutCubic(self.progress)
-        section.style.marginTop = `${-(1 - t) * 100}vh`
-        const radius = t * 45
+        // marginTop гасит натуральный (обычный document-flow) снос Above
+        // при скролле — а он строго ЛИНЕЕН относительно скролла (1px
+        // скролла = 1px сноса, никакого easing тут физически нет), поэтому
+        // именно margin обязан использовать СЫРОЙ self.progress, а не
+        // eased. Раньше здесь стоял общий eased `t` для margin И radius —
+        // margin с ease-кривой не совпадал с линейным сносом на всём
+        // промежутке, кроме самих концов (0 и 1), из-за чего Above не
+        // стояла на месте, а заметно "подъезжала" в середине фазы
+        // (багрепорт пользователя 2026-09-08). Radius — чисто
+        // косметический, ему eased-кривая по-прежнему к месту.
+        section.style.marginTop = `${-(1 - self.progress) * 100}vh`
+        const radius = easeOutCubic(self.progress) * 45
         qualities.style.borderBottomLeftRadius = `${radius}vw`
         qualities.style.borderBottomRightRadius = `${radius}vw`
       },
@@ -348,7 +364,7 @@ export default function AboveSection() {
       rightTitle.style.transform = ''
       progress.style.strokeDashoffset = ''
       progress.setAttribute('r', String(RING_RADIUS))
-      progress.setAttribute('stroke-width', '5')
+      progress.setAttribute('stroke-width', String(RING_STROKE_RESTING))
       circleScale.style.transform = ''
       capacity.style.marginTop = ''
       capacity.style.opacity = ''
@@ -395,7 +411,7 @@ export default function AboveSection() {
                 cx="50"
                 cy="50"
                 r={RING_RADIUS}
-                strokeWidth="5"
+                strokeWidth={RING_STROKE_RESTING}
                 className="stroke-light/10"
               />
               <circle
@@ -403,7 +419,7 @@ export default function AboveSection() {
                 cx="50"
                 cy="50"
                 r={RING_RADIUS}
-                strokeWidth="5"
+                strokeWidth={RING_STROKE_RESTING}
                 className="stroke-light"
                 strokeDasharray={RING_CIRCUMFERENCE}
                 strokeDashoffset={RING_CIRCUMFERENCE}
