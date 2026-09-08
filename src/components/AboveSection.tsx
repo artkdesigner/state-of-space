@@ -70,14 +70,22 @@ export default function AboveSection() {
   /* Переход Qualities → Above → Capacity (см. покадровую сцену в Figma,
    * «Qualities to Above 1..8» и «Above to Capacity 1..7»). Above —
    * `position: sticky; top: 0` внутри обёртки Above-pin-wrap высотой
-   * (2 + TOTAL_PIN_VH) вьюпортов, сдвинутой на `margin-top: -100vh» — тот
+   * (3 + TOTAL_PIN_VH) вьюпортов, сдвинутой на `margin-top: -100vh» — тот
    * же приём, что у Location1-pin-wrap/Cliff-pin-wrap (см.
-   * Location1Section.tsx/CliffSection.tsx). `(2 + TOTAL_PIN_VH)` вместо
-   * `(1 + TOTAL_PIN_VH)` — лишний вьюпорт держит Above приклеенной (уже
-   * полностью раскрытой, диск сплошной) ещё на всю дистанцию, пока
-   * Capacity (см. CapacitySection.tsx, тот же margin-приём) въезжает
-   * снизу и полностью закрывает её растущей круглой маской — настоящий
-   * cover-переход.
+   * Location1Section.tsx/CliffSection.tsx). Обычная "своя" надбавка для
+   * такой cover-цепочки — `+2` (см. остальные секции): "+1" покрывает
+   * СВОЙ riseTrigger соседа (RISE_VH=1 вьюпорт), "+1" — стандартный
+   * запас. Здесь — `+3`, на 1 больше: у CapacitySection свой "riseTrigger"
+   * (там он называется riseTrigger и растит круглую маску от диска Above
+   * до полного покрытия вьюпорта, см. CapacitySection.tsx) длиной
+   * GROW_VH=2 вьюпорта, а не стандартный 1 — маска должна успеть
+   * ПОЛНОСТЬЮ вырасти и закрыть экран ДО того, как Above отклеится,
+   * иначе Above на кадр-другой видно уезжающим из-под ещё маленькой,
+   * только начавшей расти маски (баг, на который пожаловался
+   * пользователь: "Above начинает движение на 100vh раньше, чем нужно").
+   * Лишний вьюпорт держит Above приклеенной (уже полностью раскрытой,
+   * диск сплошной) ровно на всю длительность роста маски Capacity — и ни
+   * кадром меньше.
    *
    * 1) riseTrigger (RISE_VH вьюпорт ПЕРЕД wrapTop, пока Above ещё
    *    физически въезжает поверх Qualities) — чистая косметика:
@@ -214,7 +222,7 @@ export default function AboveSection() {
     <div
       ref={wrapRef}
       className="Above-pin-wrap relative"
-      style={{ height: `${(2 + TOTAL_PIN_VH) * 100}vh`, marginTop: '-100vh' }}
+      style={{ height: `${(3 + TOTAL_PIN_VH) * 100}vh`, marginTop: '-100vh' }}
     >
       <section
         id="above"

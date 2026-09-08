@@ -8,19 +8,23 @@ const ROTATE = '[transform-box:fill-box] [transform-origin:50%_50%]'
  * диаметр стартует от диаметра уже сплошного (потолстевшего на максимум)
  * диска Above (см. AboveSection.tsx, .Above-circle-wrap) и растёт до
  * целевого, покрывающего весь вьюпорт; opacity секции синхронно 0 → 1 за
- * то же время (см. onUpdate ниже). */
+ * то же время (см. riseTrigger ниже). Это СВОЙ riseTrigger Capacity —
+ * тот же приём, что у Cliff/Above (см. CliffSection.tsx/AboveSection.tsx:
+ * `start: wrapTop() - N*innerHeight, end: wrapTop()`), просто с N=GROW_VH
+ * вместо стандартного 1: маска должна успеть ПОЛНОСТЬЮ вырасти и закрыть
+ * весь вьюпорт ДО того, как Above (см. AboveSection.tsx, лишний вьюпорт
+ * в её собственной высоте wrap'а — там же объяснено, почему) отклеится и
+ * начнёт естественным потоком уезжать — иначе на кадр-другой видно, как
+ * Above уже едет из-под ещё маленькой, только начавшей расти маски (баг,
+ * на который пожаловался пользователь). */
 const GROW_VH = 2
 /** Скролл-дистанция распрямления маски следом за ростом — та же
  * двухфазная идея, что у Hero-img (см. HeroSection.tsx: GROWTH_PIN_VH
- * растит диаметр, UNWIND_PIN_VH распрямляет уже застывший border-radius):
- * маска, уже дошедшая до целевого диаметра, перестаёт расти и вместо
- * этого «распрямляется» в прямоугольник, скругление углов линейно уходит
- * boxRadius → 0 (opacity к этому моменту уже 100%, дальше не меняется). */
+ * растит диаметр, UNWIND_PIN_VH распрямляет уже застывший border-radius),
+ * но теперь это СОБСТВЕННАЯ (не riseTrigger) sticky-фаза Capacity — маска
+ * уже на целевом диаметре (opacity уже 100%), скругление углов линейно
+ * уходит boxRadius → 0. */
 const UNWIND_VH = 1
-const PIN_VH = GROW_VH + UNWIND_VH
-/** Граница между ростом (радиус диск → цель) и распрямлением внутри
- * PIN_VH, 0..1. */
-const GROW_BOUNDARY = GROW_VH / PIN_VH
 
 /** Нижняя граница Desktop-брейкпоинта (--breakpoint-lg = 62rem в
  * src/index.css) — тот же порог и то же основание (100vw на Desktop,
@@ -29,7 +33,6 @@ const GROW_BOUNDARY = GROW_VH / PIN_VH
  * такого размера при round:0 всегда перекрывал весь вьюпорт целиком. */
 const DESKTOP_BREAKPOINT = 992
 
-const clamp = (v: number, min = 0, max = 1) => Math.min(max, Math.max(min, v))
 const easeInCubic = (t: number) => t * t * t
 
 export default function CapacitySection() {
@@ -42,18 +45,23 @@ export default function CapacitySection() {
    * места: растущая круглая маска (clip-path) стартует РОВНО с диаметра
    * этого диска (`diskRadiusPx`, измеряется через getBoundingClientRect —
    * тот же приём, что у offsets в CliffSection.tsx, — а не с 0px, как
-   * раньше) + одновременный рост opacity секции от 0 до 1, а следом, уже
-   * на замороженном целевом диаметре, маска распрямляется в прямоугольник
-   * (round-эквивалент boxRadius → 0).
+   * раньше) + одновременный рост opacity секции от 0 до 1.
    *
    * Capacity — `position: sticky; top: 0` внутри Capacity-pin-wrap высотой
-   * (2 + PIN_VH) вьюпортов, сдвинутой на `margin-top: -100vh` — тот же
-   * приём, что у Above-pin-wrap (см. AboveSection.tsx): margin утягивает
-   * документный верх Capacity-wrap ровно на 1 вьюпорт раньше, чем
-   * закончился бы Above-wrap "по прямому потоку" — то есть ровно туда, где
-   * начинается последний (замороженный) вьюпорт Above. Capacity уже
-   * приклеена и её маска стартует именно оттуда — никакого JS на саму
-   * позицию, тот же настоящий cover-переход, что и всюду в цепочке. */
+   * (2 + UNWIND_VH) вьюпортов, сдвинутой на `margin-top: -100vh` — тот же
+   * приём, что у Above-pin-wrap (см. AboveSection.tsx). НО, в отличие от
+   * остальной цепочки, весь рост маски (GROW_VH) происходит в
+   * riseTrigger — ДО собственного wrapTop, т.е. пока Above (см.
+   * AboveSection.tsx, её `+3` вместо стандартного `+2` в высоте wrap'а)
+   * ещё физически приклеена и стоит неподвижно. Только после того, как
+   * маска уже выросла и полностью закрыла вьюпорт, наступает wrapTop —
+   * Above отклеивается (её уже не видно под сплошной Capacity) и
+   * начинается собственная sticky-фаза Capacity (trigger), где маска
+   * просто распрямляется в прямоугольник (round: boxRadius → 0) на уже
+   * замороженном целевом диаметре. Тот же принцип, что у riseTrigger в
+   * CliffSection.tsx/AboveSection.tsx, только длина riseTrigger здесь не
+   * стандартный 1 вьюпорт, а GROW_VH=2 — см. комментарий у GROW_VH выше и
+   * у `(3 + TOTAL_PIN_VH)` в AboveSection.tsx. */
   useEffect(() => {
     const wrap = wrapRef.current
     const section = sectionRef.current
@@ -78,36 +86,42 @@ export default function CapacitySection() {
       return r.top + window.scrollY
     }
 
-    const trigger = ScrollTrigger.create({
+    const targetRadius = () => {
+      const isDesktop = window.innerWidth >= DESKTOP_BREAKPOINT
+      return (isDesktop ? window.innerWidth : window.innerHeight) / 2
+    }
+
+    const riseTrigger = ScrollTrigger.create({
       trigger: wrap,
-      start: wrapTop,
-      end: () => wrapTop() + window.innerHeight * PIN_VH,
+      start: () => wrapTop() - window.innerHeight * GROW_VH,
+      end: wrapTop,
       scrub: true,
       onUpdate: (self) => {
         const grow = self.progress
+        section.style.opacity = String(grow)
+        const radius =
+          diskRadiusPx + easeInCubic(grow) * (targetRadius() - diskRadiusPx)
+        section.style.clipPath = `circle(${radius}px at 50% 50%)`
+      },
+    })
 
-        const isDesktop = window.innerWidth >= DESKTOP_BREAKPOINT
-        const targetRadius =
-          (isDesktop ? window.innerWidth : window.innerHeight) / 2
-
-        // Радиус растёт только в первую GROW_BOUNDARY долю — opacity
-        // привязана к этой же под-фазе и дальше не меняется.
-        const radiusGrow = clamp(grow / GROW_BOUNDARY)
-        section.style.opacity = String(radiusGrow)
-        const boxRadius =
-          diskRadiusPx + easeInCubic(radiusGrow) * (targetRadius - diskRadiusPx)
-
-        // Распрямление — во вторую под-фазу, линейно (без ease), тот же
-        // приём, что у border-radius в Hero-img.
-        const unwind = clamp((grow - GROW_BOUNDARY) / (1 - GROW_BOUNDARY))
+    const trigger = ScrollTrigger.create({
+      trigger: wrap,
+      start: wrapTop,
+      end: () => wrapTop() + window.innerHeight * UNWIND_VH,
+      scrub: true,
+      onUpdate: (self) => {
+        const unwind = self.progress
+        const boxRadius = targetRadius()
         const round = boxRadius * (1 - unwind)
 
         // inset-бокс стороной 2×boxRadius, отцентрованный — при
-        // round == boxRadius (вся фаза роста, unwind ещё 0) это ровно
-        // окружность радиуса boxRadius; при round → 0 (распрямление) —
-        // обычный прямоугольник. Отрицательный inset (когда boxRadius уже
-        // больше половины соответствующей стороны вьюпорта) CSS сам
-        // клэмпит к границе элемента.
+        // round == boxRadius это ровно окружность радиуса boxRadius (тот
+        // же диаметр, на котором закончил riseTrigger — бесшовная
+        // передача); при round → 0 (распрямление) — обычный прямоугольник.
+        // Отрицательный inset (boxRadius уже больше половины
+        // соответствующей стороны вьюпорта) CSS сам клэмпит к границе
+        // элемента.
         const verticalInset = window.innerHeight / 2 - boxRadius
         const horizontalInset = window.innerWidth / 2 - boxRadius
         section.style.clipPath = `inset(${verticalInset}px ${horizontalInset}px round ${round}px)`
@@ -116,6 +130,7 @@ export default function CapacitySection() {
 
     return () => {
       window.removeEventListener('resize', onResize)
+      riseTrigger.kill()
       trigger.kill()
       section.style.opacity = ''
       section.style.clipPath = ''
@@ -127,7 +142,7 @@ export default function CapacitySection() {
       ref={wrapRef}
       className="Capacity-pin-wrap relative"
       style={{
-        height: `${(2 + PIN_VH) * 100}vh`,
+        height: `${(2 + UNWIND_VH) * 100}vh`,
         marginTop: '-100vh',
       }}
     >
