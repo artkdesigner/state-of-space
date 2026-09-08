@@ -21,6 +21,14 @@ const TOTAL_VH = CLIFF_PIN_VH
 /** Граница между двумя фазами общего прогресса пина, 0..1. */
 const PHASE_BOUNDARY = LOCATION1_RECEDE_VH / TOTAL_VH
 
+/** Окна fade-in title/картинок внутри фазы recede (0..1 = PHASE_BOUNDARY
+ * прогресса), с нахлёстом — тот же приём каскада, что у TITLE_WINDOW/
+ * LOGO_WINDOW в IntroSection.tsx: title начинает первым, картинки
+ * подхватывают на 40% и дотягивают ровно к концу фазы (к моменту, когда
+ * Location1 уже полностью уехала). */
+const TITLE_FADE_WINDOW: [number, number] = [0, 0.6]
+const IMAGES_FADE_WINDOW: [number, number] = [0.4, 1]
+
 /** Доля фазы reveal, за которую Cliff-title успевает уйти за кадр
  * (см. покадровую сцену в Figma: -150 к кадру 4 из 5, т.е. к 75%). */
 const TITLE_EXIT_FRACTION = 0.75
@@ -36,6 +44,8 @@ const TEXT_ENTER_VW = (660 / 1920) * 100
 
 const clamp = (v: number, min = 0, max = 1) => Math.min(max, Math.max(min, v))
 const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3)
+const windowProgress = (p: number, [start, end]: [number, number]) =>
+  clamp((p - start) / (end - start))
 
 export default function CliffSection() {
   const sectionRef = useRef<HTMLElement>(null)
@@ -50,9 +60,13 @@ export default function CliffSection() {
 
   /* Скролл-хореография Cliff — один общий pin на две фазы (см. покадровые
    * сцены в Figma):
-   * 1) 0 → PHASE_BOUNDARY — наезд Location1 (узлы "Location1 to Cliff
-   *    1..5"): Location1 уезжает вверх через margin-top (см. onUpdate
-   *    ниже).
+   * 1) 0 → PHASE_BOUNDARY — Location1 уезжает вверх через margin-top (узлы
+   *    "Location1 to Cliff 1..5", см. onUpdate ниже), Cliff под ней уже
+   *    занял свою "входную" раскладку (title по центру, 5 фото раскиданы
+   *    по Cliff-img-wrap) и параллельно проявляется из непрозрачности —
+   *    сперва title, с нахлёстом следом фото (TITLE_FADE_WINDOW/
+   *    IMAGES_FADE_WINDOW), оба дотягивают до 100% ровно к концу фазы, к
+   *    моменту, когда Location1 уже полностью уехала.
    * 2) PHASE_BOUNDARY → 1 — внутренняя хореография Cliff (узлы
    *    "Cliff 1..5"): Cliff-title уходит вверх и пропадает за кадром;
    *    Cliff-sub-title/-description въезжают с боков (изначально за
@@ -89,7 +103,13 @@ export default function CliffSection() {
     if (!section || !location1 || !title || !subTitle || !descriptionWrap) {
       return
     }
-    if (reduceMotion()) return
+    if (reduceMotion()) {
+      title.style.opacity = '1'
+      images.forEach((img) => {
+        if (img) img.style.opacity = '1'
+      })
+      return
+    }
 
     // Смещение центра каждого фото от центра Cliff-img-wrap — считаем
     // один раз по исходной (ещё не тронутой transform'ом) вёрстке, чтобы
@@ -148,11 +168,34 @@ export default function CliffSection() {
         // НИЖНИХ углах: секция уезжает вверх, верхний край сразу уходит
         // за кадр, а нижний остаётся видимым дольше всех и закругляется
         // по мере того как Location1 исчезает.
-        const recede = easeOutCubic(clamp(p / PHASE_BOUNDARY))
-        location1.style.marginTop = `${-recede * 100}vh`
+        const recedeProgress = clamp(p / PHASE_BOUNDARY)
+        const recede = easeOutCubic(recedeProgress)
+        // Базовая точка -100vh, а НЕ 0 — это та же величина, что уже стоит
+        // статическим `margin-top` на Location1 (см. Location1Section.tsx,
+        // тем же margin-приёмом Location1 подтянута к своей запиненной
+        // позиции). recede добавляет ЕЩЁ по -100vh поверх нее, уезжая
+        // дальше вверх. Раньше здесь стояло `${-recede * 100}vh` (0vh на
+        // старте) — при p=0 это МГНОВЕННО сбрасывало margin с -100vh на
+        // 0vh в первом же кадре пина Cliff, вместо непрерывного продолжения
+        // с того же значения, на котором его оставил закончившийся пин
+        // Location1 — Location1 буквально телепортировался (см. баг-репорт
+        // пользователя 2026-09-08: "не двигается, потом резко уезжает").
+        location1.style.marginTop = `${-100 - recede * 100}vh`
         const radius = recede * 45
         location1.style.borderBottomLeftRadius = `${radius}vw`
         location1.style.borderBottomRightRadius = `${radius}vw`
+
+        // Title, потом (с нахлёстом) картинки проявляются из
+        // непрозрачности, пока Location1 уезжает — линейно по скроллу, без
+        // ease (тот же приём и то же обоснование, что у Intro-title/-logo/
+        // -bottom-wrap в IntroSection.tsx).
+        title.style.opacity = String(
+          windowProgress(recedeProgress, TITLE_FADE_WINDOW),
+        )
+        const imagesFadeT = windowProgress(recedeProgress, IMAGES_FADE_WINDOW)
+        images.forEach((img) => {
+          if (img) img.style.opacity = String(imagesFadeT)
+        })
 
         const reveal = clamp((p - PHASE_BOUNDARY) / (1 - PHASE_BOUNDARY))
 
@@ -180,11 +223,15 @@ export default function CliffSection() {
       location1.style.marginTop = ''
       location1.style.borderBottomLeftRadius = ''
       location1.style.borderBottomRightRadius = ''
+      title.style.opacity = ''
       title.style.transform = ''
       subTitle.style.transform = ''
       descriptionWrap.style.transform = ''
       images.forEach((img) => {
-        if (img) img.style.transform = ''
+        if (img) {
+          img.style.opacity = ''
+          img.style.transform = ''
+        }
       })
     }
   }, [])
@@ -198,7 +245,7 @@ export default function CliffSection() {
     >
       <h2
         ref={titleRef}
-        className="Cliff-title pointer-events-none absolute inset-0 z-1 flex items-center justify-center whitespace-nowrap font-manrope text-[1.875rem] font-semibold tracking-[-0.04em] text-dark md:text-[3.375rem] lg:text-[8.375rem] lg:tracking-[-0.06em]"
+        className="Cliff-title pointer-events-none absolute inset-0 z-1 flex items-center justify-center whitespace-nowrap font-manrope text-[1.875rem] font-semibold tracking-[-0.04em] text-dark opacity-0 md:text-[3.375rem] lg:text-[8.375rem] lg:tracking-[-0.06em]"
       >
         The Cliff Villa
       </h2>
@@ -219,7 +266,7 @@ export default function CliffSection() {
         <div className="Cliff-img-wrap relative mt-[23rem] mb-[26rem] h-35.5 w-42.5 shrink-0 md:mt-[26rem] md:mb-[32rem] md:h-50 md:w-60 lg:m-0 lg:h-125 lg:w-150">
           <div
             ref={setImgRef(0)}
-            className="Cliff-img-1 absolute left-[-8.0625rem] top-[calc(50%-21.78125rem)] md:left-[-17.625rem] md:top-[calc(50%-24.75rem)] lg:left-[-45.1875rem] lg:top-[calc(50%-20.625rem)]"
+            className="Cliff-img-1 absolute left-[-8.0625rem] top-[calc(50%-21.78125rem)] opacity-0 md:left-[-17.625rem] md:top-[calc(50%-24.75rem)] lg:left-[-45.1875rem] lg:top-[calc(50%-20.625rem)]"
           >
             <div
               className={`-translate-y-1/2 h-[7.1875rem] w-[11.375rem] md:h-[11.875rem] md:w-[18.75rem] lg:h-[23.75rem] lg:w-[37.5rem] ${IMAGE_RADIUS}`}
@@ -235,7 +282,7 @@ export default function CliffSection() {
 
           <div
             ref={setImgRef(1)}
-            className="Cliff-img-2 absolute right-[-6.1875rem] top-[calc(50%-16.3125rem)] md:right-auto md:left-[calc(50%+18.9375rem)] md:top-[calc(50%-17.9375rem)] lg:left-[calc(50%+37.5rem)] lg:top-[calc(50%-30.625rem)]"
+            className="Cliff-img-2 absolute right-[-6.1875rem] top-[calc(50%-16.3125rem)] opacity-0 md:right-auto md:left-[calc(50%+18.9375rem)] md:top-[calc(50%-17.9375rem)] lg:left-[calc(50%+37.5rem)] lg:top-[calc(50%-30.625rem)]"
           >
             <div
               className={`-translate-y-1/2 h-[9.375rem] w-[7.5rem] md:-translate-x-1/2 md:h-[15.625rem] md:w-[12.5rem] lg:-translate-x-1/2 lg:h-[31.25rem] lg:w-[25rem] ${IMAGE_RADIUS}`}
@@ -251,7 +298,7 @@ export default function CliffSection() {
 
           <div
             ref={setImgRef(2)}
-            className="Cliff-img-3 absolute left-[-8.3125rem] top-[calc(50%+4.6875rem)] md:left-[-20.1875rem] md:top-[calc(50%+6.125rem)] lg:left-[-53.75rem] lg:top-[calc(50%+15rem)]"
+            className="Cliff-img-3 absolute left-[-8.3125rem] top-[calc(50%+4.6875rem)] opacity-0 md:left-[-20.1875rem] md:top-[calc(50%+6.125rem)] lg:left-[-53.75rem] lg:top-[calc(50%+15rem)]"
           >
             <div
               className={`-translate-y-1/2 h-[8.25rem] w-[6.375rem] md:h-[13.75rem] md:w-[10.625rem] lg:h-[27.5rem] lg:w-[21.25rem] ${IMAGE_RADIUS}`}
@@ -267,7 +314,7 @@ export default function CliffSection() {
 
           <div
             ref={setImgRef(3)}
-            className="Cliff-img-4 absolute left-[11.875rem] top-[calc(50%+10.78125rem)] md:left-[23.3125rem] md:top-[calc(50%+14.1875rem)] lg:left-[56.25rem] lg:top-[calc(50%+18.75rem)]"
+            className="Cliff-img-4 absolute left-[11.875rem] top-[calc(50%+10.78125rem)] opacity-0 md:left-[23.3125rem] md:top-[calc(50%+14.1875rem)] lg:left-[56.25rem] lg:top-[calc(50%+18.75rem)]"
           >
             <div
               className={`-translate-y-1/2 h-[8.0625rem] w-[6.25rem] md:h-[13.75rem] md:w-[10.625rem] lg:h-[27.5rem] lg:w-[21.25rem] ${IMAGE_RADIUS}`}
@@ -283,7 +330,7 @@ export default function CliffSection() {
 
           <div
             ref={setImgRef(4)}
-            className="Cliff-img-5 absolute left-[calc(50%-3rem)] top-[calc(50%+23.9375rem)] md:left-[calc(50%-3.875rem)] md:top-[calc(50%+28.3125rem)] lg:left-[calc(50%-8.75rem)] lg:top-[calc(50%+30.625rem)]"
+            className="Cliff-img-5 absolute left-[calc(50%-3rem)] top-[calc(50%+23.9375rem)] opacity-0 md:left-[calc(50%-3.875rem)] md:top-[calc(50%+28.3125rem)] lg:left-[calc(50%-8.75rem)] lg:top-[calc(50%+30.625rem)]"
           >
             <div
               className={`-translate-x-1/2 -translate-y-1/2 h-[9.375rem] w-[7.5rem] md:h-[15.625rem] md:w-[12.5rem] lg:h-[31.25rem] lg:w-[25rem] ${IMAGE_RADIUS}`}
