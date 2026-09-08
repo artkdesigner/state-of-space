@@ -9,12 +9,20 @@ import { getLenis, initSmoothScroll } from './lib/scroll'
  * тот же приём (overflow: hidden + lenis.stop()), что и в BookingPopup/
  * NavMenu для модалок. При prefers-reduced-motion интро показывается
  * сразу целиком (см. useLayoutEffect в HeroSection/NavBar), блокировать
- * скролл незачем. */
+ * скролл незачем.
+ *
+ * Та же логика (HeroSection/NavBar) всегда проигрывает интро с нуля, не
+ * глядя на текущий скролл — рассчитана на обычный заход на сайт (scrollY
+ * 0). Если страницу перезагрузили уже проскроллив больше 1 вьюпорта
+ * внутри Hero (браузер восстановил позицию скролла, см. scroll
+ * restoration), блокировать скролл ради интро, которую пользователь и не
+ * увидит (Hero-img/текст уже вне экрана), незачем — так же пропускаем
+ * блокировку, как и при reduceMotion(). */
 function App() {
   useEffect(() => {
     const cleanupScroll = initSmoothScroll()
 
-    if (reduceMotion()) {
+    if (reduceMotion() || window.scrollY > window.innerHeight) {
       return cleanupScroll
     }
 

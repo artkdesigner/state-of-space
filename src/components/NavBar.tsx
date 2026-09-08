@@ -19,11 +19,16 @@ export function NavLogo({ className }: { className?: string }) {
 const LEFT_LINKS = ['Experience', 'Spaces', 'About']
 const RIGHT_LINKS = ['Blog', 'Contact', 'Book now']
 
-/** Тема навбара по секции, под которой он сейчас проходит. `intro`
- * сюда не входит — переход hero→intro скролл-driven (см. HeroSection),
- * тему на этом участке ставит `setNavTheme`, не этот наблюдатель. */
+/** Тема навбара по секции, под которой он сейчас проходит. Сам переход
+ * hero→intro (пока Hero-оверлей ещё разворачивается) — скролл-driven, ту
+ * часть ставит `setNavTheme` из HeroSection.tsx, не этот наблюдатель;
+ * `intro` здесь — лишь подстраховка на момент, когда Intro-wrap уже
+ * коснулась верха экрана (та же тема, что и целевая у HeroSection к концу
+ * её собственного unwind, но не завязанная на то, что тот триггер
+ * действительно успел отработать). */
 const SECTION_THEMES: { id: string; theme: 'dark' | 'light' }[] = [
   { id: 'hero', theme: 'dark' },
+  { id: 'intro', theme: 'light' },
   { id: 'location1', theme: 'light' },
   { id: 'cliff', theme: 'dark' },
   { id: 'qualities', theme: 'dark' },
