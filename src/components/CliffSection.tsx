@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { reduceMotion } from '../lib/anim'
-import { CLIFF_PIN_VH, location1PinEnd } from '../lib/scrollChain'
+import { CLIFF_PIN_VH, location1SliderEnd } from '../lib/scrollChain'
 import cliff1 from '../assets/cliff-1.webp'
 import cliff2 from '../assets/cliff-2.webp'
 import cliff3 from '../assets/cliff-3.webp'
@@ -51,8 +51,8 @@ export default function CliffSection() {
   /* Скролл-хореография Cliff — один общий pin на две фазы (см. покадровые
    * сцены в Figma):
    * 1) 0 → PHASE_BOUNDARY — наезд Location1 (узлы "Location1 to Cliff
-   *    1..5"): Location1 уезжает вверх через margin-top (перенесено сюда
-   *    из Location1Section.tsx, т.к. пин стоит на Cliff).
+   *    1..5"): Location1 уезжает вверх через margin-top (см. onUpdate
+   *    ниже).
    * 2) PHASE_BOUNDARY → 1 — внутренняя хореография Cliff (узлы
    *    "Cliff 1..5"): Cliff-title уходит вверх и пропадает за кадром;
    *    Cliff-sub-title/-description въезжают с боков (изначально за
@@ -62,10 +62,23 @@ export default function CliffSection() {
    * Один тригger вместо двух отдельных пинов на одном элементе — GSAP не
    * умеет чисто стекать два независимых pin:true на одном и том же узле.
    *
-   * `start` — точная позиция скролла (конец пина Location1-слайдера, см.
-   * src/lib/scrollChain.ts), а не 'top top': при 'top top' и быстром
-   * скролле (флик) секция телепортируется на нужную позицию вместо
-   * плавного пина — см. подробный комментарий в IntroSection.tsx. */
+   * `start` — точная позиция скролла (`location1SliderEnd`, см.
+   * src/lib/scrollChain.ts — конец СОБСТВЕННОГО пина Location1-слайдера,
+   * включая его 1 лишний вьюпорт заморозки, см. Location1Section.tsx), а
+   * не 'top top': при 'top top' и быстром скролле (флик) секция
+   * телепортируется на нужную позицию вместо плавного пина — см.
+   * подробный комментарий в IntroSection.tsx. Сама секция при этом
+   * сдвинута статическим `margin-top: -100vh` (см. className ниже) — тот
+   * же приём, что подтягивает Intro/Location1/Presence (см.
+   * HeroSection.tsx/IntroSection.tsx/scrollChain.ts): без него пришлось
+   * бы пинить Cliff на её ИСТИННОЙ (на 1 вьюпорт позже, `location1PinEnd`)
+   * натуральной позиции, а Location1 к тому моменту уже успевала бы
+   * целый вьюпорт неуправляемо укатиться прочь (её собственный пин
+   * отпускает ровно на `location1SliderEnd`, см. Location1Section.tsx) —
+   * то пустой экран, то рывок на границе. С margin'ом натуральная позиция
+   * Cliff (`location1SliderEnd`) совпадает РОВНО с тем моментом, когда
+   * Location1 отпускает свой пин — margin-cancellation ниже подхватывает
+   * управление ею без единого кадра простоя. */
   useEffect(() => {
     const section = sectionRef.current
     const location1 = document.getElementById('location1')
@@ -115,8 +128,8 @@ export default function CliffSection() {
 
     const trigger = ScrollTrigger.create({
       trigger: section,
-      start: location1PinEnd,
-      end: () => location1PinEnd() + window.innerHeight * TOTAL_VH,
+      start: location1SliderEnd,
+      end: () => location1SliderEnd() + window.innerHeight * TOTAL_VH,
       pin: true,
       scrub: true,
       /* Раньше здесь вызывался ScrollTrigger.refresh() в onLeave (и
@@ -181,6 +194,7 @@ export default function CliffSection() {
       id="cliff"
       ref={sectionRef}
       className="Cliff relative flex h-dvh flex-col items-center justify-center overflow-hidden bg-light px-2.5 py-30 lg:px-5"
+      style={{ marginTop: '-100vh' }}
     >
       <h2
         ref={titleRef}

@@ -3,7 +3,11 @@ import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import LocationCard from './LocationCard'
 import LocationSlider from './LocationSlider'
-import { LOCATION1_PIN_VH, location1PinStart } from '../lib/scrollChain'
+import {
+  LOCATION1_PIN_VH,
+  location1PinStart,
+  location1SliderEnd,
+} from '../lib/scrollChain'
 import baseImg from '../assets/location1-slider-base.webp'
 import slide1 from '../assets/location1-slide-1.webp'
 import slide2 from '../assets/location1-slide-2.webp'
@@ -35,7 +39,6 @@ const CARD_FADE_IN = 0.2
 
 /** Smoothstep — тот же диапазон, что и линейная интерполяция, но мягче на краях. */
 const smoothstep = (t: number) => t * t * (3 - 2 * t)
-const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3)
 
 type Location1SectionProps = {
   onBookNow: () => void
@@ -52,17 +55,36 @@ export default function Location1Section({ onBookNow }: Location1SectionProps) {
     slideEls.current[index] = el
   }
 
-  /* Слайдер-кроссфейд Location1 (см. ниже) заодно подтягивает Cliff
-   * вверх на -100vh (margin-top 0 → -100vh, полностью скрыто под
-   * непрозрачным запиненным Location1 — не видно до самого перехода).
-   * Без этого Cliff-пин (CliffSection.tsx, переход Location1 → Cliff)
-   * включался бы только на СВОЁМ natural 'top top', а Location1 к тому
-   * моменту уже почти целиком уезжает обычным скроллом (он ровно 1 экран
-   * высотой) — эта JS margin-cancellation (не тот же приём, что у самого
-   * Location1 ниже) не тронута, наезд Location1 → Cliff остался старым.
+  /* Слайдер-кроссфейд Location1 (SLIDE_COUNT вьюпортов) + ещё 1 лишний
+   * вьюпорт заморозки сверху (тот же приём, что у Hero-wrap/Intro-wrap/
+   * capacityTrigger — см. HeroSection.tsx/IntroSection.tsx/
+   * AboveSection.tsx): пин длится (1 + SLIDE_COUNT) вьюпортов и кончается
+   * РОВНО на `location1SliderEnd` — а не на SLIDE_COUNT, как раньше. Без
+   * этой заморозки Location1, отпустив пин на SLIDE_COUNT, целый
+   * следующий вьюпорт естественно (никем не управляемо) уезжала прочь
+   * ДО того, как Cliff-пин (start: `location1PinEnd`, см.
+   * CliffSection.tsx и scrollChain.ts — эта натуральная позиция Cliff ещё
+   * на 1 вьюпорт ПОЗЖЕ `location1SliderEnd`, ровно на собственную высоту
+   * Location1, которую GSAP-пин добавляет к pin-спейсеру сам) вообще
+   * успевал включиться — на границе было видно то пустой экран, то рывок
+   * при активации пина Cliff. Прогресс для
+   * кроссфейда/индекса/карточки ниже пересчитан (`progress`) так, чтобы
+   * он доигрывал до 1 ровно к концу "настоящих" SLIDE_COUNT вьюпортов и
+   * дальше держался (не растягивался на весь новый диапазон) — тот же
+   * пересчёт, что у `grow` в capacityTrigger (AboveSection.tsx).
    * Location-карточка (LocationCard) проявляется из opacity: 0 в первые
-   * CARD_FADE_IN прогресса — именно этого пина, который стартует ровно
-   * когда секция встала на своё место, а не раньше во время наезда снизу.
+   * CARD_FADE_IN этого пересчитанного прогресса — то есть тоже
+   * укладывается в "настоящие" SLIDE_COUNT вьюпорта, а не в добавленный
+   * вьюпорт заморозки. Сам наезд Location1 на Cliff (margin-top на
+   * `#location1`, снятие Location1 «со сцены») теперь целиком в
+   * CliffSection.tsx — раньше здесь была ДУБЛИРУЮЩАЯ версия (тянула
+   * `cliff.style.marginTop`), оставшаяся от более старой архитектуры, где
+   * Cliff ещё не имел собственного `start: location1PinEnd`; она не была
+   * убрана при миграции и создавала как раз тот баг, который чинит этот
+   * коммит — Cliff преждевременно подтягивался вверх ещё во время
+   * слайдера, а затем никем не управляемый "дрейфовал" до включения
+   * своего настоящего пина, отчего в момент включения он резко
+   * телепортировался на нужную позицию.
    *
    * `start` — точная позиция скролла (`location1PinStart`, см.
    * src/lib/scrollChain.ts), а не 'top top': при 'top top' и быстром
@@ -95,7 +117,6 @@ export default function Location1Section({ onBookNow }: Location1SectionProps) {
   useEffect(() => {
     const section = sectionRef.current
     const slider = sliderRef.current
-    const cliff = document.getElementById('cliff')
     const card = cardRef.current
     if (!section || !slider) return
 
@@ -114,7 +135,7 @@ export default function Location1Section({ onBookNow }: Location1SectionProps) {
     const trigger = ScrollTrigger.create({
       trigger: section,
       start: location1PinStart,
-      end: () => location1PinStart() + window.innerHeight * SLIDE_COUNT,
+      end: location1SliderEnd,
       pin: true,
       scrub: true,
       /* Раньше здесь вызывался ScrollTrigger.refresh() в onLeave (и
@@ -126,7 +147,15 @@ export default function Location1Section({ onBookNow }: Location1SectionProps) {
        * давало скачок-телепорт (см. HeroSection.tsx и видео в переписке с
        * пользователем 2026-09-08). */
       onUpdate: (self) => {
-        const progress = self.progress
+        // Пересчёт: сырой self.progress идёт по (1 + SLIDE_COUNT)
+        // вьюпортам пина, а кроссфейд/индекс/карточка должны доиграть за
+        // "настоящие" SLIDE_COUNT и дальше держаться (см. комментарий
+        // выше и grow в capacityTrigger, AboveSection.tsx).
+        const progress = gsap.utils.clamp(
+          0,
+          1,
+          (self.progress * (1 + SLIDE_COUNT)) / SLIDE_COUNT,
+        )
 
         // Верхний слайд i плавно гаснет вокруг границы (i+1)/SLIDE_COUNT,
         // открывая слайд i+1, лежащий под ним в стеке.
@@ -145,7 +174,6 @@ export default function Location1Section({ onBookNow }: Location1SectionProps) {
         )
         setActiveIndex((prev) => (prev === index ? prev : index))
 
-        if (cliff) cliff.style.marginTop = `${-easeOutCubic(progress) * 100}vh`
         // Линейно, без ease — так проявление ощущается напрямую
         // привязанным к скроллу, а не рывком в начале и подвисанием в
         // конце (задняя часть карточки — backdrop-blur, на нём это
@@ -162,7 +190,6 @@ export default function Location1Section({ onBookNow }: Location1SectionProps) {
       riseTrigger.kill()
       trigger.kill()
       slider.style.borderRadius = ''
-      if (cliff) cliff.style.marginTop = ''
       if (card) card.style.opacity = ''
     }
   }, [])

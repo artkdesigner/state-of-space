@@ -39,6 +39,14 @@
  * включился — это просто обычное document-flow позиционирование самого
  * `<section>`, на которое статический `margin-top` действует точно так
  * же, как на любой другой блочный элемент.
+ *
+ * `location1PinEnd`/`cliffPinEnd` учитывают лишний вьюпорт (или два) за
+ * СОБСТВЕННУЮ высоту запиненного элемента + его заморозку (см. комментарий
+ * у `location1PinEnd` ниже) — без этого граница Location1 → Cliff была то
+ * пустым белым экраном, то рывком при активации пина Cliff: GSAP
+ * `pin: true` резервирует "своя высота + дистанция пина", а не только
+ * дистанцию, в отличие от sticky-обёрток Hero/Intro выше, где высоту
+ * резервирует явно заданный CSS `height` на wrap-диве.
  */
 
 /** Hero: рост + распрямление Hero-img, пока Hero-секция залипает вверху
@@ -84,7 +92,56 @@ export const introPinEnd = () =>
  * последний вьюпорт intro-wrap, пока Location1 её закрывает). */
 export const location1PinStart = () =>
   heroPinEnd() + window.innerHeight * INTRO_PIN_VH
+/** РАВНО `end` собственного GSAP-пина Location1 (Location1Section.tsx) —
+ * `+ (1 + LOCATION1_PIN_VH)`, а не просто `+ LOCATION1_PIN_VH`: пин
+ * держит Location1 приклеенной ЕЩЁ 1 лишний вьюпорт сверх реальных
+ * LOCATION1_PIN_VH вьюпортов слайдера (тот же приём заморозки, что у
+ * Hero-wrap/Intro-wrap/capacityTrigger — см. HeroSection.tsx/
+ * IntroSection.tsx/AboveSection.tsx) — без него слайдер отпускал пин
+ * через LOCATION1_PIN_VH вьюпортов, и Location1 ЕЩЁ 1 вьюпорт
+ * естественно, никем не управляемо уезжала прочь ДО того, как успевал
+ * включиться Cliff-пин — на границе было то пусто, то рывок при
+ * активации.
+ *
+ * ВАЖНО: это НЕ то же самое, что натуральная (пост-пин) позиция Cliff —
+ * см. `location1PinEnd` ниже, у GSAP `pin: true` это ДВЕ РАЗНЫЕ величины,
+ * отличающиеся ровно на собственную высоту запиненного элемента (в
+ * отличие от sticky-обёрток Hero/Intro выше, где высоту резервирует явно
+ * заданный CSS `height` на wrap-диве, а не сам пин). */
+export const location1SliderEnd = () =>
+  location1PinStart() + window.innerHeight * (1 + LOCATION1_PIN_VH)
+/** Истинная (натуральная, ДО того как её схватит СОБСТВЕННЫЙ пин)
+ * позиция Cliff — `location1SliderEnd() + 1 вьюпорт`, НЕ просто
+ * `location1SliderEnd()`: GSAP `pin: true` создаёт pin-спейсер высотой
+ * "собственная высота запиненного элемента + дистанция пина
+ * (`location1SliderEnd() - location1PinStart()`)", а не только
+ * дистанцию — Location1 сама `h-dvh` (1 вьюпорт), и эта её собственная
+ * высота идёт СВЕРХ дистанции пина, добавляя ещё один вьюпорт к тому,
+ * где физически заканчивается pin-спейсер (= где начинается Cliff).
+ * Путать `location1SliderEnd` (raw `end` триггера) и `location1PinEnd`
+ * (натуральная позиция СЛЕДУЮЩЕГО элемента) — конкретно тот баг, который
+ * чинил этот коммит: GSAP при первом (ещё "pristine") создании пина
+ * ставит ему `top` по фактической natural-позиции элемента, а не по
+ * формуле, и любой разрыв между тем, что формула считает истиной, и тем,
+ * что реально резервирует pin-спейсер, читался как пустой экран/скачок
+ * на границе Location1 → Cliff (см. `feedback_gsap_scrolltrigger_
+ * pin_stale_cache` в памяти — тот же класс "pristine vs formula" багов,
+ * что уже описан там). */
 export const location1PinEnd = () =>
-  location1PinStart() + window.innerHeight * LOCATION1_PIN_VH
+  location1SliderEnd() + window.innerHeight
+/** БЕЗ лишнего "+1", в отличие от `location1PinEnd` — здесь он не нужен:
+ * Cliff (CliffSection.tsx) сама подтянута статическим `margin-top: -100vh`
+ * (тот же приём, что у Intro/Location1/Presence — см. HeroSection.tsx/
+ * IntroSection.tsx/scrollChain.ts выше), и её пин стартует на
+ * `location1SliderEnd` (= `location1PinEnd() - 1 вьюпорт`), а не на своей
+ * истинной (немного более поздней) натуральной позиции — та же
+ * компенсация margin'ом уже "съедает" собственную высоту Cliff, которую
+ * иначе пришлось бы прибавлять отдельно (ровно как `location1PinStart`
+ * выше не добавляет отдельный "+1" за высоту Intro — Intro тоже на
+ * margin'е). Сейчас этой формулой никто не пользуется (следующий шаг
+ * цепочки, AboveSection, берёт свою стартовую позицию через
+ * getBoundingClientRect, а не отсюда — см. комментарий в
+ * AboveSection.tsx), но она должна остаться верной на случай, если
+ * кто-то в будущем возьмёт её как источник истины. */
 export const cliffPinEnd = () =>
   location1PinEnd() + window.innerHeight * CLIFF_PIN_VH
