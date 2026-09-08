@@ -90,12 +90,14 @@ export default function IntroSection() {
       end: () => heroPinEnd() + window.innerHeight * PIN_VH,
       pin: true,
       scrub: true,
-      onLeave: () => ScrollTrigger.refresh(),
-      /* Симметрично onLeave — иначе при скролле назад-и-снова-вперёд без
-       * выхода из пина целиком refresh() вызывается только на пересечении
-       * конца пина вперёд, никогда на возврате в него назад — см.
-       * аналогичный комментарий в HeroSection.tsx. */
-      onEnterBack: () => ScrollTrigger.refresh(),
+      /* Раньше здесь вызывался ScrollTrigger.refresh() в onLeave (и
+       * симметрично в onEnterBack) — начало пина Location1 берётся по
+       * чистой формуле (`introPinEnd`, см. scrollChain.ts), пересчитывать
+       * тут нечего. refresh() при смене размеров pin-спейсеров может САМ
+       * подвинуть scroll(), чтобы сохранить прогресс активного пина — при
+       * быстром скролле назад-вперёд прямо на границе Hero/Intro это и
+       * давало скачок-телепорт (см. HeroSection.tsx и видео в переписке с
+       * пользователем 2026-09-08). */
       onUpdate: (self) => {
         const revealProgress = clamp(self.progress / REVEAL_FRACTION)
 

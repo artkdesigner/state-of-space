@@ -203,11 +203,6 @@ export default function AboveSection() {
       pin: true,
       scrub: true,
       onLeave: () => ScrollTrigger.refresh(),
-      /* Симметрично onLeave — иначе при скролле назад-и-снова-вперёд без
-       * выхода из пина целиком refresh() вызывается только на пересечении
-       * конца пина вперёд, никогда на возврате в него назад — см.
-       * аналогичный комментарий в HeroSection.tsx. */
-      onEnterBack: () => ScrollTrigger.refresh(),
       onUpdate: (self) => {
         const p = self.progress
 
@@ -304,11 +299,6 @@ export default function AboveSection() {
       pin: true,
       scrub: true,
       onLeave: () => ScrollTrigger.refresh(),
-      /* Симметрично onLeave — иначе при скролле назад-и-снова-вперёд без
-       * выхода из пина целиком refresh() вызывается только на пересечении
-       * конца пина вперёд, никогда на возврате в него назад — см.
-       * аналогичный комментарий в HeroSection.tsx. */
-      onEnterBack: () => ScrollTrigger.refresh(),
       onUpdate: (self) => {
         const grow = self.progress
         capacity.style.opacity = String(grow)
