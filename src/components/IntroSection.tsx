@@ -2,27 +2,21 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useEffect, useRef } from 'react'
 import introLogo from '../assets/intro-logo.svg'
 import { reduceMotion } from '../lib/anim'
-import { INTRO_PIN_VH, heroPinEnd } from '../lib/scrollChain'
+import { INTRO_PIN_VH } from '../lib/scrollChain'
 
-/** Собственный пин Intro, в высотах вьюпорта — см. «Скролл-переход Intro
- * → Location1» ниже. Общий источник с HeroSection.tsx/Location1Section.tsx
- * (см. src/lib/scrollChain.ts). Наезд самого Intro поверх Hero сюда не
- * входит — это последняя фаза пина Hero (см. HeroSection.tsx), у Intro
- * здесь только его собственные reveal + rise. */
+/** Собственная (reveal) фаза Intro, в высотах вьюпорта, пока Intro
+ * приклеена вверху — см. «Скролл-переход Intro → Location1» ниже. Общий
+ * источник с HeroSection.tsx/Location1Section.tsx (см.
+ * src/lib/scrollChain.ts). Наезд самого Intro поверх Hero, и наезд
+ * Location1 поверх Intro сюда не входят — оба происходят бесплатно, за
+ * счёт собственной высоты обёрток (см. HeroSection.tsx и комментарий у
+ * Intro-pin-wrap ниже). */
 const PIN_VH = INTRO_PIN_VH
-/** Первая фаза пина: Intro-title/Intro-logo/Intro-bottom-wrap появляются
- * через slide-up + opacity. */
-const REVEAL_PIN_VH = 1
-/** Вторая фаза пина: Intro стоит на месте, Location1 наезжает поверх. */
-const RISE_PIN_VH = 1
-/** Доля общего прогресса пина (0..1), на которой заканчивается reveal и
- * начинается наезд Location1. */
-const REVEAL_FRACTION = REVEAL_PIN_VH / (REVEAL_PIN_VH + RISE_PIN_VH)
 /** Смещение по Y для слайд-ап эффекта, px — как у убранного отсюда
  * <Reveal distance={24}> (дефолт компонента, см. src/lib/anim.tsx). */
 const REVEAL_DISTANCE = 24
-/** Окна reveal-прогресса (0..1 внутри REVEAL_PIN_VH) для каждого элемента —
- * с нахлёстом, чтобы получился каскад, а не одновременное появление всех
+/** Окна reveal-прогресса (0..1 внутри PIN_VH) для каждого элемента — с
+ * нахлёстом, чтобы получился каскад, а не одновременное появление всех
  * трёх сразу. Порядок и нахлёст сохраняют прежнюю задумку (title, потом
  * logo, потом bottom-wrap — раньше это было пороками
  * IntersectionObserver 0.5 / 0.75 / 1 у <Reveal>). */
@@ -35,44 +29,40 @@ const windowProgress = (p: number, [start, end]: [number, number]) =>
   clamp((p - start) / (end - start))
 
 export default function IntroSection() {
+  const wrapRef = useRef<HTMLDivElement>(null)
   const sectionRef = useRef<HTMLElement>(null)
   const titleRef = useRef<HTMLHeadingElement>(null)
   const logoRef = useRef<HTMLImageElement>(null)
   const bottomWrapRef = useRef<HTMLDivElement>(null)
 
-  /* Скролл-переход Intro → Location1 (см. покадровую сцену в Figma) —
-   * двухфазный пин на REVEAL_PIN_VH + RISE_PIN_VH (наезд самого Intro
-   * поверх Hero — это ещё более ранняя фаза, целиком внутри пина Hero,
-   * см. комментарий у PIN_VH выше):
-   * Фаза 1 (первые REVEAL_PIN_VH вьюпортов, REVEAL_FRACTION общего
-   * прогресса): Intro-title, Intro-logo, Intro-bottom-wrap появляются
-   * через slide-up + opacity — с нахлёстом по TITLE_WINDOW/LOGO_WINDOW/
-   * BOTTOM_WRAP_WINDOW, линейно по скроллу (без easing — как и в Hero,
-   * нелинейный easing вместе с отдельными окнами создаёт то же ощущение
-   * «стоп-кадр → резкий скачок», которое уже чинили там). Location1 при
-   * этом не двигается.
-   * Фаза 2 (последние RISE_PIN_VH вьюпортов): Intro остаётся статичным,
-   * Location1 наезжает снизу через margin-top (0 → -100vh) с закруглённым
-   * верхним краем, который линейно распрямляется вместе с подъёмом (тот
-   * же приём, что и рост/распрямление Hero-img в HeroSection — раньше
-   * здесь тоже был easeOutCubic + отложенный порог RADIUS_START_FRACTION,
-   * из-за которого распрямление сжималось в короткий рывок в конце).
+  /* Скролл-переход внутри Intro (см. покадровую сцену в Figma). Intro —
+   * `position: sticky; top: 0` внутри обёртки Intro-pin-wrap высотой
+   * (1 + PIN_VH) вьюпортов — тот же приём, что и у Hero (см.
+   * HeroSection.tsx): пока идёт скролл через PIN_VH "лишних" вьюпортов
+   * обёртки, Intro остаётся приклеенной к верху экрана, и в это время
+   * Intro-title/Intro-logo/Intro-bottom-wrap появляются через slide-up +
+   * opacity — с нахлёстом по TITLE_WINDOW/LOGO_WINDOW/BOTTOM_WRAP_WINDOW,
+   * линейно по скроллу (без easing — нелинейный easing вместе с
+   * отдельными окнами создаёт ощущение «стоп-кадр → резкий скачок»).
+   * Как только скролл проходит PIN_VH вьюпортов, Intro отклеивается, и
+   * последний "свой" вьюпорт обёртки уходит на то, чтобы Intro естественно
+   * проскроллила прочь вверх, а Location1 (следующий сиблинг, с более
+   * высоким z-index) в это же время естественно наезжает на неё снизу —
+   * без единой строчки JS для самого наезда (раньше это делал
+   * margin-cancellation в onUpdate). Наезд самого Intro поверх Hero —
+   * симметрично устроенная, но ещё более ранняя фаза, целиком внутри
+   * обёртки Hero (см. HeroSection.tsx).
    *
-   * `start` — не 'top top', а точная позиция скролла (конец пина Hero,
-   * см. src/lib/scrollChain.ts), а не натуральная позиция Intro. При
-   * 'top top' GSAP кэширует стартовую позицию при монтировании (margin
-   * секции-триггера ещё 0) и пересчитывает её через
-   * ScrollTrigger.refresh() в onLeave предыдущего шага — но при быстром
-   * скролле (флик) этот refresh иногда не успевает сработать до того, как
-   * скролл уже проехал границу, и секция «телепортируется» вместо
-   * плавного пина. Абсолютная позиция не зависит от кэша вообще. */
+   * ScrollTrigger здесь без `pin: true` — он не трогает position/pin-
+   * спейсеры вообще, только читает scroll и вызывает onUpdate, поэтому
+   * ScrollTrigger.refresh() ему для корректности не нужен (см. комментарий
+   * в scrollChain.ts). */
   useEffect(() => {
-    const section = sectionRef.current
+    const wrap = wrapRef.current
     const title = titleRef.current
     const logo = logoRef.current
     const bottomWrap = bottomWrapRef.current
-    const location1 = document.getElementById('location1')
-    if (!section || !title || !logo || !bottomWrap || !location1) return
+    if (!wrap || !title || !logo || !bottomWrap) return
 
     if (reduceMotion()) {
       title.style.opacity = '1'
@@ -85,21 +75,12 @@ export default function IntroSection() {
     }
 
     const trigger = ScrollTrigger.create({
-      trigger: section,
-      start: heroPinEnd,
-      end: () => heroPinEnd() + window.innerHeight * PIN_VH,
-      pin: true,
+      trigger: wrap,
+      start: 'top top',
+      end: () => '+=' + window.innerHeight * PIN_VH,
       scrub: true,
-      /* Раньше здесь вызывался ScrollTrigger.refresh() в onLeave (и
-       * симметрично в onEnterBack) — начало пина Location1 берётся по
-       * чистой формуле (`introPinEnd`, см. scrollChain.ts), пересчитывать
-       * тут нечего. refresh() при смене размеров pin-спейсеров может САМ
-       * подвинуть scroll(), чтобы сохранить прогресс активного пина — при
-       * быстром скролле назад-вперёд прямо на границе Hero/Intro это и
-       * давало скачок-телепорт (см. HeroSection.tsx и видео в переписке с
-       * пользователем 2026-09-08). */
       onUpdate: (self) => {
-        const revealProgress = clamp(self.progress / REVEAL_FRACTION)
+        const revealProgress = self.progress
 
         const titleT = windowProgress(revealProgress, TITLE_WINDOW)
         title.style.opacity = String(titleT)
@@ -112,15 +93,6 @@ export default function IntroSection() {
         const bottomWrapT = windowProgress(revealProgress, BOTTOM_WRAP_WINDOW)
         bottomWrap.style.opacity = String(bottomWrapT)
         bottomWrap.style.transform = `translateY(${(1 - bottomWrapT) * REVEAL_DISTANCE}px)`
-
-        const riseProgress = clamp(
-          (self.progress - REVEAL_FRACTION) / (1 - REVEAL_FRACTION),
-        )
-        location1.style.zIndex = '46'
-        location1.style.marginTop = `${-riseProgress * 100}vh`
-        const radius = (1 - riseProgress) * 45
-        location1.style.borderTopLeftRadius = `${radius}vw`
-        location1.style.borderTopRightRadius = `${radius}vw`
       },
     })
 
@@ -132,52 +104,54 @@ export default function IntroSection() {
       logo.style.transform = ''
       bottomWrap.style.opacity = ''
       bottomWrap.style.transform = ''
-      location1.style.zIndex = ''
-      location1.style.marginTop = ''
-      location1.style.borderTopLeftRadius = ''
-      location1.style.borderTopRightRadius = ''
     }
   }, [])
 
   return (
-    <section
-      id="intro"
-      ref={sectionRef}
-      className="Intro relative flex min-h-dvh flex-col items-center justify-between bg-brown px-2.5 py-15 text-light lg:px-5 lg:py-30"
+    <div
+      ref={wrapRef}
+      className="Intro-pin-wrap relative z-[45]"
+      style={{ height: `${(1 + PIN_VH) * 100}vh` }}
     >
-      <h2
-        ref={titleRef}
-        className="Intro-title mx-auto max-w-[94rem] text-center font-manrope text-[1.25rem] font-semibold leading-[1.2] tracking-[-0.03em] opacity-0 md:text-[1.875rem] lg:text-[3.75rem]"
+      <section
+        id="intro"
+        ref={sectionRef}
+        className="Intro sticky top-0 flex h-dvh flex-col items-center justify-between overflow-hidden bg-brown px-2.5 py-15 text-light lg:px-5 lg:py-30"
       >
-        Live a unique experience inspired by the natural rhythm of the ocean.
-        An experience where the important thing is not a change of scenery,
-        but the inner sensation.
-      </h2>
+        <h2
+          ref={titleRef}
+          className="Intro-title mx-auto max-w-[94rem] text-center font-manrope text-[1.25rem] font-semibold leading-[1.2] tracking-[-0.03em] opacity-0 md:text-[1.875rem] lg:text-[3.75rem]"
+        >
+          Live a unique experience inspired by the natural rhythm of the
+          ocean. An experience where the important thing is not a change of
+          scenery, but the inner sensation.
+        </h2>
 
-      <img
-        ref={logoRef}
-        src={introLogo}
-        alt="State of Space"
-        className="Intro-logo size-25 opacity-0"
-      />
+        <img
+          ref={logoRef}
+          src={introLogo}
+          alt="State of Space"
+          className="Intro-logo size-25 opacity-0"
+        />
 
-      <div
-        ref={bottomWrapRef}
-        className="Intro-bottom-wrap grid w-full grid-cols-1 items-start gap-5 font-manrope text-[0.875rem] font-medium leading-[1.3] tracking-[-0.01em] text-light/60 opacity-0 md:grid-cols-[10.75rem_1fr_10.75rem] lg:grid-cols-[1fr_37.75rem_1fr] lg:gap-0 lg:text-[1.125rem]"
-      >
-        <p className="Intro-bottom-title order-1 whitespace-nowrap text-center md:order-none md:text-left">
-          Ocean Space
-        </p>
-        <p className="Intro-bottom-sub order-3 text-center md:order-none">
-          Inspired by ocean landscapes and minimalist architecture, the
-          project examines how spatial design influences focus, perception,
-          and cognitive balance. Natural elements are used intentionally - to
-          simplify, slow down, and clarify experience.
-        </p>
-        <p className="Intro-bottom-year order-2 whitespace-nowrap text-center md:order-none md:text-right">
-          2026
-        </p>
-      </div>
-    </section>
+        <div
+          ref={bottomWrapRef}
+          className="Intro-bottom-wrap grid w-full grid-cols-1 items-start gap-5 font-manrope text-[0.875rem] font-medium leading-[1.3] tracking-[-0.01em] text-light/60 opacity-0 md:grid-cols-[10.75rem_1fr_10.75rem] lg:grid-cols-[1fr_37.75rem_1fr] lg:gap-0 lg:text-[1.125rem]"
+        >
+          <p className="Intro-bottom-title order-1 whitespace-nowrap text-center md:order-none md:text-left">
+            Ocean Space
+          </p>
+          <p className="Intro-bottom-sub order-3 text-center md:order-none">
+            Inspired by ocean landscapes and minimalist architecture, the
+            project examines how spatial design influences focus, perception,
+            and cognitive balance. Natural elements are used intentionally -
+            to simplify, slow down, and clarify experience.
+          </p>
+          <p className="Intro-bottom-year order-2 whitespace-nowrap text-center md:order-none md:text-right">
+            2026
+          </p>
+        </div>
+      </section>
+    </div>
   )
 }

@@ -131,7 +131,7 @@ export default function Location1Section({ onBookNow }: Location1SectionProps) {
     <section
       id="location1"
       ref={sectionRef}
-      className="Location1 relative isolate flex h-dvh w-full flex-col items-center justify-end overflow-hidden px-2.5 pb-2.5 lg:px-5 lg:pt-30 lg:pb-5"
+      className="Location1 relative isolate z-[46] flex h-dvh w-full flex-col items-center justify-end overflow-hidden px-2.5 pb-2.5 lg:px-5 lg:pt-30 lg:pb-5"
     >
       <LocationCard
         ref={cardRef}

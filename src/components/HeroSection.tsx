@@ -26,6 +26,7 @@ const DESKTOP_BREAKPOINT = 992
 const clamp = (v: number, min = 0, max = 1) => Math.min(max, Math.max(min, v))
 
 export default function HeroSection() {
+  const wrapRef = useRef<HTMLDivElement>(null)
   const sectionRef = useRef<HTMLElement>(null)
   const imgRef = useRef<HTMLSpanElement>(null)
   const zoomRef = useRef<HTMLSpanElement>(null)
@@ -86,38 +87,41 @@ export default function HeroSection() {
   }, [])
 
   /* Скролл-переход Hero → Intro (см. покадровую сцену «Hero to Intro» в
-   * Figma) — двухфазный пин на GROWTH_PIN_VH + UNWIND_PIN_VH:
+   * Figma). Hero-секция — `position: sticky; top: 0` внутри обёртки
+   * Hero-pin-wrap высотой (1 + PIN_VH) вьюпортов: пока идёт скролл через
+   * "лишние" PIN_VH вьюпортов обёртки, Hero остаётся приклеенной к верху
+   * экрана (нативное поведение browser'а, без GSAP pin-спейсеров) — и
+   * именно в это время играет анимация роста/распрямления. Как только
+   * скролл проходит все PIN_VH вьюпортов, Hero отклеивается и последний
+   * "свой" вьюпорт обёртки (её собственная высота) уходит на то, чтобы
+   * Hero естественно проскроллила прочь вверх, а Intro (следующий сиблинг,
+   * тоже `position: relative`/`sticky` и с более высоким z-index) в это же
+   * время естественно наезжает на неё снизу — без единой строчки JS для
+   * самого наезда (раньше это делал margin-cancellation в onUpdate, см.
+   * историю коммитов и scrollChain.ts).
+   *
+   * Прогресс (0..1 на PIN_VH вьюпортов, ПОКА Hero ещё приклеена) считается
+   * тем же ScrollTrigger, что и раньше, но без `pin: true` — он больше не
+   * трогает position/pin-спейсеры вообще, только читает scroll и вызывает
+   * onUpdate, так что ScrollTrigger.refresh() ему для корректности не
+   * нужен (см. комментарий в scrollChain.ts).
+   *
    * Фаза 1 (первые GROWTH_PIN_VH вьюпортов, GROWTH_FRACTION общего
    * прогресса): Hero-img растёт из центра до целевого диаметра — fixed-
    * оверлей поверх статичного Hero-img (не участвует в grid-layout,
    * поэтому рост не сдвигает Hero-text-left/right). Целевой диаметр — 100vw
-   * на Desktop (>= DESKTOP_BREAKPOINT), 100vh на Tablet/Mobile — по
-   * заданию продукта картинка должна долетать ровно до ширины экрана на
-   * Desktop и до высоты экрана на более узких брейкпоинтах, а не до
-   * max(vw, vh), как раньше. border-radius всю эту фазу остаётся 50%
-   * (полный круг). Рост диаметра — линейный по скроллу (без easing): с
-   * easeOutCubic диаметр долетал до цели уже на ~80% фазы, и последние
-   * ~20% скролла ничего не менялось — по ощущениям это выглядело как
-   * остановка перед последующим резким распрямлением, а не как плавный
-   * переход, привязанный к скроллу.
+   * на Desktop (>= DESKTOP_BREAKPOINT), 100vh на Tablet/Mobile. border-
+   * radius всю эту фазу остаётся 50% (полный круг). Рост диаметра —
+   * линейный по скроллу (без easing): с easeOutCubic диаметр долетал до
+   * цели уже на ~80% фазы, и последние ~20% скролла ничего не менялось —
+   * по ощущениям это выглядело как остановка перед последующим резким
+   * распрямлением, а не как плавный переход, привязанный к скроллу.
    * Фаза 2 (последние UNWIND_PIN_VH вьюпортов): диаметр больше не растёт
-   * (заморожен на целевом значении), border-radius линейно (по той же
-   * причине — без easing) уходит 50% → 0% на всём протяжении фазы.
-   * Intro начинает наезжать на Hero снизу через margin-top и навбар
-   * перекрашивается в светлый по той же линейной прогрессии распрямления —
-   * оба идут только во второй фазе и заканчиваются ровно к концу пина.
+   * (заморожен на целевом значении), border-radius линейно уходит 50% →
+   * 0%, и навбар перекрашивается в светлый по той же прогрессии.
    * Hero-text-left/right и Hero-subtitle не исчезают и не двигаются —
    * только блюрятся и перекрываются растущим оверлеем в течение фазы 1
    * (к её концу оверлей уже полностью их покрывает).
-   *
-   * Создаётся сразу при монтировании (без задержки — так же, как во
-   * всех остальных pin-секциях сайта): любая задержка сдвигает момент
-   * появления спейсера Hero во времени, и все НИЖЕ идущие секции,
-   * измеряющие свой 'top top' раньше (при монтировании), закэшируют
-   * стартовую позицию без учёта этого спейсера. ScrollTrigger.refresh()
-   * эту позицию для уже созданных pin-триггеров не пересчитывает
-   * (проверено эмпирически), так что рассинхронизация не лечится
-   * постфактум — её нельзя допускать вовсе.
    *
    * `progress` при создании триггера (когда 'top top' уже выполнено на
    * скролле 0, что для первой секции — сразу) не строго 0, а исчезающе
@@ -126,40 +130,28 @@ export default function HeroSection() {
    * полностью видимым в размере покоя и перекрывает ещё идущую
    * load-анимацию scale Hero-img. */
   useEffect(() => {
-    const section = sectionRef.current
+    const wrap = wrapRef.current
     const zoom = zoomRef.current
     const img = imgRef.current
     const textLeft = textLeftRef.current
     const textRight = textRightRef.current
     const subtitle = subtitleRef.current
-    if (!section || !zoom || !img || !textLeft || !textRight || !subtitle) {
+    if (!wrap || !zoom || !img || !textLeft || !textRight || !subtitle) {
       return
     }
     if (reduceMotion()) return
 
     const EPSILON = 0.005
     const restingDiameter = img.offsetWidth
-    const intro = document.getElementById('intro')
 
     const trigger = ScrollTrigger.create({
-      trigger: section,
+      trigger: wrap,
       start: 'top top',
       end: () => '+=' + window.innerHeight * PIN_VH,
-      pin: true,
       scrub: true,
       onLeave: () => {
         zoom.style.opacity = '0'
       },
-      /* Раньше здесь и в onLeave вызывался ScrollTrigger.refresh() — начало
-       * пина Intro берётся по чистой формуле (`heroPinEnd`, см.
-       * scrollChain.ts), а не измерением DOM "вживую", так что пересчитывать
-       * тут нечего. refresh() не просто пересчитывает позиции — при смене
-       * размеров pin-спейсеров GSAP может САМ подвинуть scroll(), чтобы
-       * сохранить прогресс активного пина; при быстром скролле назад-вперёд
-       * прямо на границе Hero/Intro это и давало ровно тот скачок-телепорт,
-       * который чинили этим коммитом (см. видео в переписке с пользователем
-       * 2026-09-08) — вместо починки лишний refresh() только добавлял ещё
-       * один шанс на скачок. */
       onUpdate: (self) => {
         const progress = self.progress
         const isDesktop = window.innerWidth >= DESKTOP_BREAKPOINT
@@ -180,10 +172,6 @@ export default function HeroSection() {
         )
         zoom.style.borderRadius = `${(1 - unwindProgress) * 50}%`
 
-        if (intro) {
-          intro.style.zIndex = '45'
-          intro.style.marginTop = `${-unwindProgress * 100}vh`
-        }
         setNavTheme(unwindProgress > EPSILON ? 'light' : 'dark')
 
         const blur = `blur(${growProgress * 16}px)`
@@ -196,63 +184,65 @@ export default function HeroSection() {
     return () => {
       trigger.kill()
       zoom.style.opacity = '0'
-      if (intro) {
-        intro.style.zIndex = ''
-        intro.style.marginTop = ''
-      }
     }
   }, [])
 
   return (
-    <section
-      id="hero"
-      ref={sectionRef}
-      className="Hero relative flex min-h-dvh flex-col items-center justify-center border-b border-dark bg-light p-2.5 lg:p-5"
+    <div
+      ref={wrapRef}
+      className="Hero-pin-wrap relative"
+      style={{ height: `${(1 + PIN_VH) * 100}vh` }}
     >
-      <span
-        ref={zoomRef}
-        aria-hidden="true"
-        className="Hero-img-zoom pointer-events-none fixed left-1/2 top-1/2 z-40 block -translate-x-1/2 -translate-y-1/2 overflow-hidden opacity-0"
+      <section
+        id="hero"
+        ref={sectionRef}
+        className="Hero sticky top-0 flex h-dvh flex-col items-center justify-center overflow-hidden border-b border-dark bg-light p-2.5 lg:p-5"
       >
-        <img src={heroPortrait} alt="" className="size-full object-cover" />
-      </span>
-
-      <h1 className="grid w-full grid-cols-1 items-center justify-items-center gap-5 font-manrope font-semibold uppercase leading-none tracking-[-0.04em] text-dark md:gap-10 lg:grid-cols-[1fr_auto_1fr] lg:gap-0">
         <span
-          ref={textLeftRef}
-          className="Hero-text-left whitespace-nowrap text-[2rem] md:text-[3.4375rem] lg:justify-self-start lg:text-[6.875rem]"
+          ref={zoomRef}
+          aria-hidden="true"
+          className="Hero-img-zoom pointer-events-none fixed left-1/2 top-1/2 z-40 block -translate-x-1/2 -translate-y-1/2 overflow-hidden opacity-0"
         >
-          <SplitChars text="III spaces" />
+          <img src={heroPortrait} alt="" className="size-full object-cover" />
         </span>
 
-        <span
-          ref={imgRef}
-          className="Hero-img relative block aspect-square w-85 shrink-0 overflow-hidden rounded-full md:w-125"
-        >
-          <img
-            src={heroPortrait}
-            alt="A woman standing on a coastal cliff at sunset, her dress caught by the wind"
-            fetchPriority="high"
-            className="size-full object-cover"
-          />
-        </span>
+        <h1 className="grid w-full grid-cols-1 items-center justify-items-center gap-5 font-manrope font-semibold uppercase leading-none tracking-[-0.04em] text-dark md:gap-10 lg:grid-cols-[1fr_auto_1fr] lg:gap-0">
+          <span
+            ref={textLeftRef}
+            className="Hero-text-left whitespace-nowrap text-[2rem] md:text-[3.4375rem] lg:justify-self-start lg:text-[6.875rem]"
+          >
+            <SplitChars text="III spaces" />
+          </span>
 
-        <span
-          ref={textRightRef}
-          className="Hero-text-right whitespace-nowrap text-[2rem] md:text-[3.4375rem] lg:justify-self-end lg:text-[6.875rem]"
-        >
-          <SplitChars text="III states" />
-        </span>
-      </h1>
+          <span
+            ref={imgRef}
+            className="Hero-img relative block aspect-square w-85 shrink-0 overflow-hidden rounded-full md:w-125"
+          >
+            <img
+              src={heroPortrait}
+              alt="A woman standing on a coastal cliff at sunset, her dress caught by the wind"
+              fetchPriority="high"
+              className="size-full object-cover"
+            />
+          </span>
 
-      <p
-        ref={subtitleRef}
-        className="Hero-subtitle absolute bottom-[2.125rem] left-1/2 w-70.5 text-center text-[0.875rem] font-medium leading-[1.3] tracking-[-0.01em] text-dark/60 md:bottom-[2.3125rem] md:w-65 lg:bottom-[2.625rem] lg:w-105 lg:text-[1.125rem]"
-      >
-        A quiet return to yourself.
-        <br />
-        Shaped by space, rhythm, and presence.
-      </p>
-    </section>
+          <span
+            ref={textRightRef}
+            className="Hero-text-right whitespace-nowrap text-[2rem] md:text-[3.4375rem] lg:justify-self-end lg:text-[6.875rem]"
+          >
+            <SplitChars text="III states" />
+          </span>
+        </h1>
+
+        <p
+          ref={subtitleRef}
+          className="Hero-subtitle absolute bottom-[2.125rem] left-1/2 w-70.5 text-center text-[0.875rem] font-medium leading-[1.3] tracking-[-0.01em] text-dark/60 md:bottom-[2.3125rem] md:w-65 lg:bottom-[2.625rem] lg:w-105 lg:text-[1.125rem]"
+        >
+          A quiet return to yourself.
+          <br />
+          Shaped by space, rhythm, and presence.
+        </p>
+      </section>
+    </div>
   )
 }
