@@ -121,6 +121,14 @@ export default function Location1Section({ onBookNow }: Location1SectionProps) {
     if (!section || !slider) return
 
     slider.style.borderRadius = '50%'
+    // Синхронно, до первого срабатывания onUpdate (тот же приём, что и
+    // borderRadius выше) — иначе на reload/refresh карточка на первый
+    // кадр рисуется с дефолтной непрозрачностью (className её не задаёт)
+    // и заметно "моргает" перед тем, как GSAP выставит настоящий opacity.
+    if (card) {
+      card.style.opacity = '0'
+      card.style.setProperty('--location-blur', '0rem')
+    }
 
     const riseTrigger = ScrollTrigger.create({
       trigger: section,
