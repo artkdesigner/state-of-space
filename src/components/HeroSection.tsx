@@ -107,21 +107,30 @@ export default function HeroSection() {
    * нужен (см. комментарий в scrollChain.ts).
    *
    * Фаза 1 (первые GROWTH_PIN_VH вьюпортов, GROWTH_FRACTION общего
-   * прогресса): Hero-img растёт из центра до целевого диаметра — fixed-
-   * оверлей поверх статичного Hero-img (не участвует в grid-layout,
-   * поэтому рост не сдвигает Hero-text-left/right). Целевой диаметр — 100vw
-   * на Desktop (>= DESKTOP_BREAKPOINT), 100vh на Tablet/Mobile. border-
-   * radius всю эту фазу остаётся 50% (полный круг). Рост диаметра —
-   * линейный по скроллу (без easing): с easeOutCubic диаметр долетал до
-   * цели уже на ~80% фазы, и последние ~20% скролла ничего не менялось —
-   * по ощущениям это выглядело как остановка перед последующим резким
-   * распрямлением, а не как плавный переход, привязанный к скроллу.
+   * прогресса): Hero-img растёт из центра до целевого диаметра —
+   * `position: absolute`-оверлей (центрирован внутри самой Hero-секции,
+   * которая уже `sticky` и потому сама является containing block — пока
+   * Hero приклеена, это визуально неотличимо от `fixed` по вьюпорту)
+   * поверх статичного Hero-img (не участвует в grid-layout, поэтому рост
+   * не сдвигает Hero-text-left/right). Целевой диаметр — 100vw на Desktop
+   * (>= DESKTOP_BREAKPOINT), 100vh на Tablet/Mobile. border-radius всю эту
+   * фазу остаётся 50% (полный круг). Рост диаметра — линейный по скроллу
+   * (без easing): с easeOutCubic диаметр долетал до цели уже на ~80% фазы,
+   * и последние ~20% скролла ничего не менялось — по ощущениям это
+   * выглядело как остановка перед последующим резким распрямлением, а не
+   * как плавный переход, привязанный к скроллу.
    * Фаза 2 (последние UNWIND_PIN_VH вьюпортов): диаметр больше не растёт
    * (заморожен на целевом значении), border-radius линейно уходит 50% →
    * 0%, и навбар перекрашивается в светлый по той же прогрессии.
    * Hero-text-left/right и Hero-subtitle не исчезают и не двигаются —
    * только блюрятся и перекрываются растущим оверлеем в течение фазы 1
-   * (к её концу оверлей уже полностью их покрывает).
+   * (к её концу оверлей уже полностью их покрывает). Оверлей остаётся
+   * видимым (opacity:1, диаметр=цель, radius:0) и после конца пина — он
+   * `absolute`, поэтому естественно уезжает вместе с Hero, когда та
+   * отклеивается и скроллится прочь; раньше здесь был `fixed`-оверлей,
+   * который в `onLeave` резко прятали (`opacity:0`) — это оголяло на кадр
+   * настоящий (маленький круглый, ещё заблюренный) Hero-img под ним прямо
+   * в момент, когда Hero должна была выглядеть "полностью развёрнутой".
    *
    * `progress` при создании триггера (когда 'top top' уже выполнено на
    * скролле 0, что для первой секции — сразу) не строго 0, а исчезающе
@@ -149,9 +158,6 @@ export default function HeroSection() {
       start: 'top top',
       end: () => '+=' + window.innerHeight * PIN_VH,
       scrub: true,
-      onLeave: () => {
-        zoom.style.opacity = '0'
-      },
       onUpdate: (self) => {
         const progress = self.progress
         const isDesktop = window.innerWidth >= DESKTOP_BREAKPOINT
@@ -201,7 +207,7 @@ export default function HeroSection() {
         <span
           ref={zoomRef}
           aria-hidden="true"
-          className="Hero-img-zoom pointer-events-none fixed left-1/2 top-1/2 z-40 block -translate-x-1/2 -translate-y-1/2 overflow-hidden opacity-0"
+          className="Hero-img-zoom pointer-events-none absolute left-1/2 top-1/2 z-40 block -translate-x-1/2 -translate-y-1/2 overflow-hidden opacity-0"
         >
           <img src={heroPortrait} alt="" className="size-full object-cover" />
         </span>
