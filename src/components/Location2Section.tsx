@@ -21,6 +21,7 @@ type Location2SectionProps = {
 }
 
 export default function Location2Section({ onBookNow }: Location2SectionProps) {
+  const wrapRef = useRef<HTMLDivElement>(null)
   const sectionRef = useRef<HTMLElement>(null)
   const trackRef = useRef<HTMLDivElement>(null)
   const retreatRef = useRef<HTMLDivElement>(null)
@@ -31,15 +32,21 @@ export default function Location2Section({ onBookNow }: Location2SectionProps) {
     slideEls.current[index] = el
   }
 
+  /* Горизонтальный скролл-скраб активен только на tablet/desktop (md+) —
+   * на mobile секция обычный вертикальный поток без пина/sticky вообще.
+   * Location2 — `position: sticky; top: 0` внутри Location2-pin-wrap, чья
+   * высота, в отличие от остальных секций в цепочке, не константная (в
+   * vh), а считается в px из РЕАЛЬНОЙ ширины трека (getDistance) — задаём
+   * её императивно и пересчитываем на resize (см. updateHeight/onResize
+   * ниже), а не статическим style при рендере. */
   useEffect(() => {
+    const wrap = wrapRef.current
     const section = sectionRef.current
     const track = trackRef.current
-    if (!section || !track) return
+    if (!wrap || !section || !track) return
 
     const mm = gsap.matchMedia()
 
-    /** Горизонтальный скролл-скраб активен только на tablet/desktop (md+) — на
-     * mobile секция обычный вертикальный поток без пина. */
     mm.add('(min-width: 48rem)', () => {
       const getDistance = () => track.scrollWidth - window.innerWidth
       /** Отдельный бюджет скролла на кроссфейд трёх фото ретрит-панели —
@@ -48,12 +55,17 @@ export default function Location2Section({ onBookNow }: Location2SectionProps) {
        * Location2-about. Тот же приём "N × высота экрана на слайд", что и в
        * Location1/Location3Section. */
       const getCrossfadeBudget = () => window.innerHeight * SLIDE_COUNT
+      const getPinDistance = () => getCrossfadeBudget() + getDistance()
+
+      const updateHeight = () => {
+        wrap.style.height = `${section.offsetHeight + getPinDistance()}px`
+      }
+      updateHeight()
 
       const trigger = ScrollTrigger.create({
-        trigger: section,
+        trigger: wrap,
         start: 'top top',
-        end: () => '+=' + (getCrossfadeBudget() + getDistance()),
-        pin: true,
+        end: () => '+=' + getPinDistance(),
         scrub: true,
         invalidateOnRefresh: true,
         onUpdate: (self) => {
@@ -93,33 +105,45 @@ export default function Location2Section({ onBookNow }: Location2SectionProps) {
         },
       })
 
-      return () => trigger.kill()
+      const onResize = () => {
+        updateHeight()
+        ScrollTrigger.refresh()
+      }
+      window.addEventListener('resize', onResize)
+
+      return () => {
+        window.removeEventListener('resize', onResize)
+        trigger.kill()
+        wrap.style.height = ''
+      }
     })
 
     return () => mm.revert()
   }, [])
 
   return (
-    <section
-      id="location2"
-      ref={sectionRef}
-      className="Location2 relative bg-light md:overflow-hidden"
-    >
-      <div
-        ref={trackRef}
-        className="Location2-track flex flex-col md:flex-row md:items-stretch"
+    <div ref={wrapRef} className="Location2-pin-wrap relative">
+      <section
+        id="location2"
+        ref={sectionRef}
+        className="Location2 sticky top-0 bg-light md:overflow-hidden"
       >
-        <Location2Retreat
-          ref={retreatRef}
-          activeIndex={activeIndex}
-          onBookNow={onBookNow}
-          setSlideRef={setSlideRef}
-        />
-        <Location2About />
-        <Location2History />
-        <Location2Pillars />
-        <Location2Balance onBookNow={onBookNow} />
-      </div>
-    </section>
+        <div
+          ref={trackRef}
+          className="Location2-track flex flex-col md:flex-row md:items-stretch"
+        >
+          <Location2Retreat
+            ref={retreatRef}
+            activeIndex={activeIndex}
+            onBookNow={onBookNow}
+            setSlideRef={setSlideRef}
+          />
+          <Location2About />
+          <Location2History />
+          <Location2Pillars />
+          <Location2Balance onBookNow={onBookNow} />
+        </div>
+      </section>
+    </div>
   )
 }

@@ -31,21 +31,32 @@ const BOTTOM_CARDS = [
 ]
 
 export default function ResidenceSection() {
+  const wrapRef = useRef<HTMLDivElement>(null)
   const pinRef = useRef<HTMLDivElement>(null)
   const trackRef = useRef<HTMLHeadingElement>(null)
 
+  /* Residence-top-pin — `position: sticky; top: 0` внутри
+   * Residence-top-wrap, чья высота, как и у Location2Section.tsx, считается
+   * императивно из реальной ширины трека (getDistance), а не статическим
+   * vh — задаём её в updateHeight и пересчитываем на resize. */
   useEffect(() => {
+    const wrap = wrapRef.current
     const pin = pinRef.current
     const track = trackRef.current
-    if (!pin || !track) return
+    if (!wrap || !pin || !track) return
 
     const getDistance = () => Math.max(0, track.scrollWidth - window.innerWidth)
+    const getPinDistance = () => getDistance() * 2
+
+    const updateHeight = () => {
+      wrap.style.height = `${pin.offsetHeight + getPinDistance()}px`
+    }
+    updateHeight()
 
     const trigger = ScrollTrigger.create({
-      trigger: pin,
+      trigger: wrap,
       start: 'top top',
-      end: () => '+=' + getDistance() * 2,
-      pin: true,
+      end: () => '+=' + getPinDistance(),
       scrub: true,
       invalidateOnRefresh: true,
       onUpdate: (self) => {
@@ -53,58 +64,70 @@ export default function ResidenceSection() {
       },
     })
 
-    return () => trigger.kill()
+    const onResize = () => {
+      updateHeight()
+      ScrollTrigger.refresh()
+    }
+    window.addEventListener('resize', onResize)
+
+    return () => {
+      window.removeEventListener('resize', onResize)
+      trigger.kill()
+      wrap.style.height = ''
+    }
   }, [])
 
   return (
     <section id="residence" className="Residence bg-blue">
       <div className="Residence-top relative w-full">
-        <div
-          ref={pinRef}
-          className="Residence-top-pin relative flex h-dvh flex-col justify-center overflow-hidden lg:justify-normal"
-        >
-          <div className="Residence-top-horizontal relative flex w-full h-55 flex-none items-center md:h-105 lg:h-auto lg:flex-1">
-            <h2
-              ref={trackRef}
-              className="Residence-top-title whitespace-nowrap pl-5 pr-5 font-manrope text-[3.125rem] font-light leading-none tracking-[-0.125rem] text-light/60 md:text-[6.25rem] md:tracking-[-0.25rem] lg:text-[15.625rem] lg:tracking-[-0.625rem]"
-            >
-              The Water Residence where time slows
-            </h2>
-
-            <div
-              aria-hidden
-              className="Residence-top-circles pointer-events-none absolute inset-0"
-            >
-              <img
-                src={residenceCircleSide}
-                alt=""
-                className="absolute left-2.5 top-1/2 size-36 -translate-y-1/2 md:size-71 lg:left-0 lg:size-[44.2805rem]"
-              />
-              <img
-                src={residenceCircleCenter}
-                alt=""
-                className="absolute left-1/2 top-1/2 h-36.75 w-40 -translate-x-1/2 -translate-y-1/2 md:h-72.75 md:w-79 lg:left-[33.1291rem] lg:h-[50.2868rem] lg:w-[54.6808rem] lg:translate-x-0"
-              />
-              <img
-                src={residenceCircleSide}
-                alt=""
-                className="absolute right-2.5 top-1/2 size-36 -translate-y-1/2 md:size-71 lg:right-0 lg:size-[44.2805rem]"
-              />
-            </div>
-          </div>
-
-          <div className="Residence-top-footer flex w-full flex-col gap-4 pl-35 pr-2.5 md:grid md:grid-cols-2 md:gap-x-10 md:gap-y-10 md:px-2.5 lg:flex lg:flex-row lg:gap-5 lg:px-5 lg:pt-5 lg:pb-10">
-            {TOP_CARDS.map((card) => (
-              <div
-                key={card.title}
-                className="Residence-top-card flex flex-col gap-2.5 font-manrope text-[0.875rem] font-medium tracking-[-0.00875rem] lg:flex-1 lg:text-[1.125rem] lg:tracking-[-0.01125rem]"
+        <div ref={wrapRef} className="Residence-top-wrap relative">
+          <div
+            ref={pinRef}
+            className="Residence-top-pin sticky top-0 flex h-dvh flex-col justify-center overflow-hidden lg:justify-normal"
+          >
+            <div className="Residence-top-horizontal relative flex w-full h-55 flex-none items-center md:h-105 lg:h-auto lg:flex-1">
+              <h2
+                ref={trackRef}
+                className="Residence-top-title whitespace-nowrap pl-5 pr-5 font-manrope text-[3.125rem] font-light leading-none tracking-[-0.125rem] text-light/60 md:text-[6.25rem] md:tracking-[-0.25rem] lg:text-[15.625rem] lg:tracking-[-0.625rem]"
               >
-                <p className="text-light/60 leading-[1.3]">{card.title}</p>
-                <p className="text-light leading-[1.3] lg:max-w-125">
-                  {card.text}
-                </p>
+                The Water Residence where time slows
+              </h2>
+
+              <div
+                aria-hidden
+                className="Residence-top-circles pointer-events-none absolute inset-0"
+              >
+                <img
+                  src={residenceCircleSide}
+                  alt=""
+                  className="absolute left-2.5 top-1/2 size-36 -translate-y-1/2 md:size-71 lg:left-0 lg:size-[44.2805rem]"
+                />
+                <img
+                  src={residenceCircleCenter}
+                  alt=""
+                  className="absolute left-1/2 top-1/2 h-36.75 w-40 -translate-x-1/2 -translate-y-1/2 md:h-72.75 md:w-79 lg:left-[33.1291rem] lg:h-[50.2868rem] lg:w-[54.6808rem] lg:translate-x-0"
+                />
+                <img
+                  src={residenceCircleSide}
+                  alt=""
+                  className="absolute right-2.5 top-1/2 size-36 -translate-y-1/2 md:size-71 lg:right-0 lg:size-[44.2805rem]"
+                />
               </div>
-            ))}
+            </div>
+
+            <div className="Residence-top-footer flex w-full flex-col gap-4 pl-35 pr-2.5 md:grid md:grid-cols-2 md:gap-x-10 md:gap-y-10 md:px-2.5 lg:flex lg:flex-row lg:gap-5 lg:px-5 lg:pt-5 lg:pb-10">
+              {TOP_CARDS.map((card) => (
+                <div
+                  key={card.title}
+                  className="Residence-top-card flex flex-col gap-2.5 font-manrope text-[0.875rem] font-medium tracking-[-0.00875rem] lg:flex-1 lg:text-[1.125rem] lg:tracking-[-0.01125rem]"
+                >
+                  <p className="text-light/60 leading-[1.3]">{card.title}</p>
+                  <p className="text-light leading-[1.3] lg:max-w-125">
+                    {card.text}
+                  </p>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>

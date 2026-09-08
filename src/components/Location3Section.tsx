@@ -35,7 +35,7 @@ type Location3SectionProps = {
 }
 
 export default function Location3Section({ onBookNow }: Location3SectionProps) {
-  const sectionRef = useRef<HTMLElement>(null)
+  const wrapRef = useRef<HTMLDivElement>(null)
   const slideEls = useRef<(HTMLDivElement | null)[]>([])
   const [activeIndex, setActiveIndex] = useState(0)
 
@@ -43,15 +43,20 @@ export default function Location3Section({ onBookNow }: Location3SectionProps) {
     slideEls.current[index] = el
   }
 
+  /* Слайдер-кроссфейд, пока Location3 приклеена вверху (`position: sticky;
+   * top: 0` внутри Location3-pin-wrap высотой (1 + SLIDE_COUNT) вьюпортов
+   * — без margin-top: никто не наезжает на Location3 сверху, она просто
+   * идёт обычным потоком после Location2, поэтому `'top top'` работает
+   * буквально, без getBoundingClientRect (сравни с Location1Section.tsx/
+   * CliffSection.tsx, где margin-приём требует живого измерения). */
   useEffect(() => {
-    const section = sectionRef.current
-    if (!section) return
+    const wrap = wrapRef.current
+    if (!wrap) return
 
     const trigger = ScrollTrigger.create({
-      trigger: section,
+      trigger: wrap,
       start: 'top top',
       end: () => '+=' + window.innerHeight * SLIDE_COUNT,
-      pin: true,
       scrub: true,
       onUpdate: (self) => {
         const progress = self.progress
@@ -79,25 +84,30 @@ export default function Location3Section({ onBookNow }: Location3SectionProps) {
   }, [])
 
   return (
-    <section
-      id="location3"
-      ref={sectionRef}
-      className="Location3 relative isolate flex h-dvh w-full flex-col items-center justify-end overflow-hidden px-2.5 pb-2.5 lg:px-5 lg:pt-30 lg:pb-5"
+    <div
+      ref={wrapRef}
+      className="Location3-pin-wrap relative"
+      style={{ height: `${(1 + SLIDE_COUNT) * 100}vh` }}
     >
-      <LocationCard
-        activeIndex={activeIndex}
-        onBookNow={onBookNow}
-        quote={
-          'Where earth meets water, a profound sense of "I am here" naturally arises.'
-        }
-        locationLabel="Location 3"
-        nameLines={['The Water Residence']}
-      />
-      <LocationSlider
-        baseSrc={baseImg}
-        slides={SLIDES}
-        setSlideRef={setSlideRef}
-      />
-    </section>
+      <section
+        id="location3"
+        className="Location3 sticky top-0 isolate flex h-dvh w-full flex-col items-center justify-end overflow-hidden px-2.5 pb-2.5 lg:px-5 lg:pt-30 lg:pb-5"
+      >
+        <LocationCard
+          activeIndex={activeIndex}
+          onBookNow={onBookNow}
+          quote={
+            'Where earth meets water, a profound sense of "I am here" naturally arises.'
+          }
+          locationLabel="Location 3"
+          nameLines={['The Water Residence']}
+        />
+        <LocationSlider
+          baseSrc={baseImg}
+          slides={SLIDES}
+          setSlideRef={setSlideRef}
+        />
+      </section>
+    </div>
   )
 }

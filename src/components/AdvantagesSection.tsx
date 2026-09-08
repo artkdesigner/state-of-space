@@ -31,22 +31,26 @@ const ITEMS = [
 ]
 
 export default function AdvantagesSection() {
-  const sectionRef = useRef<HTMLElement>(null)
+  const wrapRef = useRef<HTMLDivElement>(null)
   const trackRef = useRef<HTMLDivElement>(null)
   const slotRefs = useRef<(HTMLDivElement | null)[]>([])
   const iconRefs = useRef<(HTMLImageElement | null)[]>([])
   const [activeIndex, setActiveIndex] = useState(0)
 
+  /* Ротация пунктов, пока Advantages приклеена вверху (`position: sticky;
+   * top: 0` внутри Advantages-pin-wrap высотой (1 + STEP_VH×ITEMS.length)
+   * вьюпортов — без margin-top, тот же случай, что Location3Section.tsx:
+   * никто не наезжает на Advantages сверху, `'top top'` работает
+   * буквально). */
   useEffect(() => {
-    const section = sectionRef.current
+    const wrap = wrapRef.current
     const track = trackRef.current
-    if (!section || !track) return
+    if (!wrap || !track) return
 
     const trigger = ScrollTrigger.create({
-      trigger: section,
+      trigger: wrap,
       start: 'top top',
       end: () => '+=' + window.innerHeight * STEP_VH * ITEMS.length,
-      pin: true,
       scrub: true,
       onUpdate: (self) => {
         // Позиция трека и раскрытие иконки следуют за скроллом непрерывно,
@@ -81,80 +85,85 @@ export default function AdvantagesSection() {
   }, [])
 
   return (
-    <section
-      id="advantages"
-      ref={sectionRef}
-      className="Advantages relative flex h-dvh w-full items-center justify-center overflow-hidden bg-light"
+    <div
+      ref={wrapRef}
+      className="Advantages-pin-wrap relative"
+      style={{ height: `${(1 + STEP_VH * ITEMS.length) * 100}vh` }}
     >
-      <div className="Advantages-pin flex h-full w-full flex-col gap-2.5 p-2.5 lg:grid lg:grid-cols-2 lg:gap-5 lg:p-5">
-        <div className="Advantages-left relative flex-1 overflow-hidden rounded-[0.625rem] bg-gradient-to-b from-blue to-[#081e45] lg:rounded-[1.875rem]">
-          <div
-            aria-hidden
-            className="Advantages-blur.top absolute inset-x-0 top-0 z-2 h-10 bg-gradient-to-t from-[rgba(8,30,69,0)] to-[#081e45] md:h-15 lg:h-35"
-          />
-          <div
-            aria-hidden
-            className="Advantages-blur.bottom absolute inset-x-0 bottom-0 z-2 h-10 bg-gradient-to-t from-[#081e45] to-[rgba(8,30,69,0)] backdrop-blur-[0.9375rem] [mask-image:linear-gradient(to_top,black,transparent)] [-webkit-mask-image:linear-gradient(to_top,black,transparent)] md:h-15 lg:h-35"
-          />
+      <section
+        id="advantages"
+        className="Advantages sticky top-0 flex h-dvh w-full items-center justify-center overflow-hidden bg-light"
+      >
+        <div className="Advantages-pin flex h-full w-full flex-col gap-2.5 p-2.5 lg:grid lg:grid-cols-2 lg:gap-5 lg:p-5">
+          <div className="Advantages-left relative flex-1 overflow-hidden rounded-[0.625rem] bg-gradient-to-b from-blue to-[#081e45] lg:rounded-[1.875rem]">
+            <div
+              aria-hidden
+              className="Advantages-blur.top absolute inset-x-0 top-0 z-2 h-10 bg-gradient-to-t from-[rgba(8,30,69,0)] to-[#081e45] md:h-15 lg:h-35"
+            />
+            <div
+              aria-hidden
+              className="Advantages-blur.bottom absolute inset-x-0 bottom-0 z-2 h-10 bg-gradient-to-t from-[#081e45] to-[rgba(8,30,69,0)] backdrop-blur-[0.9375rem] [mask-image:linear-gradient(to_top,black,transparent)] [-webkit-mask-image:linear-gradient(to_top,black,transparent)] md:h-15 lg:h-35"
+            />
 
-          <div
-            ref={trackRef}
-            className="Advantages-track absolute inset-x-0 top-1/2 flex flex-col gap-2.5 px-5 [--item-step:2.5rem] md:[--item-step:4rem] lg:px-15 lg:[--item-step:9rem]"
-            style={{
-              transform: 'translateY(calc(-0.5 * var(--item-step)))',
-            }}
-          >
-            {ITEMS.map((item, i) => {
-              const isCurrent = i === activeIndex
-              return (
-                <div
-                  key={i}
-                  className={`Advantages-item flex items-center whitespace-nowrap font-manrope text-[1.875rem] leading-none font-semibold tracking-[-0.075rem] transition-colors duration-500 [--icon-slot:3rem] md:text-[3.375rem] md:tracking-[-0.135rem] md:[--icon-slot:4.125rem] lg:text-[8.375rem] lg:tracking-[-0.5025rem] lg:[--icon-slot:7.5rem] ${
-                    isCurrent ? 'text-light' : 'text-light/30'
-                  }`}
-                >
+            <div
+              ref={trackRef}
+              className="Advantages-track absolute inset-x-0 top-1/2 flex flex-col gap-2.5 px-5 [--item-step:2.5rem] md:[--item-step:4rem] lg:px-15 lg:[--item-step:9rem]"
+              style={{
+                transform: 'translateY(calc(-0.5 * var(--item-step)))',
+              }}
+            >
+              {ITEMS.map((item, i) => {
+                const isCurrent = i === activeIndex
+                return (
                   <div
-                    ref={(el) => {
-                      slotRefs.current[i] = el
-                    }}
-                    className="Advantages-item-icon-slot shrink-0 overflow-hidden"
-                    style={{ width: isCurrent ? 'var(--icon-slot)' : '0px' }}
+                    key={i}
+                    className={`Advantages-item flex items-center whitespace-nowrap font-manrope text-[1.875rem] leading-none font-semibold tracking-[-0.075rem] transition-colors duration-500 [--icon-slot:3rem] md:text-[3.375rem] md:tracking-[-0.135rem] md:[--icon-slot:4.125rem] lg:text-[8.375rem] lg:tracking-[-0.5025rem] lg:[--icon-slot:7.5rem] ${
+                      isCurrent ? 'text-light' : 'text-light/30'
+                    }`}
                   >
-                    <img
+                    <div
                       ref={(el) => {
-                        iconRefs.current[i] = el
+                        slotRefs.current[i] = el
                       }}
-                      src={icon}
-                      alt=""
-                      aria-hidden
-                      className="h-6 w-7 max-w-none shrink-0 origin-left md:h-10 md:w-11.5 lg:h-17.5 lg:w-20"
-                      style={{
-                        transform: `scale(${isCurrent ? 1 : 0})`,
-                        opacity: isCurrent ? 1 : 0.3,
-                      }}
-                    />
+                      className="Advantages-item-icon-slot shrink-0 overflow-hidden"
+                      style={{ width: isCurrent ? 'var(--icon-slot)' : '0px' }}
+                    >
+                      <img
+                        ref={(el) => {
+                          iconRefs.current[i] = el
+                        }}
+                        src={icon}
+                        alt=""
+                        aria-hidden
+                        className="h-6 w-7 max-w-none shrink-0 origin-left md:h-10 md:w-11.5 lg:h-17.5 lg:w-20"
+                        style={{
+                          transform: `scale(${isCurrent ? 1 : 0})`,
+                          opacity: isCurrent ? 1 : 0.3,
+                        }}
+                      />
+                    </div>
+                    <p className="leading-none">{item.title}</p>
                   </div>
-                  <p className="leading-none">{item.title}</p>
-                </div>
-              )
-            })}
+                )
+              })}
+            </div>
+          </div>
+
+          <div className="Advantages-right relative flex-1 overflow-hidden rounded-[0.625rem] lg:rounded-[1.875rem]">
+            {ITEMS.map((item, i) => (
+              <img
+                key={i}
+                src={item.image}
+                alt=""
+                loading={i === 0 ? undefined : 'lazy'}
+                className={`Advantages-img absolute inset-0 size-full object-cover transition-opacity duration-700 ${
+                  i === activeIndex ? 'opacity-100' : 'opacity-0'
+                }`}
+              />
+            ))}
           </div>
         </div>
-
-        <div className="Advantages-right relative flex-1 overflow-hidden rounded-[0.625rem] lg:rounded-[1.875rem]">
-          {ITEMS.map((item, i) => (
-            <img
-              key={i}
-              src={item.image}
-              alt=""
-              loading={i === 0 ? undefined : 'lazy'}
-              className={`Advantages-img absolute inset-0 size-full object-cover transition-opacity duration-700 ${
-                i === activeIndex ? 'opacity-100' : 'opacity-0'
-              }`}
-            />
-          ))}
-        </div>
-      </div>
-    </section>
+      </section>
+    </div>
   )
 }

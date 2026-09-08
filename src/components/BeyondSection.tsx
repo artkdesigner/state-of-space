@@ -108,18 +108,20 @@ function innerEdgePercent(rotateDeg: number) {
 }
 
 export default function BeyondSection() {
-  const sectionRef = useRef<HTMLElement>(null)
+  const wrapRef = useRef<HTMLDivElement>(null)
   const [rotation, setRotation] = useState(0)
 
+  /* Кольцо крутится на PIN_HEIGHT_VH вьюпортов, пока Beyond приклеена
+   * вверху (`position: sticky; top: 0` внутри Beyond-pin-wrap — без
+   * margin-top, тот же случай, что Location3Section.tsx). */
   useEffect(() => {
-    const section = sectionRef.current
-    if (!section) return
+    const wrap = wrapRef.current
+    if (!wrap) return
 
     const trigger = ScrollTrigger.create({
-      trigger: section,
+      trigger: wrap,
       start: 'top top',
       end: () => '+=' + window.innerHeight * (PIN_HEIGHT_VH / 100),
-      pin: true,
       scrub: true,
       onUpdate: (self) => setRotation(self.progress * 360),
     })
@@ -128,60 +130,68 @@ export default function BeyondSection() {
   }, [])
 
   return (
-    <section
-      id="beyond"
-      ref={sectionRef}
-      className="Beyond relative flex h-dvh w-full flex-col items-center justify-center overflow-hidden bg-blue"
+    <div
+      ref={wrapRef}
+      className="Beyond-pin-wrap relative"
+      style={{ height: `${100 + PIN_HEIGHT_VH}vh` }}
     >
-      <p className="Beyond-title relative z-1 text-center font-manrope text-[1.875rem] leading-none font-semibold tracking-[-0.075rem] text-light md:text-[3.375rem] md:tracking-[-0.135rem] lg:text-[8.375rem] lg:tracking-[-0.5025rem]">
-        Beyond the
-        <br />
-        Usual Life
-      </p>
+      <section
+        id="beyond"
+        className="Beyond sticky top-0 flex h-dvh w-full flex-col items-center justify-center overflow-hidden bg-blue"
+      >
+        <p className="Beyond-title relative z-1 text-center font-manrope text-[1.875rem] leading-none font-semibold tracking-[-0.075rem] text-light md:text-[3.375rem] md:tracking-[-0.135rem] lg:text-[8.375rem] lg:tracking-[-0.5025rem]">
+          Beyond the
+          <br />
+          Usual Life
+        </p>
 
-      <div className="Beyond-carousel absolute left-1/2 top-1/2 size-[23.125rem] -translate-x-1/2 -translate-y-1/2 md:size-[59rem] lg:top-30 lg:size-[118rem] lg:translate-y-0">
-        <div
-          className="Beyond-carousel-spin absolute inset-0"
-          style={{ transform: `rotate(${rotation}deg)` }}
-        >
-          {ITEMS.map((item, i) => {
-            const edge = innerEdgePercent(item.rotate)
-            return (
-              <div
-                key={i}
-                className="Beyond-carousel-img absolute"
-                style={{
-                  top: `${item.top}%`,
-                  left: `${item.left}%`,
-                  width: `${item.size}%`,
-                  height: `${item.size}%`,
-                }}
-              >
+        <div className="Beyond-carousel absolute left-1/2 top-1/2 size-[23.125rem] -translate-x-1/2 -translate-y-1/2 md:size-[59rem] lg:top-30 lg:size-[118rem] lg:translate-y-0">
+          <div
+            className="Beyond-carousel-spin absolute inset-0"
+            style={{ transform: `rotate(${rotation}deg)` }}
+          >
+            {ITEMS.map((item, i) => {
+              const edge = innerEdgePercent(item.rotate)
+              return (
                 <div
-                  className="absolute overflow-hidden rounded-[0.3125rem] md:rounded-[0.9375rem] lg:rounded-[1.8388rem]"
+                  key={i}
+                  className="Beyond-carousel-img absolute"
                   style={{
-                    top: '50%',
-                    left: '50%',
-                    width: `${edge}%`,
-                    height: `${edge}%`,
-                    transform: `translate(-50%, -50%) rotate(${item.rotate}deg)`,
+                    top: `${item.top}%`,
+                    left: `${item.left}%`,
+                    width: `${item.size}%`,
+                    height: `${item.size}%`,
                   }}
                 >
-                  <img
-                    src={IMAGES[item.image]}
-                    alt=""
-                    loading="lazy"
-                    className="absolute inset-0 size-full object-cover"
-                  />
-                  {item.tint && (
-                    <div className="absolute inset-0 bg-dark/30" aria-hidden />
-                  )}
+                  <div
+                    className="absolute overflow-hidden rounded-[0.3125rem] md:rounded-[0.9375rem] lg:rounded-[1.8388rem]"
+                    style={{
+                      top: '50%',
+                      left: '50%',
+                      width: `${edge}%`,
+                      height: `${edge}%`,
+                      transform: `translate(-50%, -50%) rotate(${item.rotate}deg)`,
+                    }}
+                  >
+                    <img
+                      src={IMAGES[item.image]}
+                      alt=""
+                      loading="lazy"
+                      className="absolute inset-0 size-full object-cover"
+                    />
+                    {item.tint && (
+                      <div
+                        className="absolute inset-0 bg-dark/30"
+                        aria-hidden
+                      />
+                    )}
+                  </div>
                 </div>
-              </div>
-            )
-          })}
+              )
+            })}
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
+    </div>
   )
 }
