@@ -44,8 +44,12 @@ const IMAGE_GROUP_COUNT = 4
 /** Ширина окна каждой группы (0..1 прогресса reveal) и шаг между
  * стартами соседних групп, подобранный так, чтобы окно последней группы
  * заканчивалось ровно на 1 — тот же приём каскада с нахлёстом, что у
- * TITLE_WINDOW/LOGO_WINDOW в IntroSection.tsx. */
-const IMAGE_GROUP_WINDOW = 0.4
+ * TITLE_WINDOW/LOGO_WINDOW в IntroSection.tsx. Окно намеренно большое
+ * (почти вся дистанция reveal) — это даёт минимальный шаг между стартами
+ * групп (см. IMAGE_GROUP_STEP), т.е. почти одновременное появление с
+ * едва заметным каскадом от центра наружу, по прямому запросу
+ * пользователя "минимальная задержка между картинками". */
+const IMAGE_GROUP_WINDOW = 0.85
 const IMAGE_GROUP_STEP = (1 - IMAGE_GROUP_WINDOW) / (IMAGE_GROUP_COUNT - 1)
 
 const clamp = (v: number, min = 0, max = 1) => Math.min(max, Math.max(min, v))
