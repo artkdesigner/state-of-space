@@ -29,18 +29,29 @@ const RISE_VH = 1
  * после того как Presence целиком закрыла Capacity, в высотах вьюпорта. */
 const PRESENCE_PIN_VH = 2
 
-/** Стартовые смещения отдельных картинок — тоже % от СОБСТВЕННОЙ высоты
- * каждого слота (не от высоты враппера), тем же приёмом: в Figma
- * картинки начинают в «дугой» раскладке (крайние выше своей финальной
- * точки, средние — чуть ниже), а сходятся к плоскому ряду, как в текущей
- * (уже готовой) вёрстке ниже. Считано из разницы координат кадра 1
- * («дуга») и кадра 6 («плоский ряд», = текущая вёрстка), делённой на
- * собственную высоту слота: xl (248-0)/320, l (200-50)/270,
- * m (100-120)/200, s (0-140)/180. */
-const WAVE = { xl: 77.5, l: 55.56, m: -10, s: -77.78 }
-const IMAGE_WAVE_ORDER = [WAVE.xl, WAVE.l, WAVE.m, WAVE.s, WAVE.m, WAVE.l, WAVE.xl]
+/** Стартовое смещение картинок — за нижней границей экрана. Секция сама
+ * `h-dvh` (не выше одного вьюпорта), поэтому +100vh от ЛЮБОЙ стартовой
+ * позиции внутри неё гарантированно уводит картинку целиком за нижний
+ * край, независимо от того, где в разметке она изначально стоит. */
+const OFFSCREEN_VH = 100
+
+/** Порядок появления — от центра наружу (сперва средняя картинка, потом
+ * пара по бокам от неё, и так далее): индекс — позиция в ряду (0 =
+ * Presence-img-xl … 6 = Presence-img-xl2, см. JSX), значение — номер
+ * группы (0 появляется первой). */
+const IMAGE_GROUP = [3, 2, 1, 0, 1, 2, 3]
+const IMAGE_GROUP_COUNT = 4
+/** Ширина окна каждой группы (0..1 прогресса reveal) и шаг между
+ * стартами соседних групп, подобранный так, чтобы окно последней группы
+ * заканчивалось ровно на 1 — тот же приём каскада с нахлёстом, что у
+ * TITLE_WINDOW/LOGO_WINDOW в IntroSection.tsx. */
+const IMAGE_GROUP_WINDOW = 0.4
+const IMAGE_GROUP_STEP = (1 - IMAGE_GROUP_WINDOW) / (IMAGE_GROUP_COUNT - 1)
 
 const clamp = (v: number, min = 0, max = 1) => Math.min(max, Math.max(min, v))
+const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3)
+const windowProgress = (p: number, start: number, end: number) =>
+  clamp((p - start) / (end - start))
 
 export default function PresenceSection({ onBookNow }: PresenceSectionProps) {
   const sectionRef = useRef<HTMLElement>(null)
@@ -88,8 +99,11 @@ export default function PresenceSection({ onBookNow }: PresenceSectionProps) {
    * AboveSection.tsx, а не CSS sticky: Capacity в этой части цепочки уже
    * на GSAP pin:true, а не на sticky, и Presence продолжает тем же
    * идиомом) — и уже ВНУТРИ него, на всю его длину отдельные картинки
-   * сходятся из «дугой» раскладки (WAVE) к финальной плоской (0 — т.е. к
-   * тому, что уже нарисовано в JSX по умолчанию). */
+   * подъезжают снизу (изначально — за нижним краем экрана, OFFSCREEN_VH)
+   * к финальной позиции (0 — т.е. к тому, что уже нарисовано в JSX по
+   * умолчанию) по очереди, от центра ряда наружу — сперва средняя
+   * (Presence-img-s), затем пара по бокам от неё, и так далее до крайних
+   * (см. IMAGE_GROUP). */
   useEffect(() => {
     const presence = sectionRef.current
     const imgWrap = imgWrapRef.current
@@ -109,8 +123,8 @@ export default function PresenceSection({ onBookNow }: PresenceSectionProps) {
     }
     if (reduceMotion()) return
 
-    imageEls.forEach((el, i) => {
-      el!.style.transform = `translateY(${IMAGE_WAVE_ORDER[i]}%)`
+    imageEls.forEach((el) => {
+      el!.style.transform = `translateY(${OFFSCREEN_VH}vh)`
     })
 
     const riseCompleteStart = () => {
@@ -140,7 +154,11 @@ export default function PresenceSection({ onBookNow }: PresenceSectionProps) {
         const p = self.progress
 
         imageEls.forEach((el, i) => {
-          el!.style.transform = `translateY(${IMAGE_WAVE_ORDER[i] * (1 - p)}%)`
+          const start = IMAGE_GROUP[i] * IMAGE_GROUP_STEP
+          const arrive = easeOutCubic(
+            windowProgress(p, start, start + IMAGE_GROUP_WINDOW),
+          )
+          el!.style.transform = `translateY(${(1 - arrive) * OFFSCREEN_VH}vh)`
         })
       },
     })
