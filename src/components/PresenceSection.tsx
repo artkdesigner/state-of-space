@@ -24,18 +24,10 @@ const SLOT_S = SLOT_XL
 /** Скролл-дистанция наезда Presence на Capacity (см. риск-комментарий у
  * riseTrigger ниже), в высотах вьюпорта. */
 const RISE_VH = 1
-/** Скролл-дистанция собственного reveal Presence (Presence-img-wrap
- * доезжает + картинки сходятся к финальным позициям), уже после того как
- * Presence целиком закрыла Capacity, в высотах вьюпорта. */
+/** Скролл-дистанция собственного reveal Presence (картинки сходятся к
+ * финальным позициям; Presence-img-wrap статичен, см. WAVE ниже), уже
+ * после того как Presence целиком закрыла Capacity, в высотах вьюпорта. */
 const PRESENCE_PIN_VH = 2
-
-/** Стартовое смещение Presence-img-wrap — % от ЕЁ ЖЕ высоты (та же
- * высота, что у самого высокого слота, Presence-img-xl), не px: так оно
- * само масштабируется на каждом брейкпоинте вместе с реальной высотой
- * враппера, а не только на Desktop-макете, откуда оно взято (см.
- * покадровую сцену в Figma «Capacity to Presence» 1..6 — там это
- * 400/320 = 125% высоты враппера на кадре 1920×1080). */
-const WRAP_WAVE_PERCENT = 125
 
 /** Стартовые смещения отдельных картинок — тоже % от СОБСТВЕННОЙ высоты
  * каждого слота (не от высоты враппера), тем же приёмом: в Figma
@@ -74,16 +66,12 @@ export default function PresenceSection({ onBookNow }: PresenceSectionProps) {
    * закончился, и полностью закрывает её (Presence — выше z-index).
    *
    * Пока Presence так въезжает («наезд», RISE_VH вьюпортов, БЕЗ пина —
-   * это просто обычный скролл), два JS-эффекта следят за тем же самым
-   * прогрессом:
-   * 1) Capacity-overlay (см. CapacitySection.tsx) проявляется из
-   *    opacity: 0 до 1 за ПЕРВУЮ половину наезда — к моменту, когда
-   *    Presence уже перекрыла половину экрана, оверлей полностью
-   *    непрозрачный (так в макете).
-   * 2) Presence-img-wrap (изначально — в WRAP_WAVE_PERCENT% ниже своей
-   *    цели) начинает подъезжать к цели только во ВТОРУЮ половину наезда
-   *    — до этого стоит на месте (см. те же кадры в Figma: враппер не
-   *    сдвигается, пока Capacity ещё не наполовину перекрыта).
+   * это просто обычный скролл), Capacity-overlay (см. CapacitySection.tsx)
+   * проявляется из opacity: 0 до 1 за ПЕРВУЮ половину наезда — к моменту,
+   * когда Presence уже перекрыла половину экрана, оверлей полностью
+   * непрозрачный (так в макете). Presence-img-wrap при этом никогда не
+   * сдвигается — он стоит на своей финальной (последний кадр раскадровки)
+   * позиции с самого начала, двигаются только картинки внутри него.
    *
    * `riseCompleteStart` — натуральная (уже с учётом margin-top: -100vh)
    * верхняя граница Presence в document flow, ДО того как её схватит
@@ -99,13 +87,9 @@ export default function PresenceSection({ onBookNow }: PresenceSectionProps) {
    * вьюпортов, pin: true — та же механика, что у capacityTrigger в
    * AboveSection.tsx, а не CSS sticky: Capacity в этой части цепочки уже
    * на GSAP pin:true, а не на sticky, и Presence продолжает тем же
-   * идиомом) — и уже ВНУТРИ него, строго последовательно (не
-   * одновременно — см. текстовое ТЗ):
-   * a) первая половина — Presence-img-wrap доезжает от своего
-   *    промежуточного положения (после наезда) до 0 (целевая координата);
-   * b) вторая половина — только когда враппер уже доехал, отдельные
-   *    картинки сходятся из «дугой» раскладки (WAVE) к финальной плоской
-   *    (0 — т.е. к тому, что уже нарисовано в JSX по умолчанию). */
+   * идиомом) — и уже ВНУТРИ него, на всю его длину отдельные картинки
+   * сходятся из «дугой» раскладки (WAVE) к финальной плоской (0 — т.е. к
+   * тому, что уже нарисовано в JSX по умолчанию). */
   useEffect(() => {
     const presence = sectionRef.current
     const imgWrap = imgWrapRef.current
@@ -125,7 +109,6 @@ export default function PresenceSection({ onBookNow }: PresenceSectionProps) {
     }
     if (reduceMotion()) return
 
-    imgWrap.style.transform = `translateY(${WRAP_WAVE_PERCENT}%)`
     imageEls.forEach((el, i) => {
       el!.style.transform = `translateY(${IMAGE_WAVE_ORDER[i]}%)`
     })
@@ -144,12 +127,6 @@ export default function PresenceSection({ onBookNow }: PresenceSectionProps) {
       onUpdate: (self) => {
         const t = self.progress
         overlay.style.opacity = String(clamp(t / 0.5))
-        const wrapT =
-          t < 0.5
-            ? WRAP_WAVE_PERCENT
-            : WRAP_WAVE_PERCENT -
-              ((t - 0.5) / 0.5) * (WRAP_WAVE_PERCENT / 2)
-        imgWrap.style.transform = `translateY(${wrapT}%)`
       },
     })
 
@@ -162,15 +139,8 @@ export default function PresenceSection({ onBookNow }: PresenceSectionProps) {
       onUpdate: (self) => {
         const p = self.progress
 
-        const wrapPhase = clamp(p / 0.5)
-        const wrapT = (WRAP_WAVE_PERCENT / 2) * (1 - wrapPhase)
-        imgWrap.style.transform = `translateY(${wrapT}%)`
-
-        const imagePhase = clamp((p - 0.5) / 0.5)
         imageEls.forEach((el, i) => {
-          el!.style.transform = `translateY(${
-            IMAGE_WAVE_ORDER[i] * (1 - imagePhase)
-          }%)`
+          el!.style.transform = `translateY(${IMAGE_WAVE_ORDER[i] * (1 - p)}%)`
         })
       },
     })
@@ -179,7 +149,6 @@ export default function PresenceSection({ onBookNow }: PresenceSectionProps) {
       riseTrigger.kill()
       revealTrigger.kill()
       overlay.style.opacity = ''
-      imgWrap.style.transform = ''
       imageEls.forEach((el) => {
         el!.style.transform = ''
       })
