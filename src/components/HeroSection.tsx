@@ -24,7 +24,6 @@ const GROWTH_FRACTION = GROWTH_PIN_VH / (GROWTH_PIN_VH + UNWIND_PIN_VH)
  * Tablet/Mobile — 100vh. */
 const DESKTOP_BREAKPOINT = 992
 const clamp = (v: number, min = 0, max = 1) => Math.min(max, Math.max(min, v))
-const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3)
 
 export default function HeroSection() {
   const sectionRef = useRef<HTMLElement>(null)
@@ -96,12 +95,17 @@ export default function HeroSection() {
    * заданию продукта картинка должна долетать ровно до ширины экрана на
    * Desktop и до высоты экрана на более узких брейкпоинтах, а не до
    * max(vw, vh), как раньше. border-radius всю эту фазу остаётся 50%
-   * (полный круг).
+   * (полный круг). Рост диаметра — линейный по скроллу (без easing): с
+   * easeOutCubic диаметр долетал до цели уже на ~80% фазы, и последние
+   * ~20% скролла ничего не менялось — по ощущениям это выглядело как
+   * остановка перед последующим резким распрямлением, а не как плавный
+   * переход, привязанный к скроллу.
    * Фаза 2 (последние UNWIND_PIN_VH вьюпортов): диаметр больше не растёт
-   * (заморожен на целевом значении), border-radius уходит 50% → 0%.
+   * (заморожен на целевом значении), border-radius линейно (по той же
+   * причине — без easing) уходит 50% → 0% на всём протяжении фазы.
    * Intro начинает наезжать на Hero снизу через margin-top и навбар
-   * перекрашивается в светлый по той же прогрессии распрямления — оба
-   * идут только во второй фазе и заканчиваются ровно к концу пина.
+   * перекрашивается в светлый по той же линейной прогрессии распрямления —
+   * оба идут только во второй фазе и заканчиваются ровно к концу пина.
    * Hero-text-left/right и Hero-subtitle не исчезают и не двигаются —
    * только блюрятся и перекрываются растущим оверлеем в течение фазы 1
    * (к её концу оверлей уже полностью их покрывает).
@@ -162,8 +166,7 @@ export default function HeroSection() {
 
         const growProgress = clamp(progress / GROWTH_FRACTION)
         const diameter =
-          restingDiameter +
-          (targetDiameter - restingDiameter) * easeOutCubic(growProgress)
+          restingDiameter + (targetDiameter - restingDiameter) * growProgress
 
         zoom.style.opacity = progress > EPSILON ? '1' : '0'
         zoom.style.width = `${diameter}px`
@@ -172,14 +175,13 @@ export default function HeroSection() {
         const unwindProgress = clamp(
           (progress - GROWTH_FRACTION) / (1 - GROWTH_FRACTION),
         )
-        const unwindEase = easeOutCubic(unwindProgress)
-        zoom.style.borderRadius = `${(1 - unwindEase) * 50}%`
+        zoom.style.borderRadius = `${(1 - unwindProgress) * 50}%`
 
         if (intro) {
           intro.style.zIndex = '45'
-          intro.style.marginTop = `${-unwindEase * 100}vh`
+          intro.style.marginTop = `${-unwindProgress * 100}vh`
         }
-        setNavTheme(unwindEase > EPSILON ? 'light' : 'dark')
+        setNavTheme(unwindProgress > EPSILON ? 'light' : 'dark')
 
         const blur = `blur(${growProgress * 16}px)`
         textLeft.style.filter = blur
