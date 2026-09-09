@@ -17,7 +17,7 @@ type Options = {
 export function useCursorImageTrail<T extends HTMLElement>(
   containerRef: RefObject<HTMLElement | null>,
   count: number,
-  { minDistance = 80, visibleDuration = 700 }: Options = {},
+  { minDistance = 180, visibleDuration = 700 }: Options = {},
 ) {
   const itemRefs = useRef<(T | null)[]>([])
 
