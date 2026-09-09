@@ -79,19 +79,25 @@ export default function CapacitySection() {
    *
    * Capacity — `position: sticky; top: 0` внутри Capacity-pin-wrap высотой
    * (2 + GROW_VH + UNWIND_VH) вьюпортов, сдвинутой на
-   * `margin-top: -(1 + GROW_VH) × 100vh` — тот же приём, что у
-   * Above-pin-wrap (см. AboveSection.tsx), с margin увеличенным на
-   * GROW_VH сверх стандартного `100vh`, чтобы wrapTop наступал раньше —
-   * ровно там, где раньше начинался старый pre-wrapTop riseTrigger. Above
-   * (её собственный лишний `CAPACITY_GROW_VH` в AboveSection.tsx, не
-   * менялся) остаётся приклеенной ровно на эту же GROW_VH-дистанцию, так
-   * что рост маски по-прежнему полностью укладывается в окно, пока Above
-   * ещё неподвижна. riseTrigger (GROW_VH вьюпортов от wrapTop) — рост;
-   * следом sразу trigger (UNWIND_VH вьюпортов) — распрямление в
-   * прямоугольник (round: boxRadius → 0) на уже замороженном целевом
-   * диаметре. Тот же принцип, что у riseTrigger в CliffSection.tsx/
-   * AboveSection.tsx — тут он просто длиной GROW_VH=2 вместо стандартного
-   * 1 вьюпорта. */
+   * `margin-top: -(1 + GROW_VH + UNWIND_VH) × 100vh` — тот же приём, что у
+   * Above-pin-wrap (см. AboveSection.tsx), с margin увеличенным на весь
+   * `GROW_VH + UNWIND_VH` сверх стандартного `100vh`. Above резервирует
+   * СВОЙ хвостовой буфер (`CAPACITY_GROW_VH` в AboveSection.tsx) именно
+   * под всю эту дистанцию (`GROW_VH + UNWIND_VH`, не только рост) — чтобы
+   * Capacity стартовала РОВНО там, где заканчивается этот буфер (т.е. сразу
+   * как утолщение кольца Above доиграно), нужно вычесть из margin оба
+   * слагаемых, а не только `GROW_VH`: раньше здесь стоял `-(1 + GROW_VH)`,
+   * и riseTrigger стартовал на UNWIND_VH (100vh) позже, чем заканчивалось
+   * утолщение — то есть маска ждала ещё один лишний вьюпорт "пустого"
+   * скролла после того, как кольцо уже полностью потолстело (баг, на
+   * который пожаловался пользователь). riseTrigger (GROW_VH вьюпортов от
+   * wrapTop) — рост; следом сразу trigger (UNWIND_VH вьюпортов) —
+   * распрямление в прямоугольник (round: boxRadius → 0) на уже
+   * замороженном целевом диаметре. Above по-прежнему остаётся приклеенной
+   * весь этот срок (её `CAPACITY_GROW_VH` не менялся, по-прежнему равен
+   * `GROW_VH + UNWIND_VH`) — рост+распрямление маски всё так же полностью
+   * укладываются в окно, пока Above ещё неподвижна, просто без зазора
+   * перед стартом. */
   useEffect(() => {
     const wrap = wrapRef.current
     const section = sectionRef.current
@@ -218,7 +224,7 @@ export default function CapacitySection() {
       className="Capacity-pin-wrap relative"
       style={{
         height: `${(2 + GROW_VH + UNWIND_VH) * 100}vh`,
-        marginTop: `${-(1 + GROW_VH) * 100}vh`,
+        marginTop: `${-(1 + GROW_VH + UNWIND_VH) * 100}vh`,
       }}
     >
       <section

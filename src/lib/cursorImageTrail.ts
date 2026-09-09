@@ -36,13 +36,32 @@ export function useCursorImageTrail<T extends HTMLElement>(
     const showAt = (i: number, x: number, y: number) => {
       const el = itemRefs.current[i]
       if (!el) return
+      window.clearTimeout(hideTimers[i])
+
       // Позиция — мгновенным прыжком (это новое появление, не перелёт с
       // прошлого места), а плавность даёт отдельное CSS-свойство `scale` —
       // оно анимируется независимо от `transform`, который держит позицию.
       el.style.transform = `translate3d(${x - el.offsetWidth / 2}px, ${y - el.offsetHeight / 2}px, 0)`
+
+      // Принудительный сброс в невидимое состояние БЕЗ transition перед
+      // каждым появлением, а не просто `opacity/scale = '1'` — при быстром
+      // движении курсора тот же слот пула нередко переиспользуется ДО того,
+      // как отработал его предыдущий hide-таймаут (opacity уже 1 или
+      // где-то на середине fade-out): установка `opacity: 1` поверх уже
+      // `1` — no-op для CSS-transition (значение не поменялось), поэтому
+      // видно было только мгновенный прыжок transform, без затухания (баг,
+      // на который пожаловался пользователь — "появляются/исчезают
+      // мгновенно, резко"). Reflow (`el.offsetWidth`) между сбросом и
+      // возвратом transition обязателен — иначе браузер схлопнёт оба
+      // synchronous-присвоения в один кадр и transition снова не сыграет.
+      el.style.transitionProperty = 'none'
+      el.style.opacity = '0'
+      el.style.scale = '0.85'
+      void el.offsetWidth
+      el.style.transitionProperty = ''
       el.style.opacity = '1'
       el.style.scale = '1'
-      window.clearTimeout(hideTimers[i])
+
       hideTimers[i] = window.setTimeout(() => {
         el.style.opacity = '0'
         el.style.scale = '0.85'

@@ -7,15 +7,28 @@ import residenceCircleCenter from '../assets/residence-circle-center.svg'
 
 /** Длительность собственной (pin) хореографии Residence-bottom на Desktop,
  * в высотах вьюпорта — см. useEffect ниже. Три последовательные фазы без
- * нахлёста (sub → title-fill → column), поэтому общий бюджет достаточно
- * щедрый: title-fill несёт ~21 слово и должен успеть прочитаться, а не
- * промелькнуть. */
-const REVEAL_VH = 3
-/** Доли REVEAL_VH под каждую фазу — строго последовательно (по просьбе:
- * "после того как текст заполнился" начинается column), без нахлёста. */
-const SUB_WINDOW: [number, number] = [0, 0.15]
-const TITLE_WINDOW: [number, number] = [0.15, 0.85]
-const COLUMN_WINDOW: [number, number] = [0.85, 1]
+ * нахлёста (sub → title-fill → column), заданные напрямую в vh (а не как
+ * доли от REVEAL_VH — так порядок правки конкретной фазы прямой: поменял
+ * число, поменялась только её длительность, а не пересчёт долей
+ * остальных). CARD_VH увеличен на 50vh по просьбе пользователя — карточки
+ * появлялись слишком быстро (укладывались всего в 45vh = 15% от старых
+ * 300vh). */
+const SUB_VH = 45
+const TITLE_VH = 210
+const CARD_VH = 95
+const REVEAL_VH = (SUB_VH + TITLE_VH + CARD_VH) / 100
+/** Окна фаз как доли REVEAL_VH, выведенные из vh-констант выше — строго
+ * последовательные (по просьбе: "после того как текст заполнился"
+ * начинается column), без нахлёста. */
+const SUB_WINDOW: [number, number] = [0, SUB_VH / (REVEAL_VH * 100)]
+const TITLE_WINDOW: [number, number] = [
+  SUB_VH / (REVEAL_VH * 100),
+  (SUB_VH + TITLE_VH) / (REVEAL_VH * 100),
+]
+const COLUMN_WINDOW: [number, number] = [
+  (SUB_VH + TITLE_VH) / (REVEAL_VH * 100),
+  1,
+]
 /** Базовая (незалитая) яркость слова и её "долив" при 100% локального
  * прогресса — 0.3 → 1, как попросили. */
 const WORD_BASE_OPACITY = 0.3

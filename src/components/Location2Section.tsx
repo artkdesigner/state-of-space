@@ -19,6 +19,11 @@ const CROSSFADE = 0.28
  * у неё своя, отдельная от Retreat, фаза кроссфейда (см. LOCATION3_SLIDE_COUNT
  * ниже). */
 const LOCATION3_SLIDE_COUNT = 3
+/** Скролл-дистанция наезда Location3Panel поверх Balance, в высотах
+ * вьюпорта — отдельный бюджет, СРАЗУ после того как трек (уже БЕЗ
+ * Location3Panel, см. комментарий у useEffect ниже) целиком докатился и
+ * Balance стоит полностью в кадре. См. setLocation3Overlay. */
+const LOCATION3_ENTRANCE_VH = 100
 
 const smoothstep = (t: number) => t * t * (3 - 2 * t)
 
@@ -87,17 +92,26 @@ export default function Location2Section({ onBookNow }: Location2SectionProps) {
    * анимации отличается слишком сильно (третья, «сжимающая» фаза), чтобы
    * различать её на лету было проще, чем повторить блок целиком.
    *
-   * Location3Panel.tsx — последняя панель трека (Location2 → Location3
-   * теперь один непрерывный горизонтальный поток, а не отдельная секция со
-   * своим вертикальным пином и наездом сбоку — убрано по просьбе
-   * пользователя, см. комментарий в Location3Panel.tsx): getDistance()
-   * автоматически растёт на её ширину, обычная трек-анимация довозит её
-   * так же, как и любую другую панель, никакого отдельного механизма не
-   * нужно. У неё своя, отдельная от Retreat, фаза кроссфейда слайдов —
-   * см. runLocation3Crossfade и LOCATION3_SLIDE_COUNT — которая стартует
-   * только после того, как трек уже целиком докатился (Location3Panel
-   * полностью в кадре). RESIDENCE_DWELL_VH — хвостовой запас после этого,
-   * под наезд ResidenceSection.tsx (см. константу выше). */
+   * Location3Panel.tsx — НЕ панель трека (не флекс-child `track`, см. JSX
+   * ниже — она сиблинг трека внутри `section`, `md:absolute md:inset-0`,
+   * поверх него) — по просьбе пользователя должна физически НАЕЗЖАТЬ
+   * поверх Balance, а не просто идти следующей панелью в общей ленте
+   * (обычная лента даёт соседство, а не перекрытие). getDistance()
+   * поэтому её ширину больше не учитывает вообще (трек оканчивается на
+   * Balance) — сразу после того как трек целиком докатился (см.
+   * LOCATION3_ENTRANCE_VH-фазу ниже), Location3Panel отдельным
+   * translateX 100%→0% (плюс скругление левых углов 50%→0%, см.
+   * setLocation3Overlay) заезжает по диагонали поверх уже неподвижного,
+   * полностью видимого Balance — тот же визуальный эффект, что был у
+   * старой отдельной Location3Section.tsx с собственным вертикальным
+   * пином (см. её git-историю), но БЕЗ отдельного pin-wrap и связанного с
+   * ним шва (пустой фон на миг перекрывал Balance ДО начала наезда) —
+   * Location3Panel всегда красится значениями transform/border-radius,
+   * никогда не показывается в невизуализированном "дефолтном" виде.
+   * Следом — её собственная, отдельная от Retreat, фаза кроссфейда
+   * слайдов (см. runLocation3Crossfade/LOCATION3_SLIDE_COUNT).
+   * RESIDENCE_DWELL_VH — хвостовой запас после всего этого, под наезд
+   * ResidenceSection.tsx (см. константу выше). */
   useEffect(() => {
     const wrap = wrapRef.current
     const section = sectionRef.current
@@ -107,26 +121,16 @@ export default function Location2Section({ onBookNow }: Location2SectionProps) {
 
     const mm = gsap.matchMedia()
 
-    // Location3Panel въезжает сбоку на Balance, "наездом" — тот же приём,
-    // что был у отдельной Location3Section.tsx до слияния в трек (см.
-    // комментарий в Location3Panel.tsx), но БЕЗ отдельного вертикального
-    // пина: скругление левых углов крутится от 50% до 0% ровно за то же
-    // время, что естественная трек-анимация довозит Location3Panel из-за
-    // правого края экрана до финальной, прижатой к Balance позиции —
-    // никакой отдельной дистанции/переменной не заводим, просто отслеживаем
-    // тот же trackPx на последнем viewport'е его пробега (панель полной
-    // ширины viewport, последняя в треке — trackPx достигает distance
-    // ровно тогда, когда её левый край доезжает до x=0). По просьбе
-    // пользователя.
-    const setLocation3Radius = (trackPx: number, distance: number) => {
-      const viewportWidth = window.innerWidth
-      const entranceStart = Math.max(0, distance - viewportWidth)
-      const t = gsap.utils.clamp(
-        0,
-        1,
-        (trackPx - entranceStart) / (distance - entranceStart || 1),
-      )
-      const radius = `${50 * (1 - smoothstep(t))}%`
+    // Наезд Location3Panel поверх Balance — translateX 100%→0% (полностью
+    // за правым краем → на месте, поверх Balance) вместе со скруглением
+    // левых углов 50%→0% (та же идея "разворачивающейся карточки", что и
+    // у Capacity/Cliff в остальном проекте). Управляется отдельным
+    // LOCATION3_ENTRANCE_VH-бюджетом (см. onUpdate ниже), не завязана на
+    // trackPx/distance — Location3Panel больше не часть трека.
+    const setLocation3Overlay = (t: number) => {
+      const eased = smoothstep(gsap.utils.clamp(0, 1, t))
+      location3.style.transform = `translateX(${(1 - eased) * 100}%)`
+      const radius = `${50 * (1 - eased)}%`
       location3.style.borderTopLeftRadius = radius
       location3.style.borderBottomLeftRadius = radius
     }
@@ -173,6 +177,8 @@ export default function Location2Section({ onBookNow }: Location2SectionProps) {
        * Location2-about. Тот же приём "N × высота экрана на слайд", что и у
        * Location1Section.tsx и у LOCATION3_SLIDE_COUNT ниже. */
       const getCrossfadeBudget = () => window.innerHeight * SLIDE_COUNT
+      const getLocation3EntranceBudget = () =>
+        window.innerHeight * (LOCATION3_ENTRANCE_VH / 100)
       const getLocation3CrossfadeBudget = () =>
         window.innerHeight * LOCATION3_SLIDE_COUNT
       const getResidenceDwellBudget = () =>
@@ -180,6 +186,7 @@ export default function Location2Section({ onBookNow }: Location2SectionProps) {
       const getPinDistance = () =>
         getCrossfadeBudget() +
         getDistance() +
+        getLocation3EntranceBudget() +
         getLocation3CrossfadeBudget() +
         getResidenceDwellBudget()
 
@@ -187,7 +194,7 @@ export default function Location2Section({ onBookNow }: Location2SectionProps) {
         wrap.style.height = `${section.offsetHeight + getPinDistance()}px`
       }
       updateHeight()
-      setLocation3Radius(0, getDistance())
+      setLocation3Overlay(0)
 
       const trigger = ScrollTrigger.create({
         trigger: wrap,
@@ -198,18 +205,28 @@ export default function Location2Section({ onBookNow }: Location2SectionProps) {
         onUpdate: (self) => {
           const distance = getDistance()
           const crossfadeBudget = getCrossfadeBudget()
+          const location3EntranceBudget = getLocation3EntranceBudget()
           const location3CrossfadeBudget = getLocation3CrossfadeBudget()
           const total = getPinDistance()
           if (!distance || !total) return
 
           const splitCrossfade = crossfadeBudget / total
-          // Конец фазы 2 (горизонтальный переезд трека).
+          // Конец фазы 2 (горизонтальный переезд трека — теперь БЕЗ
+          // Location3Panel, трек оканчивается на Balance).
           const splitDistance = (crossfadeBudget + distance) / total
-          // Конец фазы 3 (кроссфейд слайдов Location3Panel) — сразу после
+          // Конец фазы 3 (наезд Location3Panel поверх уже неподвижного
+          // Balance).
+          const splitEntrance =
+            (crossfadeBudget + distance + location3EntranceBudget) / total
+          // Конец фазы 4 (кроссфейд слайдов Location3Panel) — сразу после
           // неё остаётся только RESIDENCE_DWELL_VH хвост-запас (см.
           // константу выше), ничего уже не меняется.
           const splitLocation3Crossfade =
-            (crossfadeBudget + distance + location3CrossfadeBudget) / total
+            (crossfadeBudget +
+              distance +
+              location3EntranceBudget +
+              location3CrossfadeBudget) /
+            total
 
           // Фаза 1 (0 → splitCrossfade): кроссфейд слайдов Retreat, трек
           // неподвижен.
@@ -217,23 +234,32 @@ export default function Location2Section({ onBookNow }: Location2SectionProps) {
 
           // Фаза 2 (splitCrossfade → splitDistance): горизонтальный переезд
           // трека, начинается только после того как кроссфейд завершён —
-          // довозит все панели, включая Location3Panel, последнюю в треке.
+          // довозит все панели трека, последняя из которых теперь Balance.
           const scrollLocal = gsap.utils.clamp(
             0,
             1,
             (self.progress - splitCrossfade) / (splitDistance - splitCrossfade),
           )
           gsap.set(track, { x: -distance * scrollLocal })
-          setLocation3Radius(distance * scrollLocal, distance)
 
-          // Фаза 3 (splitDistance → splitLocation3Crossfade): трек уже
-          // целиком докатился (Location3Panel полностью в кадре) — теперь
-          // кроссфейд её собственных слайдов.
+          // Фаза 3 (splitDistance → splitEntrance): трек уже целиком
+          // докатился (Balance полностью в кадре, неподвижна) — теперь
+          // Location3Panel наезжает поверх неё.
+          const overlayT = gsap.utils.clamp(
+            0,
+            1,
+            (self.progress - splitDistance) / (splitEntrance - splitDistance),
+          )
+          setLocation3Overlay(overlayT)
+
+          // Фаза 4 (splitEntrance → splitLocation3Crossfade): наезд
+          // доигран (Location3Panel полностью на месте) — теперь кроссфейд
+          // её собственных слайдов.
           const location3Local = gsap.utils.clamp(
             0,
             1,
-            (self.progress - splitDistance) /
-              (splitLocation3Crossfade - splitDistance),
+            (self.progress - splitEntrance) /
+              (splitLocation3Crossfade - splitEntrance),
           )
           runLocation3Crossfade(location3Local)
         },
@@ -249,6 +275,7 @@ export default function Location2Section({ onBookNow }: Location2SectionProps) {
         window.removeEventListener('resize', onResize)
         trigger.kill()
         wrap.style.height = ''
+        location3.style.transform = ''
         location3.style.borderTopLeftRadius = ''
         location3.style.borderBottomLeftRadius = ''
       }
@@ -261,6 +288,8 @@ export default function Location2Section({ onBookNow }: Location2SectionProps) {
       const getCrossfadeBudget = () => window.innerHeight * SLIDE_COUNT
       const getRetreatWidth = () => retreatRef.current?.offsetWidth ?? 0
       const getSqueezeBudget = () => window.innerHeight * (SQUEEZE_VH / 100)
+      const getLocation3EntranceBudget = () =>
+        window.innerHeight * (LOCATION3_ENTRANCE_VH / 100)
       const getLocation3CrossfadeBudget = () =>
         window.innerHeight * LOCATION3_SLIDE_COUNT
       const getResidenceDwellBudget = () =>
@@ -269,6 +298,7 @@ export default function Location2Section({ onBookNow }: Location2SectionProps) {
         getCrossfadeBudget() +
         getDistance() +
         getSqueezeBudget() +
+        getLocation3EntranceBudget() +
         getLocation3CrossfadeBudget() +
         getResidenceDwellBudget()
 
@@ -294,7 +324,7 @@ export default function Location2Section({ onBookNow }: Location2SectionProps) {
       }
       updateHeight()
       setCol2(0)
-      setLocation3Radius(0, getDistance())
+      setLocation3Overlay(0)
 
       const trigger = ScrollTrigger.create({
         trigger: wrap,
@@ -307,12 +337,13 @@ export default function Location2Section({ onBookNow }: Location2SectionProps) {
           const crossfadeBudget = getCrossfadeBudget()
           const retreatWidth = getRetreatWidth()
           const squeezeBudget = getSqueezeBudget()
+          const location3EntranceBudget = getLocation3EntranceBudget()
           const location3CrossfadeBudget = getLocation3CrossfadeBudget()
           // getPinDistance(), не локальная сумма — включает ещё и хвостовые
-          // LOCATION3_SLIDE_COUNT/RESIDENCE_DWELL_VH запасы (см. константы
-          // выше), иначе доли splitCrossfade/scrolledPx съезжали бы
-          // относительно реального конца триггера (`end`, тоже посчитанного
-          // через getPinDistance()).
+          // LOCATION3_ENTRANCE_VH/LOCATION3_SLIDE_COUNT/RESIDENCE_DWELL_VH
+          // запасы (см. константы выше), иначе доли splitCrossfade/
+          // scrolledPx съезжали бы относительно реального конца триггера
+          // (`end`, тоже посчитанного через getPinDistance()).
           const total = getPinDistance()
           if (!distance || !total) return
 
@@ -344,8 +375,8 @@ export default function Location2Section({ onBookNow }: Location2SectionProps) {
           } else {
             // Фаза 4: сжатие уже доиграно (col-1/2/3 замерли как на кадре
             // 4), трек продолжает переезд — Location2-galery уезжает,
-            // дальше идут About/History/Pillars/Balance и, наконец,
-            // Location3Panel, последняя панель трека.
+            // дальше идут About/History/Pillars/Balance, последняя панель
+            // трека (Location3Panel больше не в треке, см. useEffect выше).
             trackPx = afterCrossfadePx - squeezeBudget
             squeezeProgress = 1
           }
@@ -353,19 +384,31 @@ export default function Location2Section({ onBookNow }: Location2SectionProps) {
           const clampedTrackPx = gsap.utils.clamp(0, distance, trackPx)
           gsap.set(track, { x: -clampedTrackPx })
           setCol2(squeezeProgress)
-          setLocation3Radius(clampedTrackPx, distance)
 
           // Фаза 5: трек уже целиком докатился (trackPx достиг distance,
-          // Location3Panel полностью в кадре) — теперь кроссфейд её
-          // собственных слайдов.
+          // Balance полностью в кадре, неподвижна) — теперь Location3Panel
+          // наезжает поверх неё.
           const afterTrackPx = Math.max(
             0,
             afterCrossfadePx - squeezeBudget - distance,
           )
+          const overlayT = gsap.utils.clamp(
+            0,
+            1,
+            afterTrackPx / location3EntranceBudget,
+          )
+          setLocation3Overlay(overlayT)
+
+          // Фаза 6: наезд доигран (Location3Panel полностью на месте) —
+          // теперь кроссфейд её собственных слайдов.
+          const afterEntrancePx = Math.max(
+            0,
+            afterTrackPx - location3EntranceBudget,
+          )
           const location3Local = gsap.utils.clamp(
             0,
             1,
-            afterTrackPx / location3CrossfadeBudget,
+            afterEntrancePx / location3CrossfadeBudget,
           )
           runLocation3Crossfade(location3Local)
         },
@@ -388,6 +431,7 @@ export default function Location2Section({ onBookNow }: Location2SectionProps) {
           col2.style.paddingTop = ''
           col2.style.paddingBottom = ''
         }
+        location3.style.transform = ''
         location3.style.borderTopLeftRadius = ''
         location3.style.borderBottomLeftRadius = ''
       }
@@ -422,13 +466,14 @@ export default function Location2Section({ onBookNow }: Location2SectionProps) {
           <Location2History />
           <Location2Pillars />
           <Location2Balance onBookNow={onBookNow} />
-          <Location3Panel
-            ref={location3Ref}
-            activeIndex={location3ActiveIndex}
-            onBookNow={onBookNow}
-            setSlideRef={setLocation3SlideRef}
-          />
         </div>
+
+        <Location3Panel
+          ref={location3Ref}
+          activeIndex={location3ActiveIndex}
+          onBookNow={onBookNow}
+          setSlideRef={setLocation3SlideRef}
+        />
       </section>
     </div>
   )

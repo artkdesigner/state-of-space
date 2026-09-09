@@ -27,31 +27,39 @@ type Location3PanelProps = {
   setSlideRef: (index: number) => (el: HTMLDivElement | null) => void
 }
 
-/** Панель Location3 внутри общего горизонтального трека Location2Section.tsx
- * (см. её useEffect — тот же crossfade-приём, что уже был у
- * Location2Retreat.tsx, просто с ещё одним набором слайдов). Раньше это
- * была отдельная Location3Section.tsx со своим вертикальным пином и
- * наездом сбоку (translateX + скругление капсулой) — убрана по просьбе
- * пользователя: отдельный вертикальный пин с ручным наездом поверх ещё
- * едущего Location2 давал шов (пустой фон Location3-pin-wrap на
- * мгновение перекрывал Balance ДО того, как начинался сам наезд). Простая
- * панель в уже существующем горизонтальном потоке этого не имеет —
- * трек просто продолжает катиться дальше, без отдельной точки стыка.
+/** Панель Location3 — НЕ часть флекс-трека Location2Section.tsx (см. её
+ * JSX: сиблинг `Location2-track`, не его ребёнок), `md:absolute md:inset-0
+ * md:z-20` — по прямой просьбе пользователя должна физически НАЕЗЖАТЬ
+ * поверх уже неподвижной Balance, а не просто идти следующей панелью в
+ * общей ленте (соседство в ленте не даёт перекрытия — трек просто
+ * продолжает катиться, Balance уезжает влево, а не остаётся видна под
+ * Location3). На mobile (нет `md:`-переопределений) это по-прежнему
+ * обычный блок в вертикальном document flow, без анимации вообще — там
+ * нет ни трека, ни Balance-наезда, все секции просто идут одна под
+ * другой.
  *
- * Левые углы (border-top/bottom-left-radius) при этом остались из старой
- * анимации — Location2Section.tsx крутит их отдельно, от 50% до 0%, всё
- * то время, что эта панель ещё въезжает своей естественной позицией в
- * треке (последний viewport трек-скролла, сразу за Balance) — см. её
- * onUpdate/location3Ref. Ref нужен именно за счёт этого: className задаёт
- * только overflow-hidden (чтобы было что клипать), сам радиус — inline
- * style, крутится по скроллу. */
+ * Раньше это была отдельная Location3Section.tsx со своим ВЕРТИКАЛЬНЫМ
+ * пином и наездом сбоку — убрана по прошлой просьбе пользователя:
+ * отдельный вертикальный пин с ручным наездом поверх ещё едущего
+ * Location2 давал шов (пустой фон Location3-pin-wrap на мгновение
+ * перекрывал Balance ДО того, как начинался сам наезд). Текущая версия
+ * того шва не имеет: Location3Panel всегда красится actual transform/
+ * border-radius значениями (см. Location2Section.tsx `setLocation3Overlay`
+ * — translateX 100%→0% + скругление левых углов 50%→0%, тот же приём,
+ * что был у старой Location3Section, просто без отдельного pin-wrap) —
+ * никогда не показывается в невизуализированном "дефолтном" виде,
+ * поэтому шва физически неоткуда взяться. `overflow-hidden` в className —
+ * не только клипует левые углы под радиус, но и прячет саму панель, пока
+ * она ещё translateX(100%) (полностью за правым краем `section`, см.
+ * `md:overflow-hidden` там же). Ref нужен для этого же inline-управления
+ * (transform/radius) из Location2Section.tsx. */
 const Location3Panel = forwardRef<HTMLElement, Location3PanelProps>(
   function Location3Panel({ activeIndex, onBookNow, setSlideRef }, ref) {
     return (
       <section
         id="location3"
         ref={ref}
-        className="Location3 relative flex h-dvh w-full flex-col items-center justify-end overflow-hidden px-2.5 pb-2.5 md:w-dvw md:shrink-0 lg:px-5 lg:pt-30 lg:pb-5"
+        className="Location3 relative flex h-dvh w-full flex-col items-center justify-end overflow-hidden px-2.5 pb-2.5 md:absolute md:inset-0 md:z-20 lg:px-5 lg:pt-30 lg:pb-5"
       >
         <LocationCard
           activeIndex={activeIndex}
