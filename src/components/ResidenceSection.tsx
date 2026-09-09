@@ -295,7 +295,17 @@ export default function ResidenceSection() {
   }, [])
 
   return (
-    <section id="residence" className="Residence bg-blue">
+    // `relative` здесь обязателен, а не косметика: без него это обычный
+    // статичный блок, и его фон красится браузером в более раннем слое
+    // отрисовки, чем ЛЮБОЙ `position`-элемент на странице (в т.ч. более
+    // ранний по DOM Location3-pin-wrap) — фон синего Residence оказывался
+    // ПОД Location3 во время наезда (см. RISE_VH выше), пока заголовок/
+    // кольца внутри уже честно позиционированного Residence-top-pin
+    // (sticky) корректно рисовались поверх (баг, на который пожаловался
+    // пользователь). `relative` без z-index переводит и фон секции в тот
+    // же слой — там уже обычный порядок DOM (позже — сверху) решает всё
+    // сам, как и везде в этой цепочке секций.
+    <section id="residence" className="Residence relative bg-blue">
       <div className="Residence-top relative w-full">
         <div
           ref={wrapRef}

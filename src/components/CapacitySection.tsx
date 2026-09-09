@@ -8,28 +8,32 @@ const ROTATE = '[transform-box:fill-box] [transform-origin:50%_50%]'
  * диаметр стартует от диаметра уже сплошного (потолстевшего на максимум)
  * диска Above (см. AboveSection.tsx, .Above-circle-wrap) и растёт до
  * целевого, покрывающего весь вьюпорт; opacity секции синхронно 0 → 1 за
- * то же время (см. riseTrigger ниже). Это СВОЙ riseTrigger Capacity —
- * тот же приём, что у Cliff/Above (см. CliffSection.tsx/AboveSection.tsx:
- * `start: wrapTop() - N*innerHeight, end: wrapTop()`), просто с N=GROW_VH
- * вместо стандартного 1: маска должна успеть ПОЛНОСТЬЮ вырасти и закрыть
- * весь вьюпорт ДО того, как Above (см. AboveSection.tsx, лишний вьюпорт
- * в её собственной высоте wrap'а — там же объяснено, почему) отклеится и
- * начнёт естественным потоком уезжать — иначе на кадр-другой видно, как
- * Above уже едет из-под ещё маленькой, только начавшей расти маски (баг,
- * на который пожаловался пользователь). */
+ * то же время (см. riseTrigger ниже).
+ *
+ * Это ПЕРВАЯ фаза собственной sticky-фазы Capacity, т.е. riseTrigger
+ * стартует РОВНО в wrapTop, как и везде в остальной цепочке (Cliff/Above)
+ * — раньше он стоял ДО wrapTop (пока секция ещё в обычном потоке физически
+ * едет вверх снизу экрана), и JS пытался компенсировать это смещение
+ * только у clip-path (центр круга), но не у контента (заголовок,
+ * декоративные SVG) — тот честно ехал вместе с секцией, а сам clip
+ * всё равно частично обрезался собственной верхней границей ещё не
+ * доехавшего бокса, визуально давая наезжающий снизу "купол" вместо
+ * растущего из центра круга (баг, на который пожаловался пользователь).
+ * Перенос фазы на ПОСЛЕ wrapTop чинит оба симптома разом: секция уже
+ * `position: sticky` и неподвижно перекрывает весь вьюпорт, поэтому и
+ * clip-path, и контент растут/стоят строго на месте без всякой JS-
+ * компенсации (`at 50% 50%` — это буквально центр вьюпорта). Above
+ * по-прежнему остаётся приклеенной весь этот рост (её собственный лишний
+ * `CAPACITY_GROW_VH` в AboveSection.tsx подобран под ту же дистанцию и не
+ * менялся) — маска всё так же успевает вырасти ДО того, как Above
+ * отклеится, просто сам рост теперь физически внутри Capacity-wrap, а не
+ * до него (см. высоту/margin wrap'а ниже). */
 const GROW_VH = 2
-/** Пока секция не приклеена (весь riseTrigger ниже), её собственный
- * бокс физически едет вверх по нормальному потоку — центр clip-path
- * компенсирует это движение на каждом тике (см. onUpdate), чтобы
- * видимый круг рос на месте, вокруг уже неподвижного центра диска Above,
- * а не полз вверх вместе с боксом (баг, на который пожаловался
- * пользователь: маска визуально "подъезжала", а не росла из центра). */
 /** Скролл-дистанция распрямления маски следом за ростом — та же
  * двухфазная идея, что у Hero-img (см. HeroSection.tsx: GROWTH_PIN_VH
- * растит диаметр, UNWIND_PIN_VH распрямляет уже застывший border-radius),
- * но теперь это СОБСТВЕННАЯ (не riseTrigger) sticky-фаза Capacity — маска
- * уже на целевом диаметре (opacity уже 100%), скругление углов линейно
- * уходит boxRadius → 0. */
+ * растит диаметр, UNWIND_PIN_VH распрямляет уже застывший border-radius).
+ * Маска уже на целевом диаметре (opacity уже 100%), скругление углов
+ * линейно уходит boxRadius → 0. */
 const UNWIND_VH = 1
 
 /** Нижняя граница Desktop-брейкпоинта (--breakpoint-lg = 62rem в
@@ -54,20 +58,20 @@ export default function CapacitySection() {
    * раньше) + одновременный рост opacity секции от 0 до 1.
    *
    * Capacity — `position: sticky; top: 0` внутри Capacity-pin-wrap высотой
-   * (2 + UNWIND_VH) вьюпортов, сдвинутой на `margin-top: -100vh` — тот же
-   * приём, что у Above-pin-wrap (см. AboveSection.tsx). НО, в отличие от
-   * остальной цепочки, весь рост маски (GROW_VH) происходит в
-   * riseTrigger — ДО собственного wrapTop, т.е. пока Above (см.
-   * AboveSection.tsx, её `+3` вместо стандартного `+2` в высоте wrap'а)
-   * ещё физически приклеена и стоит неподвижно. Только после того, как
-   * маска уже выросла и полностью закрыла вьюпорт, наступает wrapTop —
-   * Above отклеивается (её уже не видно под сплошной Capacity) и
-   * начинается собственная sticky-фаза Capacity (trigger), где маска
-   * просто распрямляется в прямоугольник (round: boxRadius → 0) на уже
-   * замороженном целевом диаметре. Тот же принцип, что у riseTrigger в
-   * CliffSection.tsx/AboveSection.tsx, только длина riseTrigger здесь не
-   * стандартный 1 вьюпорт, а GROW_VH=2 — см. комментарий у GROW_VH выше и
-   * у `(3 + TOTAL_PIN_VH)` в AboveSection.tsx. */
+   * (2 + GROW_VH + UNWIND_VH) вьюпортов, сдвинутой на
+   * `margin-top: -(1 + GROW_VH) × 100vh` — тот же приём, что у
+   * Above-pin-wrap (см. AboveSection.tsx), с margin увеличенным на
+   * GROW_VH сверх стандартного `100vh`, чтобы wrapTop наступал раньше —
+   * ровно там, где раньше начинался старый pre-wrapTop riseTrigger. Above
+   * (её собственный лишний `CAPACITY_GROW_VH` в AboveSection.tsx, не
+   * менялся) остаётся приклеенной ровно на эту же GROW_VH-дистанцию, так
+   * что рост маски по-прежнему полностью укладывается в окно, пока Above
+   * ещё неподвижна. riseTrigger (GROW_VH вьюпортов от wrapTop) — рост;
+   * следом sразу trigger (UNWIND_VH вьюпортов) — распрямление в
+   * прямоугольник (round: boxRadius → 0) на уже замороженном целевом
+   * диаметре. Тот же принцип, что у riseTrigger в CliffSection.tsx/
+   * AboveSection.tsx — тут он просто длиной GROW_VH=2 вместо стандартного
+   * 1 вьюпорта. */
   useEffect(() => {
     const wrap = wrapRef.current
     const section = sectionRef.current
@@ -99,33 +103,25 @@ export default function CapacitySection() {
 
     const riseTrigger = ScrollTrigger.create({
       trigger: wrap,
-      start: () => wrapTop() - window.innerHeight * GROW_VH,
-      end: wrapTop,
+      start: wrapTop,
+      end: () => wrapTop() + window.innerHeight * GROW_VH,
       scrub: true,
       onUpdate: (self) => {
         const grow = self.progress
         section.style.opacity = String(grow)
         const radius =
           diskRadiusPx + easeInCubic(grow) * (targetRadius() - diskRadiusPx)
-        // Секция весь riseTrigger ещё НЕ приклеена (обычный поток, сама
-        // физически поднимается снизу вверх, см. комментарий у useEffect)
-        // — если центрировать по "50% 50%" её же (движущегося) бокса,
-        // видимый круг будет ползти вместе с ней, а не расти на месте
-        // вокруг уже неподвижного диска Above. Компенсируем текущий
-        // вьюпорт-относительный top секции, чтобы "at" указывал на
-        // ФИКСИРОВАННЫЙ центр вьюпорта (= центр диска Above) на любом
-        // шаге. По горизонтали компенсация не нужна — секция w-full,
-        // левый край и так совпадает с левым краем вьюпорта на любом шаге.
-        const sectionTop = section.getBoundingClientRect().top
-        const centerY = window.innerHeight / 2 - sectionTop
-        section.style.clipPath = `circle(${radius}px at 50% ${centerY}px)`
+        // Секция уже `position: sticky` и стоит неподвижно на весь
+        // вьюпорт весь riseTrigger (см. комментарий у useEffect) — "at
+        // 50% 50%" это буквально центр вьюпорта, без JS-компенсации.
+        section.style.clipPath = `circle(${radius}px at 50% 50%)`
       },
     })
 
     const trigger = ScrollTrigger.create({
       trigger: wrap,
-      start: wrapTop,
-      end: () => wrapTop() + window.innerHeight * UNWIND_VH,
+      start: () => wrapTop() + window.innerHeight * GROW_VH,
+      end: () => wrapTop() + window.innerHeight * (GROW_VH + UNWIND_VH),
       scrub: true,
       onUpdate: (self) => {
         const unwind = self.progress
@@ -159,8 +155,8 @@ export default function CapacitySection() {
       ref={wrapRef}
       className="Capacity-pin-wrap relative"
       style={{
-        height: `${(2 + UNWIND_VH) * 100}vh`,
-        marginTop: '-100vh',
+        height: `${(2 + GROW_VH + UNWIND_VH) * 100}vh`,
+        marginTop: `${-(1 + GROW_VH) * 100}vh`,
       }}
     >
       <section

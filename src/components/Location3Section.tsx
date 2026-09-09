@@ -98,10 +98,25 @@ export default function Location3Section({ onBookNow }: Location3SectionProps) {
   }
 
   /* Location3 приклеена вверху (`position: sticky; top: 0` внутри
-   * Location3-pin-wrap — без margin-top: никто не наезжает на Location3
-   * сверху, она просто идёт обычным потоком после Location2, поэтому
-   * `'top top'` работает буквально, без getBoundingClientRect, сравни с
-   * Location1Section.tsx/CliffSection.tsx). Собственный пин разбит на 2
+   * Location3-pin-wrap высотой (100 + ENTRANCE_VH + SLIDE_COUNT*100 +
+   * DWELL_VH) вьюпортов, сдвинутой на `margin-top: -100vh` — тот же приём,
+   * что у Cliff-pin-wrap/Location1-pin-wrap (см. CliffSection.tsx): margin
+   * утягивает документный верх Location3-wrap ровно на ENTRANCE_VH раньше,
+   * чем закончился бы Location2 "по прямому потоку" — Location2Section.tsx
+   * держит свой собственный пин ровно на эту же LOCATION3_ENTRANCE_VH
+   * дистанцию дольше специально под это (см. константу там). Раньше здесь
+   * не было margin вообще — Location3 просто шла обычным потоком после
+   * Location2, и `'top top'` совпадал с моментом, когда Location2 УЖЕ
+   * полностью уехала: сбоку-наезд начинался только после того, как
+   * Location2 исчезала, а не поверх ещё видимой (неподвижной) Location2,
+   * как должно быть по макету (баг, на который пожаловался пользователь).
+   * `'top top'` по-прежнему работает буквально (GSAP сам учитывает margin
+   * в естественной doc-flow позиции wrap'а и пересчитывает её на refresh),
+   * без отдельного getBoundingClientRect-хелпера, как в Location1/Cliff —
+   * там он нужен из-за компенсации ещё не приклеенного бокса, тут в этом
+   * нет необходимости: единственное, что меняется — ГДЕ (раньше/позже)
+   * наступает штатный sticky-стик, а не что происходит до него. Собственный
+   * пин разбит на 2
    * последовательные фазы (тот же приём splitProgress, что в
    * Location2Section.tsx): первые ENTRANCE_VH — наезд сбоку (translateX +
    * скругление левых углов, см. ENTRANCE_KEYFRAMES выше), дальше —
@@ -178,6 +193,7 @@ export default function Location3Section({ onBookNow }: Location3SectionProps) {
       className="Location3-pin-wrap relative bg-light"
       style={{
         height: `${100 + ENTRANCE_VH + SLIDE_COUNT * 100 + DWELL_VH}vh`,
+        marginTop: '-100vh',
       }}
     >
       <section

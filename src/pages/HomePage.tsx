@@ -13,7 +13,6 @@ import Location3Section from '../components/Location3Section'
 import ResidenceSection from '../components/ResidenceSection'
 import AdvantagesSection from '../components/AdvantagesSection'
 import BeyondSection from '../components/BeyondSection'
-import MoveSection from '../components/MoveSection'
 import DriftSection from '../components/DriftSection'
 import FooterSection from '../components/FooterSection'
 import BookingPopup from '../components/BookingPopup'
@@ -38,7 +37,6 @@ export default function HomePage() {
         <ResidenceSection />
         <AdvantagesSection />
         <BeyondSection />
-        <MoveSection />
         <DriftSection onBookNow={() => setBookingOpen(true)} />
       </main>
       <FooterSection onBookNow={() => setBookingOpen(true)} />

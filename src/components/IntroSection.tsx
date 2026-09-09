@@ -12,11 +12,6 @@ import { INTRO_PIN_VH } from '../lib/scrollChain'
  * счёт собственной высоты обёрток (см. HeroSection.tsx и комментарий у
  * Intro-pin-wrap ниже). */
 const PIN_VH = INTRO_PIN_VH
-/** Смещение по Y для слайд-ап эффекта — % от СОБСТВЕННОЙ высоты каждого
- * элемента (`translateY(N%)` в CSS считается именно от неё), поэтому не
- * нужно измерять высоту в JS отдельно для title/logo/bottom-wrap — она у
- * них разная и meняется по брейкпоинтам. */
-const REVEAL_DISTANCE_PERCENT = 50
 /** Окна reveal-прогресса (0..1 внутри PIN_VH) для каждого элемента — с
  * нахлёстом, чтобы получился каскад, а не одновременное появление всех
  * трёх сразу. Порядок и нахлёст сохраняют прежнюю задумку (title, потом
@@ -65,7 +60,7 @@ export default function IntroSection() {
    *
    * Как только Intro-wrap "доехала" (margin утянул её верх к 0vh
    * относительно исходной точки), играет её собственная PIN_VH-анимация
-   * (Intro-title/Intro-logo/Intro-bottom-wrap slide-up + opacity, с
+   * (Intro-title/Intro-logo/Intro-bottom-wrap opacity, с
    * нахлёстом по TITLE_WINDOW/LOGO_WINDOW/BOTTOM_WRAP_WINDOW, линейно по
    * скроллу — нелинейный easing вместе с отдельными окнами создаёт
    * ощущение «стоп-кадр → резкий скачок»). `(2 + PIN_VH)` вместо
@@ -92,11 +87,8 @@ export default function IntroSection() {
 
     if (reduceMotion()) {
       title.style.opacity = '1'
-      title.style.transform = 'none'
       logo.style.opacity = '1'
-      logo.style.transform = 'none'
       bottomWrap.style.opacity = '1'
-      bottomWrap.style.transform = 'none'
       return
     }
 
@@ -118,26 +110,20 @@ export default function IntroSection() {
 
         const titleT = windowProgress(revealProgress, TITLE_WINDOW)
         title.style.opacity = String(titleT)
-        title.style.transform = `translateY(${(1 - titleT) * REVEAL_DISTANCE_PERCENT}%)`
 
         const logoT = windowProgress(revealProgress, LOGO_WINDOW)
         logo.style.opacity = String(logoT)
-        logo.style.transform = `translateY(${(1 - logoT) * REVEAL_DISTANCE_PERCENT}%)`
 
         const bottomWrapT = windowProgress(revealProgress, BOTTOM_WRAP_WINDOW)
         bottomWrap.style.opacity = String(bottomWrapT)
-        bottomWrap.style.transform = `translateY(${(1 - bottomWrapT) * REVEAL_DISTANCE_PERCENT}%)`
       },
     })
 
     return () => {
       trigger.kill()
       title.style.opacity = ''
-      title.style.transform = ''
       logo.style.opacity = ''
-      logo.style.transform = ''
       bottomWrap.style.opacity = ''
-      bottomWrap.style.transform = ''
     }
   }, [])
 

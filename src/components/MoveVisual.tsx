@@ -15,15 +15,16 @@ type MoveVisualProps = {
   activeIndex: number
   /** Ref на обёртку title+cards (не bg-колец) — нужен BeyondSection.tsx,
    * чтобы прогонять по ней scale/opacity на въезде маски (см. «Beyond to
-   * Move» в Figma). MoveSection.tsx это не нужно — там элементы сразу
-   * видны, ref не передаётся. */
+   * Move» в Figma). */
   contentRef?: (el: HTMLDivElement | null) => void
 }
 
-/** Визуал секции Move (кольца + заголовок + стопка карточек) — общий для
- * MoveSection.tsx (статичный, финальный вид) и для растущей маски-оверлея
- * в BeyondSection.tsx (см. переход «Beyond to Move» в Figma), чтобы не
- * дублировать разметку/копирайт в двух местах. */
+/** Визуал секции Move (кольца + заголовок + стопка карточек) — вынесен
+ * отдельным компонентом, чтобы не мешать разметку внутрь и без того
+ * большого BeyondSection.tsx, где растущая маска (см. «Beyond to Move» в
+ * Figma) и есть единственная Move (раньше существовала ещё и отдельная
+ * MoveSection.tsx с тем же визуалом — убрана, было дублирование одной и
+ * той же секции двумя DOM-узлами). */
 export default function MoveVisual({ activeIndex, contentRef }: MoveVisualProps) {
   return (
     <>

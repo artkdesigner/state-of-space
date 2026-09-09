@@ -6,7 +6,7 @@ import { scrollToHash } from '../lib/scroll'
  * обычный document flow (без JS): margin-top тянет Footer вверх на этот же
  * DWELL_VH, поэтому её реальный подъём с `top: 100vh` до `0` укладывается
  * именно в то окно, где Drift ещё не отклеилась и не укатилась. */
-const DWELL_VH = 100
+const DWELL_VH = 200
 
 const NAV_LINKS = [
   'Experience',

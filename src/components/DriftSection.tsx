@@ -15,7 +15,7 @@ const CURSOR_IMAGES = [cursor1, cursor2, cursor3]
  * ResidenceSection.tsx, только здесь без собственной scroll-анимации у
  * Drift — чистый CSS (`position: sticky` само держит секцию на месте,
  * пока не кончится высота обёртки), без ScrollTrigger. */
-const DWELL_VH = 100
+const DWELL_VH = 200
 
 type DriftSectionProps = {
   onBookNow: () => void

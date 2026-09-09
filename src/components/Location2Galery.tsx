@@ -20,14 +20,12 @@ export default function Location2Galery({ col2Ref }: Location2GaleryProps) {
         <img
           src={img1}
           alt="The Island Retreat pavilion roofline among the pines"
-          loading="lazy"
-          className="Galery-img-1 h-20 w-full rounded-[1.875rem] object-cover"
+          className="Galery-img-1 h-[20rem] w-full rounded-[1.875rem] object-cover"
         />
         <img
           src={img2}
           alt="The Island Retreat pool deck between the pines"
-          loading="lazy"
-          className="Galery-img-2 h-[18.75rem] w-25 rounded-[1.875rem] object-cover"
+          className="Galery-img-2 h-[18.75rem] w-[25rem] rounded-[1.875rem] object-cover"
         />
       </div>
 
@@ -38,7 +36,6 @@ export default function Location2Galery({ col2Ref }: Location2GaleryProps) {
         <img
           src={img3}
           alt="The Island Retreat pavilion nestled among tall pine trees"
-          loading="lazy"
           className="Galery-img-3 min-h-px w-full flex-1 rounded-[3.75rem] object-cover"
         />
       </div>
@@ -47,14 +44,12 @@ export default function Location2Galery({ col2Ref }: Location2GaleryProps) {
         <img
           src={img4}
           alt="The Island Retreat guest room interior"
-          loading="lazy"
-          className="Galery-img-4 h-[18.75rem] w-25 rounded-[1.875rem] object-cover"
+          className="Galery-img-4 h-[18.75rem] w-[25rem] rounded-[1.875rem] object-cover"
         />
         <img
           src={img5}
           alt="The Island Retreat terrace overlooking the coastline"
-          loading="lazy"
-          className="Galery-img-5 h-20 w-full rounded-[1.875rem] object-cover"
+          className="Galery-img-5 h-[20rem] w-full rounded-[1.875rem] object-cover"
         />
       </div>
     </div>

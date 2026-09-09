@@ -87,19 +87,16 @@ export default function Location2Pillars() {
         <img
           src={img3}
           alt="Rammed-earth wall detail of The Island Retreat"
-          loading="lazy"
           className="absolute top-[calc(50%-1.72rem)] left-[calc(50%-1.1875rem)] h-63.25 w-47.5 max-w-none -translate-x-1/2 -translate-y-1/2 rounded-md object-cover md:top-[calc(50%-1.3125rem)] md:left-[calc(50%-0.9375rem)] md:h-45 md:w-33 lg:top-[calc(50%-2.8125rem)] lg:left-[calc(50%-2.03875rem)] lg:h-112.5 lg:w-82.5 lg:rounded-[1.875rem]"
         />
         <img
           src={img2}
           alt="Still pool at The Island Retreat reflecting the surrounding pines"
-          loading="lazy"
           className="absolute right-0 bottom-0 h-52 w-38.75 max-w-none rounded-md object-cover md:h-37.5 md:w-27.5 md:rounded-[0.6529rem] lg:h-92.5 lg:w-67.5 lg:rounded-[1.875rem]"
         />
         <img
           src={img1}
           alt=""
-          loading="lazy"
           className="absolute top-0 left-0 size-25 max-w-none rounded-md object-cover md:size-18.5 lg:size-45 lg:rounded-[1.875rem]"
         />
       </div>
@@ -111,13 +108,11 @@ export default function Location2Pillars() {
         <img
           src={img5}
           alt="Herbarium terrace at The Island Retreat"
-          loading="lazy"
           className="absolute top-[1.875rem] left-0 h-[13.125rem] w-[calc(100%-4rem)] max-w-none rounded-md object-cover md:top-[0.25rem] md:h-[8.3125rem] md:w-[calc(100%-2.625rem)] lg:top-0 lg:h-[17.5rem] lg:w-[calc(100%-5.3125rem)] lg:rounded-[1.875rem]"
         />
         <img
           src={img4}
           alt="Locally sourced meal served at The Island Retreat"
-          loading="lazy"
           className="absolute top-0 left-[14.375rem] h-[9.625rem] w-[calc(100%-14.375rem)] max-w-none rounded-md object-cover md:top-[-1.25rem] md:left-[9.3125rem] md:h-[6.25rem] md:w-[calc(100%-9.3125rem)] md:rounded-[0.75rem] lg:top-[-3.75rem] lg:left-[19.6875rem] lg:h-[12.875rem] lg:w-[11.875rem] lg:rounded-[1.875rem]"
         />
       </div>

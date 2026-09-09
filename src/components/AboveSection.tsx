@@ -17,17 +17,14 @@ const RING_INNER_RESTING = RING_OUTER - RING_STROKE_RESTING
 const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS
 
 /** Первые RISE_VH вьюпорта СОБСТВЕННОЙ (уже приклеенной) sticky-фазы
- * Above — тот же приём "riseTrigger ПОСЛЕ wrapTop, не до", что и в
- * CliffSection.tsx (см. её комментарий у константы RISE_VH — тот же
- * класс бага и тот же фикс): по структуре обёрток Qualities (обычный
- * поток, без sticky) в этот момент уже гарантированно дочитывает свой
- * последний вьюпорт и уезжает вверх сама — Above просто ждёт этого,
- * уже неподвижно приклеенная, скругляя её нижние углы синхронно с этим
- * уже идущим отъездом (зеркально тому, как распрямляется верхний край в
- * IntroSection.tsx, но снизу, как в CliffSection.tsx). Раньше здесь стоял
- * riseTrigger ДО wrapTop — тогда до Qualities оставался ещё целый лишний
- * вьюпорт натурального скролла, и скругление начиналось на кадр-другой
- * раньше, чем нужно (баг, на который пожаловался пользователь). */
+ * Above — чистый запас: по структуре обёрток Qualities (обычный поток,
+ * без sticky) в этот момент уже гарантированно дочитывает свой последний
+ * вьюпорт и уезжает вверх сама, естественным document flow, без единой
+ * строчки JS — Above просто ждёт этого, уже неподвижно приклеенная, и
+ * только затем начинает собственное раскрытие (см. trigger ниже). Раньше
+ * тут же скруглялись нижние углы Qualities синхронно с её отъездом —
+ * анимацию убрали по просьбе пользователя, сам буфер (и структура
+ * обёрток, задающая момент, когда Qualities отклеивается) остался. */
 const RISE_VH = 1
 /** Собственная (reveal) фаза Above — раскрытие: circle-wrap проявляется
  * из прозрачности, заливка кольца растёт 0 → 100%, левый заголовок
@@ -62,9 +59,11 @@ const WRAP_FADE_FRACTION = 0.15
  * прячется за оставшуюся половину фазы 1, синхронно с тем, как правый
  * заголовок въезжает и полностью появляется ровно к концу фазы 1 (кольцо
  * = 100%). Кольцо намеренно НЕ получает собственный easing поверх
- * `reveal` — `ringFill = reveal` напрямую, иначе "заполнено на 50%" и
- * "left полностью виден" разъезжались бы (реальная синхронизация тогда
- * была бы не по факту, а по совпадению конкретных чисел easeOutCubic). */
+ * `reveal` — `ringFill = reveal` напрямую, а сам `reveal` линеен (без
+ * easeOutCubic, см. onUpdate ниже), иначе "заполнено на 50%" и "left
+ * полностью виден" разъезжались бы (реальная синхронизация тогда была бы
+ * не по факту, а по совпадению конкретных чисел easeOutCubic), а заливка
+ * кольца тратила бы на первую половину меньше скролла, чем на вторую. */
 const TITLE_HALFWAY = 0.5
 
 const clamp = (v: number, min = 0, max = 1) => Math.min(max, Math.max(min, v))
@@ -100,19 +99,17 @@ export default function AboveSection() {
    * (движущегося) бокса и на глаз "наезжал"/сползал, а не рос на месте
    * из уже неподвижного диска Above, как должно быть по макету.
    *
-   * 1) riseTrigger (первые RISE_VH вьюпорта собственной sticky-фазы,
-   *    т.е. ПОСЛЕ wrapTop, не до) — чистая косметика: скругление НИЖНИХ
-   *    углов Qualities по мере того, как она (обычный поток, без sticky)
-   *    сама уезжает вверх и пропадает за верхней границей (зеркально
-   *    тому, как распрямляется верхний край в IntroSection.tsx, но снизу,
-   *    как в CliffSection.tsx). z-index Qualities поднят один раз при
-   *    монтировании (не по кадрам) — при их обычном position:relative без
-   *    этого Above (позже в DOM) перекрыла бы Qualities по умолчанию.
-   * 2) trigger (TOTAL_PIN_VH вьюпортов сразу следом, Above уже приклеена)
-   *    — раскрытие + утолщение, см. onUpdate ниже. Остальные
-   *    CAPACITY_GROW_VH вьюпорта после этого — чистый запас: Above уже
-   *    полностью раскрыта и просто ждёт, пока Capacity дорастит маску
-   *    (см. выше). */
+   * Первые RISE_VH вьюпорта собственной sticky-фазы (т.е. ПОСЛЕ wrapTop,
+   * не до) — чистый запас, пока Qualities (обычный поток, без sticky)
+   * сама уезжает вверх и пропадает за верхней границей, без анимации.
+   * z-index Qualities поднят один раз при монтировании (не по кадрам) —
+   * при их обычном position:relative без этого Above (позже в DOM)
+   * перекрыла бы Qualities по умолчанию.
+   *
+   * trigger (TOTAL_PIN_VH вьюпортов сразу следом, Above уже приклеена) —
+   * раскрытие + утолщение, см. onUpdate ниже. Остальные CAPACITY_GROW_VH
+   * вьюпорта после этого — чистый запас: Above уже полностью раскрыта и
+   * просто ждёт, пока Capacity дорастит маску (см. выше). */
   useEffect(() => {
     const wrap = wrapRef.current
     const section = sectionRef.current
@@ -150,18 +147,6 @@ export default function AboveSection() {
       return r.top + window.scrollY
     }
 
-    const riseTrigger = ScrollTrigger.create({
-      trigger: wrap,
-      start: wrapTop,
-      end: () => wrapTop() + window.innerHeight * RISE_VH,
-      scrub: true,
-      onUpdate: (self) => {
-        const radius = easeOutCubic(self.progress) * 45
-        qualities.style.borderBottomLeftRadius = `${radius}vw`
-        qualities.style.borderBottomRightRadius = `${radius}vw`
-      },
-    })
-
     const trigger = ScrollTrigger.create({
       trigger: wrap,
       start: () => wrapTop() + window.innerHeight * RISE_VH,
@@ -170,12 +155,19 @@ export default function AboveSection() {
       onUpdate: (self) => {
         const p = self.progress
 
-        // Фаза 1 — раскрытие: единое эазед-время `reveal` управляет и
-        // кольцом, и обоими заголовками. Кольцо = reveal напрямую (без
-        // дополнительного easing) — так "заполнено на TITLE_HALFWAY" и
-        // "заголовок полностью виден/спрятан" гарантированно совпадают
-        // по построению, а не по случайному совпадению кривых.
-        const reveal = easeOutCubic(clamp(p / REVEAL_BOUNDARY))
+        // Фаза 1 — раскрытие: единое (линейное, БЕЗ easing) время `reveal`
+        // управляет и кольцом, и обоими заголовками. Линейность здесь
+        // принципиальна для самого кольца — заливка должна тратить на
+        // каждую половину (0→50% и 50%→100%) одинаковый скролл (по жалобе
+        // пользователя: раньше `reveal` сам был eased, из-за чего первая
+        // половина заливки съедала намного меньше скролла, чем вторая).
+        // Кольцо = reveal напрямую (без дополнительного easing) — так
+        // "заполнено на TITLE_HALFWAY" и "заголовок полностью виден/
+        // спрятан" гарантированно совпадают по построению, а не по
+        // случайному совпадению кривых. Заголовки не теряют смягчение
+        // движения — каждый берёт свой собственный easeOutCubic ниже,
+        // локально внутри своей половины `reveal`.
+        const reveal = clamp(p / REVEAL_BOUNDARY)
         circleWrap.style.opacity = String(clamp(reveal / WRAP_FADE_FRACTION))
         const ringFill = reveal
 
@@ -220,11 +212,8 @@ export default function AboveSection() {
     })
 
     return () => {
-      riseTrigger.kill()
       trigger.kill()
       qualities.style.zIndex = ''
-      qualities.style.borderBottomLeftRadius = ''
-      qualities.style.borderBottomRightRadius = ''
       circleWrap.style.opacity = ''
       leftTitle.style.transform = ''
       rightTitle.style.transform = ''

@@ -33,6 +33,15 @@ const GALERY_COL2_REST = { width: 120, paddingX: 20, paddingY: 6.25 }
  * просто без раннтайм-измерения. paddingY = 60px = 3.75rem. */
 const GALERY_COL2_SETTLED = { width: 38.375, paddingX: 0, paddingY: 3.75 }
 
+/** Хвостовой запас пина (в vh), после того как Location2 уже полностью
+ * доиграла собственную анимацию — держит её приклеенной ещё на эту
+ * дистанцию, пока Location3Section.tsx (следующий сиблинг, подтянутый
+ * своим собственным `margin-top: -100vh`) наезжает сбоку поверх неё, а не
+ * после того как Location2 уже уехала (тот же приём хвоста, что у Cliff/
+ * Above/Location1, см. CliffSection.tsx). Должно совпадать с ENTRANCE_VH
+ * в Location3Section.tsx. */
+const LOCATION3_ENTRANCE_VH = 100
+
 type Location2SectionProps = {
   onBookNow: () => void
 }
@@ -96,7 +105,10 @@ export default function Location2Section({ onBookNow }: Location2SectionProps) {
        * Location2-about. Тот же приём "N × высота экрана на слайд", что и в
        * Location1/Location3Section. */
       const getCrossfadeBudget = () => window.innerHeight * SLIDE_COUNT
-      const getPinDistance = () => getCrossfadeBudget() + getDistance()
+      const getLocation3EntranceBudget = () =>
+        window.innerHeight * (LOCATION3_ENTRANCE_VH / 100)
+      const getPinDistance = () =>
+        getCrossfadeBudget() + getDistance() + getLocation3EntranceBudget()
 
       const updateHeight = () => {
         wrap.style.height = `${section.offsetHeight + getPinDistance()}px`
@@ -112,20 +124,25 @@ export default function Location2Section({ onBookNow }: Location2SectionProps) {
         onUpdate: (self) => {
           const distance = getDistance()
           const crossfadeBudget = getCrossfadeBudget()
-          const total = crossfadeBudget + distance
+          const total = getPinDistance()
           if (!distance || !total) return
 
-          const splitProgress = crossfadeBudget / total
+          const splitCrossfade = crossfadeBudget / total
+          // Конец фазы 2 (горизонтальный переезд) — сразу после неё остаётся
+          // только LOCATION3_ENTRANCE_VH хвост-запас (см. константу выше),
+          // трек на нём просто стоит на месте (scrollLocal уже = 1).
+          const splitDistance =
+            (crossfadeBudget + distance) / total
 
-          // Фаза 1 (0 → splitProgress): кроссфейд слайдов, трек неподвижен.
-          runCrossfade(gsap.utils.clamp(0, 1, self.progress / splitProgress))
+          // Фаза 1 (0 → splitCrossfade): кроссфейд слайдов, трек неподвижен.
+          runCrossfade(gsap.utils.clamp(0, 1, self.progress / splitCrossfade))
 
-          // Фаза 2 (splitProgress → 1): горизонтальный переезд трека,
-          // начинается только после того как кроссфейд завершён.
+          // Фаза 2 (splitCrossfade → splitDistance): горизонтальный переезд
+          // трека, начинается только после того как кроссфейд завершён.
           const scrollLocal = gsap.utils.clamp(
             0,
             1,
-            (self.progress - splitProgress) / (1 - splitProgress),
+            (self.progress - splitCrossfade) / (splitDistance - splitCrossfade),
           )
           gsap.set(track, { x: -distance * scrollLocal })
         },
@@ -188,7 +205,13 @@ export default function Location2Section({ onBookNow }: Location2SectionProps) {
           const crossfadeBudget = getCrossfadeBudget()
           const retreatWidth = getRetreatWidth()
           const squeezeBudget = getSqueezeBudget()
-          const total = crossfadeBudget + distance + squeezeBudget
+          // getPinDistance(), не локальная сумма — включает ещё и хвостовой
+          // LOCATION3_ENTRANCE_VH запас (см. константу выше), иначе доли
+          // splitCrossfade/scrolledPx съезжали бы относительно реального
+          // конца триггера (`end`, тоже посчитанного через getPinDistance()).
+          // Сам хвост ничего доп. не делает — track/squeezeProgress ниже уже
+          // клэмпятся на своих финальных значениях естественно.
+          const total = getPinDistance()
           if (!distance || !total) return
 
           const splitCrossfade = crossfadeBudget / total

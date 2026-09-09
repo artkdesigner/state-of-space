@@ -85,9 +85,11 @@ const CAROUSEL_KEYFRAMES: { translateY: number }[] = [
   { translateY: 36.86 },
   { translateY: 0 },
 ]
-/** Линейный рост scale кольца на заезде: от SCALE_START (кадр 1 сцены) до
- * SCALE_END (состояние покоя) — без ступеней/smoothstep по кадрам, просто
- * прямая пропорция entrance-прогрессу. */
+/** Точки кривой scale кольца — SCALE_START (кадр 1 сцены захода) и
+ * SCALE_END (состояние покоя, конец захода). Третья точка (EXIT_SCALE_END)
+ * добавляется ниже, после её объявления — см. RING_SCALE_KEYFRAMES и
+ * комментарий там про то, почему все три точки нужно сэмплить ОДНОЙ
+ * непрерывной кривой, а не двумя независимыми кусками. */
 const SCALE_START = 2.4364
 const SCALE_END = 1
 /** Доля ENTRANCE_VH, за которую Beyond-title долистывает до 100% opacity
@@ -107,16 +109,28 @@ const TITLE_FADE_WINDOW: [number, number] = [0, 0.25]
  * 3) PHASE3 — после того как маска дошла до 100vw, высота досаживается со
  *    "100vw" до 100dvh (через CSS calc(), тоже без раннтайм-измерений), а
  *    скругление — с 50% до 0%, до финального полноэкранного прямоугольника.
- * Дальше, вплоть до конца PHASE3, Beyond всё ещё приклеена — как только
- * скролл проходит этот хвост, Beyond отклеивается и обычным document flow
- * сразу открывается настоящая MoveSection.tsx, которая к этому моменту
- * выглядит идентично последнему кадру маски (тот же MoveVisual). */
+ * Дальше идёт CARD_PIN_VH (см. ниже) — уже не рост маски, а смена карточек
+ * внутри уже полностью выросшего Move. Раньше здесь была ОТДЕЛЬНАЯ секция
+ * MoveSection.tsx, которая начинала сама пиниться сразу после того, как
+ * Beyond отклеивалась — де-факто ДВЕ разные секции ("Move", выросшая из
+ * маски, и следом настоящая MoveSection) визуально сшитые покадрово, но
+ * по факту два отдельных DOM-узла (баг/дублирование, на которое пожаловался
+ * пользователь). Теперь растущая маска — ЕДИНСТВЕННЫЙ Move: сама
+ * card-хореография (см. CARD_COUNT/CARD_PIN_VH) перенесена сюда же, в тот
+ * же trigger/onUpdate, что и рост маски, вместо отдельной секции/триггера
+ * ниже по DOM. */
 const MOVE_PHASE1_VH = 120
 const MOVE_PHASE2_VH = 200
 const MOVE_PHASE3_VH = 80
 const MOVE_VH = MOVE_PHASE1_VH + MOVE_PHASE2_VH + MOVE_PHASE3_VH
 /** Итоговый scale кольца на кадре 3 сцены (920/1888 от текущего покоя). */
 const EXIT_SCALE_END = 920 / 1888
+/** Смена 3 карточек Move-visual — тот же расчёт (`CARD_COUNT - 0.5`), что
+ * раньше был в отдельной MoveSection.tsx, просто выраженный в "vh-числах"
+ * (×100), как остальные константы этого файла, а не как прямой множитель
+ * `window.innerHeight`. */
+const CARD_COUNT = 3
+const CARD_PIN_VH = (CARD_COUNT - 0.5) * 100
 /** Итоговый блюр заголовка на кадре 4 сцены, 48.35px на Figma-фрейме 1920. */
 const TITLE_BLUR_END_REM = 48.35 / 16
 
@@ -142,10 +156,38 @@ function sampleCarousel(progress: number) {
   }
 }
 
-/** Строго линейный рост scale по entrance-прогрессу, без smoothstep и
- * без промежуточных кадров — от SCALE_START до SCALE_END напрямую. */
-function sampleScale(progress: number) {
-  return SCALE_START + (SCALE_END - SCALE_START) * clamp(progress)
+/** Кривая scale кольца по АБСОЛЮТНОМУ vhScrolled, одной непрерывной
+ * кусочно-smoothstep кривой через все 3 точки — SCALE_START (0vh) →
+ * SCALE_END (ENTRANCE_VH, состояние покоя) → EXIT_SCALE_END (конец
+ * MOVE_PHASE1_VH, кадр 3 перехода в Move). Раньше это были ДВА независимых
+ * сэмпла (linear заезд + отдельный exit-множитель, стартующий только на
+ * PIN_HEIGHT_VH), из-за чего между концом захода (ENTRANCE_VH=300vh) и
+ * началом схлопывания (PIN_HEIGHT_VH=400vh) scale держался плоско — кольцо
+ * визуально останавливалось, а потом резко возобновляло сжатие, хотя
+ * вращение (rotation) всё это время шло непрерывно — асимметрия читалась
+ * как "рывок"/"ступенька" (баг, на который пожаловался пользователь: "scale
+ * меняется ступенчато"). Одна кривая через 3 точки убирает эту паузу —
+ * сжатие начинается сразу же, как только заход долистан до состояния покоя,
+ * без плоского участка между ними. */
+const RING_SCALE_KEYFRAMES: { vh: number; scale: number }[] = [
+  { vh: 0, scale: SCALE_START },
+  { vh: ENTRANCE_VH, scale: SCALE_END },
+  { vh: PIN_HEIGHT_VH + MOVE_PHASE1_VH, scale: EXIT_SCALE_END },
+]
+
+function sampleRingScale(vhScrolled: number) {
+  const segments = RING_SCALE_KEYFRAMES.length - 1
+  let i = 0
+  while (
+    i < segments - 1 &&
+    vhScrolled > RING_SCALE_KEYFRAMES[i + 1].vh
+  ) {
+    i++
+  }
+  const a = RING_SCALE_KEYFRAMES[i]
+  const b = RING_SCALE_KEYFRAMES[i + 1]
+  const local = smoothstep(clamp((vhScrolled - a.vh) / (b.vh - a.vh)))
+  return a.scale + (b.scale - a.scale) * local
 }
 
 /**
@@ -203,14 +245,16 @@ function innerEdgePercent(rotateDeg: number) {
 export default function BeyondSection() {
   const wrapRef = useRef<HTMLDivElement>(null)
   const titleRef = useRef<HTMLParagraphElement>(null)
+  const carouselRef = useRef<HTMLDivElement>(null)
   const entranceRef = useRef<HTMLDivElement>(null)
   const moveMaskRef = useRef<HTMLDivElement>(null)
   const moveContentRef = useRef<HTMLDivElement>(null)
   const [rotation, setRotation] = useState(0)
+  const [activeIndex, setActiveIndex] = useState(0)
 
-  /* Кольцо крутится на TOTAL_SCRUB_VH = PIN_HEIGHT_VH + MOVE_VH вьюпортов,
-   * пока Beyond приклеена вверху (`position: sticky; top: 0` внутри
-   * Beyond-pin-wrap — без margin-top, тот же случай, что
+  /* Кольцо крутится на TOTAL_SCRUB_VH = PIN_HEIGHT_VH + MOVE_VH + CARD_PIN_VH
+   * вьюпортов, пока Beyond приклеена вверху (`position: sticky; top: 0`
+   * внутри Beyond-pin-wrap — без margin-top, тот же случай, что
    * Location3Section.tsx). Первые ENTRANCE_VH из PIN_HEIGHT_VH — заезд:
    * Beyond-title из прозрачности + Beyond-carousel подъезжает/усаживается
    * от кадра 1 до уже закодированного кадра 5 (см.
@@ -218,16 +262,41 @@ export default function BeyondSection() {
    * НЕПРЕРЫВНО на весь TOTAL_SCRUB_VH, не завися ни от заезда, ни от
    * хвоста — угловая скорость не меняется на границе PIN_HEIGHT_VH/MOVE_VH,
    * кольцо просто продолжает крутиться (см. rawVhScrolled ниже). Хвост
-   * MOVE_VH — переход «Beyond to Move», см. константы выше. */
-  const TOTAL_SCRUB_VH = PIN_HEIGHT_VH + MOVE_VH
+   * MOVE_VH — переход «Beyond to Move», см. константы выше. Хвост
+   * CARD_PIN_VH сразу следом — уже не рост, а смена карточек Move-visual
+   * (см. CARD_COUNT/CARD_PIN_VH и комментарий у них). */
+  const TOTAL_SCRUB_VH = PIN_HEIGHT_VH + MOVE_VH + CARD_PIN_VH
 
   useEffect(() => {
     const wrap = wrapRef.current
     const title = titleRef.current
+    const carousel = carouselRef.current
     const entrance = entranceRef.current
     const mask = moveMaskRef.current
     const content = moveContentRef.current
-    if (!wrap || !title || !entrance || !mask || !content) return
+    if (!wrap || !title || !carousel || !entrance || !mask || !content) return
+
+    // Beyond-carousel стоит статично через top-30 (Desktop) вместо
+    // top-1/2 -translate-y-1/2 (Mobile/Tablet, уже по центру) — см. её
+    // className ниже. Чтобы кольцо оказалось по центру секции ровно к
+    // началу роста маски Move (по просьбе пользователя), меряем реальный
+    // зазор между центром статичного бокса (не зависит от JS-transform на
+    // entrance, см. getBoundingClientRect ниже — transform ребёнка не
+    // трогает layout-геометрию родителя) и центром вьюпорта, и добавляем
+    // этот зазор как ещё один additive translateY (в px, поверх основного
+    // %-based) на PHASE1 (см. centerOffsetPx в onUpdate). На Mobile/Tablet
+    // зазор и так ~0 (кольцо уже по центру), поэтому JS не нужно ветвить
+    // по брейкпоинту отдельно.
+    const measureCenterOffset = () => {
+      const rect = carousel.getBoundingClientRect()
+      const carouselCenterY = rect.top + rect.height / 2
+      return window.innerHeight / 2 - carouselCenterY
+    }
+    let centerOffsetPx = measureCenterOffset()
+    const onResize = () => {
+      centerOffsetPx = measureCenterOffset()
+    }
+    window.addEventListener('resize', onResize)
 
     if (reduceMotion()) {
       title.style.opacity = '1'
@@ -244,7 +313,7 @@ export default function BeyondSection() {
       // покоя и заметно моргает при первом скролле.
       title.style.opacity = '0'
       const start = sampleCarousel(0)
-      entrance.style.transform = `translateY(${start.translateY}%) scale(${sampleScale(0)})`
+      entrance.style.transform = `translateY(${start.translateY}%) scale(${sampleRingScale(0)})`
       mask.style.width = '0px'
       mask.style.height = '0px'
       mask.style.borderRadius = '50%'
@@ -273,15 +342,19 @@ export default function BeyondSection() {
         // держат кольцо/маску в состоянии покоя.
         const vhInMove = vhScrolled - PIN_HEIGHT_VH
 
-        // Фаза 1: кольцо досаживается до scale кадра 3, заголовок — в блюр
-        // до значения кадра 4.
+        // Фаза 1: кольцо досаживается до scale кадра 3 (см.
+        // sampleRingScale — одна непрерывная кривая, без паузы на границе
+        // ENTRANCE_VH/PIN_HEIGHT_VH), заголовок — в блюр до значения кадра
+        // 4, и кольцо довдвигается к центру секции (centerOffsetPx, см.
+        // измерение выше) — по просьбе пользователя, к началу роста маски
+        // Move кольцо должно уже стоять по центру, а не в своей статичной
+        // "top-30" точке покоя.
         const shrinkT = clamp(vhInMove / MOVE_PHASE1_VH)
+        const shrinkEase = smoothstep(shrinkT)
         const { translateY } = sampleCarousel(entranceProgress)
-        const scale =
-          sampleScale(entranceProgress) *
-          (1 + (EXIT_SCALE_END - 1) * smoothstep(shrinkT))
-        entrance.style.transform = `translateY(${translateY}%) scale(${scale})`
-        title.style.filter = `blur(${TITLE_BLUR_END_REM * smoothstep(shrinkT)}rem)`
+        const scale = sampleRingScale(vhScrolled)
+        entrance.style.transform = `translateY(calc(${translateY}% + ${centerOffsetPx * shrinkEase}px)) scale(${scale})`
+        title.style.filter = `blur(${TITLE_BLUR_END_REM * shrinkEase}rem)`
 
         // Фаза 2: маска растёт из центра квадратом (ширина=высота в vw —
         // остаётся кругом на любом брейкпоинте), элементы внутри идут из
@@ -306,10 +379,22 @@ export default function BeyondSection() {
           mask.style.height = `calc(100vw + (100dvh - 100vw) * ${radiusT})`
           mask.style.borderRadius = `${50 * (1 - radiusT)}%`
         }
+
+        // Фаза 4: маска уже полностью выросла (см. фазы 1-3 выше) — смена
+        // карточек Move-visual, тот же расчёт, что раньше был в отдельной
+        // MoveSection.tsx (см. CARD_PIN_VH/CARD_COUNT).
+        const vhInCards = vhInMove - MOVE_VH
+        const cardsProgress = clamp(vhInCards / CARD_PIN_VH)
+        const cardIndex = Math.min(
+          CARD_COUNT - 1,
+          Math.floor(cardsProgress * CARD_COUNT),
+        )
+        setActiveIndex((prev) => (prev === cardIndex ? prev : cardIndex))
       },
     })
 
     return () => {
+      window.removeEventListener('resize', onResize)
       trigger.kill()
       title.style.opacity = ''
       title.style.filter = ''
@@ -326,7 +411,7 @@ export default function BeyondSection() {
     <div
       ref={wrapRef}
       className="Beyond-pin-wrap relative"
-      style={{ height: `${100 + PIN_HEIGHT_VH + MOVE_VH}vh` }}
+      style={{ height: `${100 + PIN_HEIGHT_VH + MOVE_VH + CARD_PIN_VH}vh` }}
     >
       <section
         id="beyond"
@@ -341,7 +426,10 @@ export default function BeyondSection() {
           Usual Life
         </p>
 
-        <div className="Beyond-carousel absolute left-1/2 top-1/2 size-[23.125rem] -translate-x-1/2 -translate-y-1/2 md:size-[59rem] lg:top-30 lg:size-[118rem] lg:translate-y-0">
+        <div
+          ref={carouselRef}
+          className="Beyond-carousel absolute left-1/2 top-1/2 size-[23.125rem] -translate-x-1/2 -translate-y-1/2 md:size-[59rem] lg:top-30 lg:size-[118rem] lg:translate-y-0"
+        >
           <div
             ref={entranceRef}
             className="Beyond-carousel-entrance absolute inset-0"
@@ -393,16 +481,19 @@ export default function BeyondSection() {
           </div>
         </div>
 
-        {/* Растущая маска секции Move (переход «Beyond to Move», см.
-         * MOVE_PHASE1_VH/2/3_VH выше) — клон MoveVisual, не настоящая
-         * MoveSection.tsx: та подхватывает обычным document flow сразу
-         * после того, как этот хвост доигран, и к тому моменту выглядит
-         * идентично последнему кадру этой маски. aria-hidden — доступный
-         * инстанс контента только один, в самой MoveSection.tsx. */}
+        {/* Растущая маска — это и есть Move, а не клон-заглушка перед
+         * настоящей секцией: раньше здесь была ОТДЕЛЬНАЯ MoveSection.tsx,
+         * которая подхватывала обычным document flow сразу после того, как
+         * этот хвост доигран — де-факто два разных DOM-узла одной и той же
+         * секции, визуально сшитых покадрово (дублирование, на которое
+         * пожаловался пользователь). Теперь MoveSection.tsx удалена,
+         * card-хореография (activeIndex) считается прямо здесь, в фазе 4
+         * onUpdate (см. CARD_PIN_VH выше) — эта маска остаётся на экране и
+         * после того, как выросла, вплоть до конца всего Beyond-pin-wrap. */}
         <div
           ref={moveMaskRef}
-          aria-hidden
-          className="Beyond-move-mask pointer-events-none absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2 overflow-hidden bg-light"
+          id="move"
+          className="Beyond-move-mask absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2 overflow-hidden bg-light"
           style={{ width: 0, height: 0, borderRadius: '50%' }}
         >
           <div
@@ -416,7 +507,7 @@ export default function BeyondSection() {
           >
             <div className="flex h-full w-full flex-col items-center justify-center px-2.5">
               <MoveVisual
-                activeIndex={0}
+                activeIndex={activeIndex}
                 contentRef={(el) => {
                   moveContentRef.current = el
                 }}

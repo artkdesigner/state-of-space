@@ -32,12 +32,12 @@ const IMAGE_RADIUS =
  * пользователя они начинали проявляться прямо во время этого отъезда,
  * когда Location1 ещё не скрылась за верхним краем экрана. */
 const RISE_VH = 1
-/** Cliff-title/картинки начинают проявляться из прозрачности только
- * ПОСЛЕ RISE_VH — то есть только когда Location1 уже гарантированно
- * полностью скрылась за верхним краем экрана (см. RISE_VH выше), а не
- * одновременно с её отъездом, как было раньше. Долгота окна — тот же
- * 1 вьюпорт, что и раньше был у fade внутри RISE_VH, просто целиком
- * сдвинутый на RISE_VH позже. */
+/** Cliff-title начинает проявляться из прозрачности только ПОСЛЕ RISE_VH
+ * — то есть только когда Location1 уже гарантированно полностью скрылась
+ * за верхним краем экрана (см. RISE_VH выше), а не одновременно с её
+ * отъездом, как было раньше. Долгота окна — тот же 1 вьюпорт, что и раньше
+ * был у fade внутри RISE_VH, просто целиком сдвинутый на RISE_VH позже.
+ * Картинки в этом окне больше не участвуют — см. TITLE_FADE_WINDOW ниже. */
 const FADE_VH = 1
 /** Собственная (внутренняя) хореография Cliff — title уходит вверх и
  * пропадает за кадром, sub-title/description въезжают с боков, 5 фото
@@ -45,12 +45,11 @@ const FADE_VH = 1
  * вьюпорта. */
 const REVEAL_VH = 2
 
-/** Окна fade-in title/картинок внутри FADE_VH (0..1), с нахлёстом — тот
- * же приём каскада, что у TITLE_WINDOW/LOGO_WINDOW в IntroSection.tsx:
- * title начинает первым, картинки подхватывают на 40% и дотягивают ровно
- * к концу фазы. */
+/** Окно fade-in title внутри FADE_VH (0..1). Картинки сюда больше не
+ * входят — их opacity теперь меняется одновременно с их же движением в
+ * стопку, внутри REVEAL_VH (см. imagesEase в trigger ниже), а не отдельной
+ * более быстрой фазой перед ним. */
 const TITLE_FADE_WINDOW: [number, number] = [0, 0.6]
-const IMAGES_FADE_WINDOW: [number, number] = [0.4, 1]
 
 /** Доля фазы REVEAL_VH, за которую Cliff-title успевает уйти за кадр
  * (см. покадровую сцену в Figma: -150 к кадру 4 из 5, т.е. к 75%). */
@@ -110,14 +109,16 @@ export default function CliffSection() {
    *    Cliff здесь не трогается — см. fadeTrigger ниже.
    * 2) fadeTrigger (следующие FADE_VH вьюпорта, сразу после riseTrigger) —
    *    только теперь, когда Location1 гарантированно уже скрылась,
-   *    начинают проявляться из прозрачности Cliff-title/картинки.
+   *    начинает проявляться из прозрачности Cliff-title.
    * 3) trigger (REVEAL_VH вьюпортов сразу следом, Cliff всё так же
    *    приклеена) — внутренняя хореография: Cliff-title уходит вверх и
    *    пропадает за кадром; Cliff-sub-title/-description въезжают с боков
    *    (изначально за кадром слева/справа); 5 фото из Cliff-img-wrap
-   *    сходятся в стопку точно в центре обёртки (в Figma центры всех 5
-   *    фото в кадре 5 совпадают с центром Cliff-img-wrap с точностью до
-   *    пикселя). */
+   *    одновременно проявляются из прозрачности и сходятся в стопку точно
+   *    в центре обёртки (opacity и transform завязаны на один и тот же
+   *    imagesEase, а не на отдельные более быстрые фазы) — в Figma центры
+   *    всех 5 фото в кадре 5 совпадают с центром Cliff-img-wrap с
+   *    точностью до пикселя. */
   useEffect(() => {
     const wrap = wrapRef.current
     const section = sectionRef.current
@@ -146,6 +147,15 @@ export default function CliffSection() {
       })
       return
     }
+
+    // Cliff-sub-title/-description изначально должны стоять за кадром
+    // слева/справа (см. TEXT_ENTER_VW/trigger ниже) — но их transform
+    // выставляет только `trigger`, стартующий лишь после RISE_VH+FADE_VH.
+    // Без этой инициализации в промежутке riseTrigger/fadeTrigger (пока
+    // Cliff только появляется) у них нет вообще никакого transform, и они
+    // на мгновение видны в своей обычной (центр экрана) позиции.
+    subTitle.style.transform = `translateX(${-TEXT_ENTER_VW}vw)`
+    descriptionWrap.style.transform = `translateX(${TEXT_ENTER_VW}vw)`
 
     // Смещение центра каждого фото от центра Cliff-img-wrap — считаем
     // один раз по исходной (ещё не тронутой transform'ом) вёрстке, чтобы
@@ -209,10 +219,6 @@ export default function CliffSection() {
         title.style.opacity = String(
           windowProgress(self.progress, TITLE_FADE_WINDOW),
         )
-        const imagesFadeT = windowProgress(self.progress, IMAGES_FADE_WINDOW)
-        images.forEach((img) => {
-          if (img) img.style.opacity = String(imagesFadeT)
-        })
       },
     })
 
@@ -238,6 +244,7 @@ export default function CliffSection() {
         images.forEach((img, i) => {
           if (!img) return
           const { dx, dy } = offsets[i]
+          img.style.opacity = String(imagesEase)
           img.style.transform = `translate(${dx * imagesEase}px, ${dy * imagesEase}px)`
         })
       },
