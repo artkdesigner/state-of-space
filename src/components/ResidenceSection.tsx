@@ -20,6 +20,12 @@ const COLUMN_WINDOW: [number, number] = [0.85, 1]
  * прогресса — 0.3 → 1, как попросили. */
 const WORD_BASE_OPACITY = 0.3
 
+/** Residence наезжает на Location3 снизу — тот же приём margin-компенсации,
+ * что у Location1Section.tsx/CliffSection.tsx: RISE_VH должен совпадать с
+ * DWELL_VH в Location3Section.tsx (её хвост, во время которого она ещё
+ * видна и никуда не укатывается, пока Residence-top заезжает поверх). */
+const RISE_VH = 100
+
 const clamp = (v: number, min = 0, max = 1) => Math.min(max, Math.max(min, v))
 const windowProgress = (p: number, [start, end]: [number, number]) =>
   clamp((p - start) / (end - start))
@@ -94,7 +100,16 @@ export default function ResidenceSection() {
   /* Residence-top-pin — `position: sticky; top: 0` внутри
    * Residence-top-wrap, чья высота, как и у Location2Section.tsx, считается
    * императивно из реальной ширины трека (getDistance), а не статическим
-   * vh — задаём её в updateHeight и пересчитываем на resize. */
+   * vh — задаём её в updateHeight и пересчитываем на resize.
+   *
+   * Residence-top-wrap тянет `margin-top: -${RISE_VH}vh`, чтобы наехать
+   * снизу на ещё видимую (см. DWELL_VH в Location3Section.tsx) Location3 —
+   * тот же приём, что Location1-pin-wrap/Cliff-pin-wrap (см.
+   * CliffSection.tsx): `wrapTop()` вместо строкового `'top top'`, так как
+   * getBoundingClientRect уже отражает итоговую, свёрнутую margin'ом
+   * позицию. Высота инфлирована на тот же RISE_VH, чтобы margin не
+   * укоротил общую длину документа — ровно то же, что "+2 вместо +1" у
+   * Location1Section.tsx. */
   useEffect(() => {
     const wrap = wrapRef.current
     const pin = pinRef.current
@@ -105,14 +120,19 @@ export default function ResidenceSection() {
     const getPinDistance = () => getDistance() * 2
 
     const updateHeight = () => {
-      wrap.style.height = `${pin.offsetHeight + getPinDistance()}px`
+      wrap.style.height = `${pin.offsetHeight + getPinDistance() + window.innerHeight * (RISE_VH / 100)}px`
     }
     updateHeight()
 
+    const wrapTop = () => {
+      const r = wrap.getBoundingClientRect()
+      return r.top + window.scrollY
+    }
+
     const trigger = ScrollTrigger.create({
       trigger: wrap,
-      start: 'top top',
-      end: () => '+=' + getPinDistance(),
+      start: wrapTop,
+      end: () => wrapTop() + getPinDistance(),
       scrub: true,
       invalidateOnRefresh: true,
       onUpdate: (self) => {
@@ -197,12 +217,12 @@ export default function ResidenceSection() {
           const titleT = windowProgress(progress, TITLE_WINDOW)
           words.forEach((word, i) => {
             const wp = windowProgress(titleT, wordWindow(i, words.length))
-            word.style.opacity = String(WORD_BASE_OPACITY + (1 - WORD_BASE_OPACITY) * wp)
+            word.style.opacity = String(
+              WORD_BASE_OPACITY + (1 - WORD_BASE_OPACITY) * wp,
+            )
           })
 
-          column.style.opacity = String(
-            windowProgress(progress, COLUMN_WINDOW),
-          )
+          column.style.opacity = String(windowProgress(progress, COLUMN_WINDOW))
         },
       })
 
@@ -277,7 +297,11 @@ export default function ResidenceSection() {
   return (
     <section id="residence" className="Residence bg-blue">
       <div className="Residence-top relative w-full">
-        <div ref={wrapRef} className="Residence-top-wrap relative">
+        <div
+          ref={wrapRef}
+          className="Residence-top-wrap relative"
+          style={{ marginTop: `-${RISE_VH}vh` }}
+        >
           <div
             ref={pinRef}
             className="Residence-top-pin sticky top-0 flex h-dvh flex-col justify-center overflow-hidden lg:justify-normal"
@@ -329,7 +353,10 @@ export default function ResidenceSection() {
         </div>
       </div>
 
-      <div ref={bottomWrapRef} className="Residence-bottom-wrap relative w-full">
+      <div
+        ref={bottomWrapRef}
+        className="Residence-bottom-wrap relative w-full"
+      >
         <div
           ref={bottomPinRef}
           className="Residence-bottom flex flex-col items-center gap-35 px-2.5 py-5 md:gap-20 md:py-15 lg:sticky lg:top-0 lg:h-dvh lg:justify-center lg:gap-10 lg:overflow-hidden lg:px-0 lg:py-30"
