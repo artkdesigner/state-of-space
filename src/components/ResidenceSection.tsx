@@ -20,10 +20,12 @@ const COLUMN_WINDOW: [number, number] = [0.85, 1]
  * прогресса — 0.3 → 1, как попросили. */
 const WORD_BASE_OPACITY = 0.3
 
-/** Residence наезжает на Location3 снизу — тот же приём margin-компенсации,
+/** Residence наезжает на Location2 снизу — тот же приём margin-компенсации,
  * что у Location1Section.tsx/CliffSection.tsx: RISE_VH должен совпадать с
- * DWELL_VH в Location3Section.tsx (её хвост, во время которого она ещё
- * видна и никуда не укатывается, пока Residence-top заезжает поверх). */
+ * RESIDENCE_DWELL_VH в Location2Section.tsx (её хвостовой запас после того,
+ * как трек уже целиком докатился и кроссфейд слайдов Location3Panel —
+ * последней панели трека — доигран; см. комментарий там про то, что
+ * Location3 больше не отдельная секция). */
 const RISE_VH = 100
 
 const clamp = (v: number, min = 0, max = 1) => Math.min(max, Math.max(min, v))
@@ -96,6 +98,11 @@ export default function ResidenceSection() {
   const subRef = useRef<HTMLParagraphElement>(null)
   const titleRef = useRef<HTMLParagraphElement>(null)
   const columnRef = useRef<HTMLDivElement>(null)
+  const cardRefs = useRef<(HTMLDivElement | null)[]>([])
+
+  const setCardRef = (index: number) => (el: HTMLDivElement | null) => {
+    cardRefs.current[index] = el
+  }
 
   /* Residence-top-pin — `position: sticky; top: 0` внутри
    * Residence-top-wrap, чья высота, как и у Location2Section.tsx, считается
@@ -103,13 +110,23 @@ export default function ResidenceSection() {
    * vh — задаём её в updateHeight и пересчитываем на resize.
    *
    * Residence-top-wrap тянет `margin-top: -${RISE_VH}vh`, чтобы наехать
-   * снизу на ещё видимую (см. DWELL_VH в Location3Section.tsx) Location3 —
-   * тот же приём, что Location1-pin-wrap/Cliff-pin-wrap (см.
+   * снизу на ещё видимую (см. RESIDENCE_DWELL_VH в Location2Section.tsx)
+   * Location2 — тот же приём, что Location1-pin-wrap/Cliff-pin-wrap (см.
    * CliffSection.tsx): `wrapTop()` вместо строкового `'top top'`, так как
    * getBoundingClientRect уже отражает итоговую, свёрнутую margin'ом
-   * позицию. Высота инфлирована на тот же RISE_VH, чтобы margin не
-   * укоротил общую длину документа — ровно то же, что "+2 вместо +1" у
-   * Location1Section.tsx. */
+   * позицию.
+   *
+   * В отличие от Location1Section.tsx (там "+2 вместо +1"), высоту НЕ
+   * инфлируем на RISE_VH сверху: там та инфляция нужна, потому что
+   * СЛЕДУЮЩАЯ секция (Cliff) сама наезжает на Location1 через точно такой
+   * же margin-трюк и должна успеть это сделать, пока Location1 всё ещё
+   * приклеена. Здесь Residence-bottom идёт следом обычным document flow,
+   * без наезда — инфляция только создавала на границе "пустой" кусок
+   * скролла, где секция уже отклеилась (trigger.end не учитывал добавку),
+   * но Residence-bottom ещё не начиналась (баг, на который пожаловался
+   * пользователь: "заголовок закончил скольжение — и часть скролла
+   * проходит впустую"). Без инфляции wrap-высота ровно совпадает с
+   * длительностью пина, и Residence-bottom стартует сразу же. */
   useEffect(() => {
     const wrap = wrapRef.current
     const pin = pinRef.current
@@ -120,7 +137,7 @@ export default function ResidenceSection() {
     const getPinDistance = () => getDistance() * 2
 
     const updateHeight = () => {
-      wrap.style.height = `${pin.offsetHeight + getPinDistance() + window.innerHeight * (RISE_VH / 100)}px`
+      wrap.style.height = `${pin.offsetHeight + getPinDistance()}px`
     }
     updateHeight()
 
@@ -158,8 +175,8 @@ export default function ResidenceSection() {
    * настоящий scroll-scrub pin — `position: sticky; top: 0` внутри
    * Residence-bottom-wrap высотой (1 + REVEAL_VH) вьюпортов, без
    * margin-top (никто не наезжает на Residence-bottom сверху — тот же
-   * случай "голого" pin'а без cover-приёма, что у AdvantagesSection.tsx/
-   * Location3Section.tsx, `start: 'top top'` работает буквально).
+   * случай "голого" pin'а без cover-приёма, что у AdvantagesSection.tsx,
+   * `start: 'top top'` работает буквально).
    *
    * На Tablet/Mobile содержимое Residence-bottom выше своего вьюпорта
    * (проверено: на 390×844 оно ~964px) — жёсткий pin на h-dvh обрезал бы
@@ -181,6 +198,7 @@ export default function ResidenceSection() {
     const sub = subRef.current
     const titleP = titleRef.current
     const column = columnRef.current
+    const cards = cardRefs.current
     if (!wrap || !pin || !sub || !titleP || !column) return
 
     const words = Array.from(
@@ -197,7 +215,9 @@ export default function ResidenceSection() {
       words.forEach((word) => {
         word.style.opacity = String(WORD_BASE_OPACITY)
       })
-      column.style.opacity = '0'
+      cards.forEach((card) => {
+        if (card) card.style.opacity = '0'
+      })
 
       // Высота обёртки — только в этой ветке (см. комментарий у useEffect):
       // на Tablet/Mobile pin'а нет вообще, и wrap должен остаться обычным
@@ -222,7 +242,16 @@ export default function ResidenceSection() {
             )
           })
 
-          column.style.opacity = String(windowProgress(progress, COLUMN_WINDOW))
+          // Карточки появляются по очереди (тот же приём каскада, что у
+          // слов заголовка выше, wordWindow), а не всей колонкой разом —
+          // по просьбе пользователя.
+          const columnT = windowProgress(progress, COLUMN_WINDOW)
+          cards.forEach((card, i) => {
+            if (!card) return
+            card.style.opacity = String(
+              windowProgress(columnT, wordWindow(i, cards.length)),
+            )
+          })
         },
       })
 
@@ -233,7 +262,9 @@ export default function ResidenceSection() {
         words.forEach((word) => {
           word.style.opacity = ''
         })
-        column.style.opacity = ''
+        cards.forEach((card) => {
+          if (card) card.style.opacity = ''
+        })
       }
     })
 
@@ -243,7 +274,9 @@ export default function ResidenceSection() {
         words.forEach((word) => {
           word.style.opacity = '1'
         })
-        column.style.opacity = '1'
+        cards.forEach((card) => {
+          if (card) card.style.opacity = '1'
+        })
         return
       }
 
@@ -251,9 +284,12 @@ export default function ResidenceSection() {
       words.forEach((word) => {
         word.style.opacity = String(WORD_BASE_OPACITY)
       })
-      column.style.opacity = '0'
+      cards.forEach((card) => {
+        if (card) card.style.opacity = '0'
+      })
 
-      const els = [sub, ...words, column]
+      const definiteCards = cards.filter((c): c is HTMLDivElement => c !== null)
+      const els = [sub, ...words, ...definiteCards]
       els.forEach((el) => {
         el.style.transition = 'opacity 700ms cubic-bezier(0.16, 1, 0.3, 1)'
       })
@@ -261,6 +297,8 @@ export default function ResidenceSection() {
       // Разовый шаг между словами при заливке — ~21 слово в заголовке,
       // 45ms даёт цепочке уложиться в ~1с, ощутимо, но не затянуто.
       const WORD_STEP_MS = 45
+      // Шаг между карточками — их всего 2, шаг ощутимо крупнее словного.
+      const CARD_STEP_MS = 200
 
       const io = new IntersectionObserver(
         ([entry]) => {
@@ -274,8 +312,11 @@ export default function ResidenceSection() {
             word.style.opacity = '1'
           })
 
-          column.style.transitionDelay = `${150 + words.length * WORD_STEP_MS + 200}ms`
-          column.style.opacity = '1'
+          const cardsStart = 150 + words.length * WORD_STEP_MS + 200
+          definiteCards.forEach((card, i) => {
+            card.style.transitionDelay = `${cardsStart + i * CARD_STEP_MS}ms`
+            card.style.opacity = '1'
+          })
         },
         { threshold: 0.4 },
       )
@@ -298,8 +339,8 @@ export default function ResidenceSection() {
     // `relative` здесь обязателен, а не косметика: без него это обычный
     // статичный блок, и его фон красится браузером в более раннем слое
     // отрисовки, чем ЛЮБОЙ `position`-элемент на странице (в т.ч. более
-    // ранний по DOM Location3-pin-wrap) — фон синего Residence оказывался
-    // ПОД Location3 во время наезда (см. RISE_VH выше), пока заголовок/
+    // ранний по DOM Location2-pin-wrap) — фон синего Residence оказывался
+    // ПОД Location2 во время наезда (см. RISE_VH выше), пока заголовок/
     // кольца внутри уже честно позиционированного Residence-top-pin
     // (sticky) корректно рисовались поверх (баг, на который пожаловался
     // пользователь). `relative` без z-index переводит и фон секции в тот
@@ -405,9 +446,10 @@ export default function ResidenceSection() {
               ref={columnRef}
               className="Residence-bottom-column flex flex-1 flex-col gap-5 font-manrope text-[0.875rem] font-medium tracking-[-0.00875rem] md:grid md:grid-cols-2 md:gap-10 lg:flex lg:w-100 lg:flex-none lg:flex-col lg:gap-5 lg:text-[1.125rem] lg:tracking-[-0.01125rem]"
             >
-              {BOTTOM_CARDS.map((card) => (
+              {BOTTOM_CARDS.map((card, i) => (
                 <div
                   key={card.title}
+                  ref={setCardRef(i)}
                   className="Residence-bottom-card flex flex-col gap-2.5"
                 >
                   <p className="text-light/60 leading-[1.3]">{card.title}</p>

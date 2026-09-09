@@ -39,14 +39,17 @@ const THICKEN_VH = 2
 const TOTAL_PIN_VH = REVEAL_VH + THICKEN_VH
 /** Граница фаз 1/2 внутри общего прогресса самопина Above, 0..1. */
 const REVEAL_BOUNDARY = REVEAL_VH / TOTAL_PIN_VH
-/** Должно совпадать с GROW_VH в CapacitySection.tsx — рост её круглой
- * маски (от уже сплошного диска Above до полного покрытия вьюпорта)
- * идёт в её riseTrigger ДО её собственного wrapTop, т.е. пока Above ещё
- * физически приклеена (см. коммент у высоты wrap'а ниже) — маска должна
- * успеть ПОЛНОСТЬЮ вырасти и закрыть экран ДО того, как Above отклеится,
- * иначе на кадр-другой видно, как Above уже едет из-под ещё маленькой,
- * только начавшей расти маски. */
-const CAPACITY_GROW_VH = 2
+/** Должно совпадать с (GROW_VH + UNWIND_VH) в CapacitySection.tsx — её
+ * riseTrigger растит круглую маску (от уже сплошного диска Above до
+ * полного покрытия вьюпорта), но круг радиусом в половину ширины экрана
+ * закрывает не весь прямоугольник вьюпорта — его УГЛЫ остаются непокрыты,
+ * их закрывает только следующая фаза (trigger), где маска распрямляется
+ * в прямоугольник (round 50% → 0%). Above должна оставаться неподвижно
+ * приклеенной ВЕСЬ этот срок (обе фазы, не только рост), иначе в углах на
+ * кадр-другой видно, как Above уже едет из-под ещё не полностью
+ * распрямившейся маски (по просьбе пользователя: Above должна стоять на
+ * месте, пока идёт вся анимация Capacity). */
+const CAPACITY_GROW_VH = 3
 
 /** Доля фазы 1, за которую Above-circle-wrap успевает проявиться из
  * прозрачности (см. покадровую сцену в Figma — заметно опережает оба
@@ -244,8 +247,17 @@ export default function AboveSection() {
           loading="lazy"
         />
 
+        {/* lg:flex-1 на Above-left/Above-right (вместо shrink-0-по-контенту)
+         * — "Above the ocean"/"Above the world" разной ширины, поэтому
+         * `justify-center` центрировал всю группу как единый блок, а не
+         * само кольцо: при разных по ширине соседях кольцо визуально
+         * съезжало от центра экрана (баг, на который пожаловался
+         * пользователь). Два равных flex-1 гарантируют, что кольцо стоит
+         * ровно посередине независимо от длины текста; justify-end/-start
+         * держат текст прижатым к кольцу на фиксированный `gap-21.25`, а
+         * вся "лишняя" ширина уходит в невидимый отступ у внешнего края. */}
         <div className="Above-pin relative z-1 flex w-full items-center justify-between px-2.5 lg:justify-center lg:gap-21.25 lg:px-5">
-          <div className="Above-left flex shrink-0 items-center overflow-hidden">
+          <div className="Above-left flex shrink-0 items-center overflow-hidden lg:flex-1 lg:justify-end">
             <p
               ref={leftTitleRef}
               className="[word-break:break-word] whitespace-nowrap font-manrope text-[1.875rem] leading-none font-semibold tracking-[-0.04em] text-light md:text-[3.375rem] lg:text-[8.375rem] lg:tracking-[-0.06em]"
@@ -282,7 +294,7 @@ export default function AboveSection() {
             </svg>
           </div>
 
-          <div className="Above-right flex shrink-0 items-center justify-end overflow-hidden">
+          <div className="Above-right flex shrink-0 items-center justify-end overflow-hidden lg:flex-1 lg:justify-start">
             <p
               ref={rightTitleRef}
               className="[word-break:break-word] whitespace-nowrap text-right font-manrope text-[1.875rem] leading-none font-semibold tracking-[-0.04em] text-light md:text-[3.375rem] lg:text-[8.375rem] lg:tracking-[-0.06em]"

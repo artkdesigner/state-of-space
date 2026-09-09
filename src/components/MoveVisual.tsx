@@ -17,6 +17,12 @@ type MoveVisualProps = {
    * чтобы прогонять по ней scale/opacity на въезде маски (см. «Beyond to
    * Move» в Figma). */
   contentRef?: (el: HTMLDivElement | null) => void
+  /** Ref на Move-cards-wrap отдельно от contentRef — нужен BeyondSection.tsx,
+   * чтобы дополнительно проехать по ней translateY (снизу вверх, пока
+   * маска раскрывается), по просьбе пользователя: карточки должны
+   * приезжать снизу, а не просто проявляться на месте вместе с остальным
+   * контентом. */
+  cardsWrapRef?: (el: HTMLDivElement | null) => void
 }
 
 /** Визуал секции Move (кольца + заголовок + стопка карточек) — вынесен
@@ -25,7 +31,11 @@ type MoveVisualProps = {
  * Figma) и есть единственная Move (раньше существовала ещё и отдельная
  * MoveSection.tsx с тем же визуалом — убрана, было дублирование одной и
  * той же секции двумя DOM-узлами). */
-export default function MoveVisual({ activeIndex, contentRef }: MoveVisualProps) {
+export default function MoveVisual({
+  activeIndex,
+  contentRef,
+  cardsWrapRef,
+}: MoveVisualProps) {
   return (
     <>
       <svg
@@ -110,7 +120,10 @@ export default function MoveVisual({ activeIndex, contentRef }: MoveVisualProps)
           </p>
         </div>
 
-        <div className="Move-cards-wrap relative h-[13.6875rem] w-[12.5rem] overflow-hidden rounded-[0.5rem] md:h-[19.125rem] md:w-[17.5rem] md:rounded-[0.75rem] lg:h-[28.75rem] lg:w-[26.25rem] lg:rounded-[1.875rem]">
+        <div
+          ref={cardsWrapRef}
+          className="Move-cards-wrap relative h-[13.6875rem] w-[12.5rem] overflow-hidden rounded-[0.5rem] md:h-[19.125rem] md:w-[17.5rem] md:rounded-[0.75rem] lg:h-[28.75rem] lg:w-[26.25rem] lg:rounded-[1.875rem]"
+        >
           {CARDS.map((card, i) => (
             <div
               key={card.label}

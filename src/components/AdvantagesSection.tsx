@@ -39,9 +39,8 @@ export default function AdvantagesSection() {
 
   /* Ротация пунктов, пока Advantages приклеена вверху (`position: sticky;
    * top: 0` внутри Advantages-pin-wrap высотой (1 + STEP_VH×ITEMS.length)
-   * вьюпортов — без margin-top, тот же случай, что Location3Section.tsx:
-   * никто не наезжает на Advantages сверху, `'top top'` работает
-   * буквально). */
+   * вьюпортов — без margin-top: никто не наезжает на Advantages сверху,
+   * `'top top'` работает буквально). */
   useEffect(() => {
     const wrap = wrapRef.current
     const track = trackRef.current

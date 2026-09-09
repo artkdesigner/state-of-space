@@ -9,12 +9,18 @@ import cursor3 from '../assets/drift/cursor3.webp'
 
 const CURSOR_IMAGES = [cursor1, cursor2, cursor3]
 
-/** Хвост, во время которого Drift уже приклеена, но ещё видна — пока
- * FooterSection.tsx (следующий сиблинг, с `margin-top: -${DWELL_VH}vh`)
- * наезжает поверх снизу. Тот же приём, что Location3Section.tsx/
- * ResidenceSection.tsx, только здесь без собственной scroll-анимации у
- * Drift — чистый CSS (`position: sticky` само держит секцию на месте,
- * пока не кончится высота обёртки), без ScrollTrigger. */
+/** Хвост, во время которого Drift уже приклеена (sticky) и видна — весь
+ * этот пин ничего не анимирует (у Drift нет собственной scroll-анимации,
+ * курсор-трейл управляется мышью, не скроллом), это чистый "продержаться
+ * подольше" запас. FooterSection.tsx (следующий сиблинг, с ВСЕГДА
+ * постоянным `margin-top: -100vh`, см. FOOTER_ENTRANCE_VH там — НЕ
+ * привязанным к этому DWELL_VH) начинает въезжать снизу только когда это
+ * sticky-окно (ровно DWELL_VH) заканчивается, и полностью закрывает экран
+ * ровно через 1 дополнительный вьюпорт после этого — тот же приём, что у
+ * margin-top любого другого "наезжающего" сиблинга в этой цепочке (Cliff-
+ * pin-wrap, Residence-top-wrap и т.д.), просто здесь Drift, в отличие от
+ * них, держится чистым CSS (`position: sticky` само держит секцию на
+ * месте, пока не кончится высота обёртки), без единого ScrollTrigger. */
 const DWELL_VH = 200
 
 type DriftSectionProps = {

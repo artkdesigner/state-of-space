@@ -7,8 +7,11 @@ const ROTATE = '[transform-box:fill-box] [transform-origin:50%_50%]'
 /** Скролл-дистанция роста круглой маски (clip-path), в высотах вьюпорта —
  * диаметр стартует от диаметра уже сплошного (потолстевшего на максимум)
  * диска Above (см. AboveSection.tsx, .Above-circle-wrap) и растёт до
- * целевого, покрывающего весь вьюпорт; opacity секции синхронно 0 → 1 за
- * то же время (см. riseTrigger ниже).
+ * целевого, покрывающего весь вьюпорт. Сама секция всегда полностью
+ * непрозрачна (по просьбе пользователя — раньше opacity секции шло 0→1
+ * синхронно с ростом маски); вместо этого из scale:0 растут до scale:1
+ * заголовок и декоративные кольца внутри, а у заголовка ещё и opacity 0→1
+ * (см. riseTrigger ниже).
  *
  * Это ПЕРВАЯ фаза собственной sticky-фазы Capacity, т.е. riseTrigger
  * стартует РОВНО в wrapTop, как и везде в остальной цепочке (Cliff/Above)
@@ -44,10 +47,17 @@ const UNWIND_VH = 1
 const DESKTOP_BREAKPOINT = 992
 
 const easeInCubic = (t: number) => t * t * t
+const smoothstep = (t: number) => t * t * (3 - 2 * t)
 
 export default function CapacitySection() {
   const wrapRef = useRef<HTMLDivElement>(null)
   const sectionRef = useRef<HTMLElement>(null)
+  const titleRef = useRef<HTMLParagraphElement>(null)
+  const circleRefs = useRef<(SVGSVGElement | null)[]>([])
+
+  const setCircleRef = (index: number) => (el: SVGSVGElement | null) => {
+    circleRefs.current[index] = el
+  }
 
   /* Above-circle-wrap уже подрос до сплошного диска (см. AboveSection.tsx
    * — фаза thicken там заканчивает утолщение кольца, дальше сам диск
@@ -75,10 +85,12 @@ export default function CapacitySection() {
   useEffect(() => {
     const wrap = wrapRef.current
     const section = sectionRef.current
+    const title = titleRef.current
+    const circles = circleRefs.current
     const aboveDisk = document.querySelector<HTMLElement>(
       '#above .Above-circle-wrap',
     )
-    if (!wrap || !section || !aboveDisk) return
+    if (!wrap || !section || !title || !aboveDisk) return
     if (reduceMotion()) return
 
     const measureDiskRadius = () => aboveDisk.getBoundingClientRect().width / 2
@@ -88,8 +100,17 @@ export default function CapacitySection() {
     }
     window.addEventListener('resize', onResize)
 
-    section.style.opacity = '0'
+    // Секция сама всегда полностью непрозрачна (по просьбе пользователя —
+    // раньше opacity самой секции 0→1 шло синхронно с ростом маски) —
+    // "проявление" даёт только сам растущий clip-path. Заголовок и
+    // декоративные кольца внутри — отдельно, из scale:0 (кольца) / scale:0
+    // + opacity:0 (заголовок) до 1, тем же прогрессом, что и рост маски.
     section.style.clipPath = `circle(${diskRadiusPx}px at 50% 50%)`
+    title.style.opacity = '0'
+    title.style.transform = 'scale(0)'
+    circles.forEach((circle) => {
+      if (circle) circle.style.transform = 'translate(-50%, -50%) scale(0)'
+    })
 
     const wrapTop = () => {
       const r = wrap.getBoundingClientRect()
@@ -108,13 +129,21 @@ export default function CapacitySection() {
       scrub: true,
       onUpdate: (self) => {
         const grow = self.progress
-        section.style.opacity = String(grow)
         const radius =
           diskRadiusPx + easeInCubic(grow) * (targetRadius() - diskRadiusPx)
         // Секция уже `position: sticky` и стоит неподвижно на весь
         // вьюпорт весь riseTrigger (см. комментарий у useEffect) — "at
         // 50% 50%" это буквально центр вьюпорта, без JS-компенсации.
         section.style.clipPath = `circle(${radius}px at 50% 50%)`
+
+        const contentEase = smoothstep(grow)
+        title.style.opacity = String(contentEase)
+        title.style.transform = `scale(${contentEase})`
+        circles.forEach((circle) => {
+          if (circle) {
+            circle.style.transform = `translate(-50%, -50%) scale(${contentEase})`
+          }
+        })
       },
     })
 
@@ -145,8 +174,12 @@ export default function CapacitySection() {
       window.removeEventListener('resize', onResize)
       riseTrigger.kill()
       trigger.kill()
-      section.style.opacity = ''
       section.style.clipPath = ''
+      title.style.opacity = ''
+      title.style.transform = ''
+      circles.forEach((circle) => {
+        if (circle) circle.style.transform = ''
+      })
     }
   }, [])
 
@@ -164,7 +197,10 @@ export default function CapacitySection() {
         ref={sectionRef}
         className="Capacity sticky top-0 flex h-dvh flex-col items-center justify-center overflow-hidden bg-light px-2.5"
       >
-        <p className="Capacity-title relative z-1 w-75 text-center font-manrope text-[1.25rem] font-semibold leading-[1.2] tracking-[-0.03em] text-dark md:w-[40.75rem] md:text-[1.875rem] md:tracking-[-0.03em] lg:w-150 lg:text-[1.75rem] lg:font-medium lg:tracking-[-0.0714em]">
+        <p
+          ref={titleRef}
+          className="Capacity-title relative z-1 w-75 text-center font-manrope text-[1.25rem] font-semibold leading-[1.2] tracking-[-0.03em] text-dark md:w-[40.75rem] md:text-[1.875rem] md:tracking-[-0.03em] lg:w-150 lg:text-[1.75rem] lg:font-medium lg:tracking-[-0.0714em]"
+        >
           What remains is not a feeling, but a capacity.
           <br className="hidden md:block" />
           The capacity to focus without tension, to think without overload, and
@@ -172,6 +208,7 @@ export default function CapacitySection() {
         </p>
 
         <svg
+          ref={setCircleRef(0)}
           aria-hidden
           className="Capacity-circles-wrap pointer-events-none absolute left-1/2 top-1/2 h-[32.4969rem] w-[35.3144rem] max-w-none -translate-x-1/2 -translate-y-1/2 md:hidden"
           viewBox="0 0 565.031 519.95"
@@ -237,6 +274,7 @@ export default function CapacitySection() {
         </svg>
 
         <svg
+          ref={setCircleRef(1)}
           aria-hidden
           className="Capacity-circles-wrap pointer-events-none absolute left-1/2 top-1/2 hidden h-[56.25rem] w-[61.1271rem] max-w-none -translate-x-1/2 -translate-y-1/2 md:block lg:hidden"
           viewBox="0 0 978.033 900"
@@ -302,6 +340,7 @@ export default function CapacitySection() {
         </svg>
 
         <svg
+          ref={setCircleRef(2)}
           aria-hidden
           className="Capacity-circles-wrap pointer-events-none absolute left-1/2 top-1/2 hidden h-[130.6125rem] w-[141.9371rem] max-w-none -translate-x-1/2 -translate-y-1/2 lg:block"
           viewBox="0 0 2270.99 2089.8"

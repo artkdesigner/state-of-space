@@ -249,13 +249,14 @@ export default function BeyondSection() {
   const entranceRef = useRef<HTMLDivElement>(null)
   const moveMaskRef = useRef<HTMLDivElement>(null)
   const moveContentRef = useRef<HTMLDivElement>(null)
+  const moveCardsWrapRef = useRef<HTMLDivElement>(null)
   const [rotation, setRotation] = useState(0)
   const [activeIndex, setActiveIndex] = useState(0)
 
   /* Кольцо крутится на TOTAL_SCRUB_VH = PIN_HEIGHT_VH + MOVE_VH + CARD_PIN_VH
    * вьюпортов, пока Beyond приклеена вверху (`position: sticky; top: 0`
    * внутри Beyond-pin-wrap — без margin-top, тот же случай, что
-   * Location3Section.tsx). Первые ENTRANCE_VH из PIN_HEIGHT_VH — заезд:
+   * AdvantagesSection.tsx). Первые ENTRANCE_VH из PIN_HEIGHT_VH — заезд:
    * Beyond-title из прозрачности + Beyond-carousel подъезжает/усаживается
    * от кадра 1 до уже закодированного кадра 5 (см.
    * CAROUSEL_KEYFRAMES/TITLE_FADE_WINDOW выше). Вращение (rotation) идёт
@@ -274,7 +275,18 @@ export default function BeyondSection() {
     const entrance = entranceRef.current
     const mask = moveMaskRef.current
     const content = moveContentRef.current
-    if (!wrap || !title || !carousel || !entrance || !mask || !content) return
+    const cardsWrap = moveCardsWrapRef.current
+    if (
+      !wrap ||
+      !title ||
+      !carousel ||
+      !entrance ||
+      !mask ||
+      !content ||
+      !cardsWrap
+    ) {
+      return
+    }
 
     // Beyond-carousel стоит статично через top-30 (Desktop) вместо
     // top-1/2 -translate-y-1/2 (Mobile/Tablet, уже по центру) — см. её
@@ -307,6 +319,7 @@ export default function BeyondSection() {
       mask.style.borderRadius = '0'
       content.style.opacity = '1'
       content.style.transform = 'scale(1)'
+      cardsWrap.style.transform = 'translateY(0%)'
     } else {
       // Синхронно, до первого onUpdate — тот же приём, что в
       // Location1Section.tsx, иначе на reload кадр рисуется в состоянии
@@ -319,6 +332,7 @@ export default function BeyondSection() {
       mask.style.borderRadius = '50%'
       content.style.opacity = '0'
       content.style.transform = 'scale(0)'
+      cardsWrap.style.transform = 'translateY(100%)'
     }
 
     const trigger = ScrollTrigger.create({
@@ -368,6 +382,13 @@ export default function BeyondSection() {
         const contentT = smoothstep(maskT)
         content.style.opacity = String(contentT)
         content.style.transform = `scale(${contentT})`
+        // Move-cards-wrap отдельно приезжает снизу вверх (100% → 0% её же
+        // высоты) тем же прогрессом — по просьбе пользователя: карточки
+        // должны быть за нижней границей секции в начале раскрытия и
+        // доехать на место ровно к тому моменту, когда секция полностью
+        // раскрылась (contentT=1), а уже потом (см. Фаза 4 ниже) стартует
+        // смена карточек.
+        cardsWrap.style.transform = `translateY(${(1 - contentT) * 100}%)`
 
         // Фаза 3: маска уже 100vw — досаживает высоту до 100dvh и скругление
         // до 0, через CSS calc() между vw/dvh, без раннтайм-измерений.
@@ -404,6 +425,7 @@ export default function BeyondSection() {
       mask.style.borderRadius = ''
       content.style.opacity = ''
       content.style.transform = ''
+      cardsWrap.style.transform = ''
     }
   }, [TOTAL_SCRUB_VH])
 
@@ -510,6 +532,9 @@ export default function BeyondSection() {
                 activeIndex={activeIndex}
                 contentRef={(el) => {
                   moveContentRef.current = el
+                }}
+                cardsWrapRef={(el) => {
+                  moveCardsWrapRef.current = el
                 }}
               />
             </div>

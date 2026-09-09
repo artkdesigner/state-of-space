@@ -59,6 +59,10 @@ const IMAGES_START_OFFSET_VH = 0.5
 const IMAGES_EXTRA_VH = 1
 /** Итоговая длина imagesTrigger. */
 const IMAGES_REVEAL_VH = REVEAL_VH + IMAGES_EXTRA_VH
+/** Доля imagesTrigger, за которую картинки долистывают opacity 0→1 — по
+ * просьбе пользователя, в 2 раза быстрее, чем их же движение в стопку
+ * (которое идёт на всю длину imagesTrigger, 0..1 от reveal напрямую). */
+const IMAGES_OPACITY_FRACTION = 0.5
 
 /** Окно fade-in title внутри FADE_VH (0..1). Картинки сюда больше не
  * входят — их opacity теперь меняется одновременно с их же движением в
@@ -136,12 +140,11 @@ export default function CliffSection() {
    *    двигаются картинки, по просьбе пользователя) и длится
    *    IMAGES_REVEAL_VH (REVEAL_VH + доп. бюджет IMAGES_EXTRA_VH, тоже по
    *    просьбе): Cliff-sub-title/-description въезжают с боков (изначально
-   *    за кадром слева/справа); 5 фото из Cliff-img-wrap одновременно
-   *    проявляются из прозрачности и сходятся в стопку точно в центре
-   *    обёртки (opacity и transform завязаны на один и тот же imagesEase,
-   *    а не на отдельные более быстрые фазы) — в Figma центры всех 5 фото
-   *    в кадре 5 совпадают с центром Cliff-img-wrap с точностью до
-   *    пикселя. */
+   *    за кадром слева/справа); 5 фото из Cliff-img-wrap сходятся в стопку
+   *    точно в центре обёртки — в Figma центры всех 5 фото в кадре 5
+   *    совпадают с центром Cliff-img-wrap с точностью до пикселя. Opacity
+   *    у картинок — на своём отдельном imagesOpacityEase, вдвое быстрее
+   *    движения (IMAGES_OPACITY_FRACTION), по просьбе пользователя. */
   useEffect(() => {
     const wrap = wrapRef.current
     const section = sectionRef.current
@@ -277,10 +280,13 @@ export default function CliffSection() {
         descriptionWrap.style.transform = `translateX(${(1 - textEase) * TEXT_ENTER_VW}vw)`
 
         const imagesEase = easeOutCubic(reveal)
+        const imagesOpacityEase = easeOutCubic(
+          clamp(reveal / IMAGES_OPACITY_FRACTION),
+        )
         images.forEach((img, i) => {
           if (!img) return
           const { dx, dy } = offsets[i]
-          img.style.opacity = String(imagesEase)
+          img.style.opacity = String(imagesOpacityEase)
           img.style.transform = `translate(${dx * imagesEase}px, ${dy * imagesEase}px)`
         })
       },
