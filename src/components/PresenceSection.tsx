@@ -35,6 +35,15 @@ const PRESENCE_PIN_VH = 2
  * край, независимо от того, где в разметке она изначально стоит. */
 const OFFSCREEN_VH = 100
 
+/** Скролл-дистанция, за которую картинки внутри Presence-img-wrap
+ * доезжают от нижнего выравнивания (штатное `items-end`, разная высота —
+ * "skyline") до верхнего, пока сама Presence уходит — естественно
+ * отклеивается от sticky и уезжает вверх обычным document flow сразу
+ * после revealTrigger (см. leaveTrigger ниже). Секция `h-dvh`, поэтому
+ * ей нужен ровно 1 вьюпорт скролла, чтобы полностью уйти за верхний край
+ * — по просьбе пользователя. */
+const LEAVE_VH = 1
+
 /** Порядок появления — от центра наружу (сперва средняя картинка, потом
  * пара по бокам от неё, и так далее): индекс — позиция в ряду (0 =
  * Presence-img-xl … 6 = Presence-img-xl2, см. JSX), значение — номер
@@ -131,6 +140,25 @@ export default function PresenceSection({ onBookNow }: PresenceSectionProps) {
       el!.style.transform = `translateY(${OFFSCREEN_VH}vh)`
     })
 
+    // Дельта "до верхнего выравнивания" на картинку — сколько px нужно
+    // сдвинуть её вверх, чтобы её верх встал вровень с верхом
+    // Presence-img-wrap (сейчас там только самая высокая, xl/xl2, за счёт
+    // штатного items-end остальные короче и "висят" на общей нижней
+    // границе). Меряем реальные высоты (imgWrap растёт по самой высокой
+    // картинке), а не берём числа из Tailwind-классов — те breakpoint-
+    // специфичны и по факту плавно скейлятся корневым rem (см. CLAUDE.md).
+    const measureLeaveDeltas = () => {
+      const wrapHeight = imgWrap.getBoundingClientRect().height
+      return imageEls.map(
+        (el) => -(wrapHeight - el!.getBoundingClientRect().height),
+      )
+    }
+    let leaveDeltas = measureLeaveDeltas()
+    const onResize = () => {
+      leaveDeltas = measureLeaveDeltas()
+    }
+    window.addEventListener('resize', onResize)
+
     const wrapTop = () => {
       const r = wrap.getBoundingClientRect()
       return r.top + window.scrollY
@@ -165,9 +193,29 @@ export default function PresenceSection({ onBookNow }: PresenceSectionProps) {
       },
     })
 
+    // Как только revealTrigger доиграл (картинки уже на штатных,
+    // нижневыровненных местах) и Presence отклеивается от sticky и
+    // естественным потоком уезжает вверх — картинки едут к верхнему
+    // выравниванию (см. leaveDeltas выше), по просьбе пользователя.
+    const leaveTrigger = ScrollTrigger.create({
+      trigger: wrap,
+      start: () => wrapTop() + window.innerHeight * PRESENCE_PIN_VH,
+      end: () =>
+        wrapTop() + window.innerHeight * (PRESENCE_PIN_VH + LEAVE_VH),
+      scrub: true,
+      onUpdate: (self) => {
+        const t = easeOutCubic(self.progress)
+        imageEls.forEach((el, i) => {
+          el!.style.transform = `translateY(${leaveDeltas[i] * t}px)`
+        })
+      },
+    })
+
     return () => {
+      window.removeEventListener('resize', onResize)
       riseTrigger.kill()
       revealTrigger.kill()
+      leaveTrigger.kill()
       overlay.style.opacity = ''
       imageEls.forEach((el) => {
         el!.style.transform = ''

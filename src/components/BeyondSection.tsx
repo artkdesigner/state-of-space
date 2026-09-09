@@ -57,12 +57,17 @@ const IMAGES = [
 /** Высота скролла, за которую кольцо делает один полный оборот. */
 const PIN_HEIGHT_VH = 400
 /** Заезд (заголовок из прозрачности + подъезд/усадка кольца до текущего
- * "покоя") занимает первые ENTRANCE_VH из общих PIN_HEIGHT_VH — дальше,
- * до конца пина, кольцо просто продолжает крутиться на уже финальном
- * месте (см. покадровую сцену «Анимация внутри Beyond (1..5)» в Figma,
- * узел 11144:893/999/1028/1057/970). Вращение (rotation, ниже) идёт
- * непрерывно на весь PIN_HEIGHT_VH и не зависит от ENTRANCE_VH — это
- * отдельный, уже существовавший до заезда слой анимации. */
+ * "покоя") занимает первые ENTRANCE_VH из общих PIN_HEIGHT_VH (см.
+ * покадровую сцену «Анимация внутри Beyond (1..5)» в Figma, узел
+ * 11144:893/999/1028/1057/970). Остаток пина, до PIN_HEIGHT_VH, кольцо
+ * продолжает крутиться на уже финальном месте — но именно в этом остатке
+ * теперь донастраивается центровка (см. RECENTER-логику в onUpdate ниже),
+ * чтобы к началу следующего хвоста (Beyond to Move, где кольцо садится и
+ * заголовок уходит в блюр) кольцо уже стояло по центру и не "улетало"
+ * туда одновременно с блюром (по просьбе пользователя). Вращение
+ * (rotation, ниже) идёт непрерывно на весь PIN_HEIGHT_VH и не зависит от
+ * ENTRANCE_VH — это отдельный, уже существовавший до заезда слой
+ * анимации. */
 const ENTRANCE_VH = 300
 
 /** Кадры 1..5 из Figma-сцены, взятые как точки прогресса 0/0.25/0.5/0.75/1
@@ -139,16 +144,23 @@ const smoothstep = (t: number) => t * t * (3 - 2 * t)
 const windowProgress = (p: number, [start, end]: [number, number]) =>
   clamp((p - start) / (end - start))
 
-/** Кусочно-линейная интерполяция (со smoothstep внутри каждого отрезка)
- * между 5 keyframe-точками сцены — сохраняет неравномерность самой
- * Figma-анимации (например, между кадром 1 и 2 позиция ещё не такая
- * плавная, как хотелось бы, — а не сглаживает её одной кривой через все
- * 5 точек). Scale в это уже не входит, см. sampleScale. */
+/** Кусочно-линейная интерполяция между 5 keyframe-точками сцены, с ОДНИМ
+ * smoothstep поверх всего прогресса (а не отдельным smoothstep внутри
+ * каждого отрезка, как было раньше). Раньше каждый отрезок сам разгонялся
+ * из нулевой скорости и сам же тормозил обратно в ноль к своему концу —
+ * на стыке двух отрезков скорость дважды падала почти до нуля, и заезд
+ * читался как серия "прыжков"/остановок вместо одного плавного подъёма
+ * (баг, на который пожаловался пользователь). Один smoothstep даёт мягкий
+ * старт/финиш только на границах ВСЕЙ сцены (progress=0/1), а между
+ * кадрами скорость меняется только наклоном (сохраняя неравномерность
+ * самой Figma-анимации), без обнуления. Scale в это уже не входит, см.
+ * sampleScale. */
 function sampleCarousel(progress: number) {
+  const eased = smoothstep(clamp(progress))
   const segments = CAROUSEL_KEYFRAMES.length - 1
-  const scaled = clamp(progress) * segments
+  const scaled = eased * segments
   const i = Math.min(segments - 1, Math.floor(scaled))
-  const local = smoothstep(scaled - i)
+  const local = scaled - i
   const a = CAROUSEL_KEYFRAMES[i]
   const b = CAROUSEL_KEYFRAMES[i + 1]
   return {
@@ -351,6 +363,21 @@ export default function BeyondSection() {
           windowProgress(entranceProgress, TITLE_FADE_WINDOW),
         )
 
+        // Довдвижение кольца к центру секции (centerOffsetPx, см.
+        // измерение выше) теперь идёт в "холостом" остатке пина — между
+        // ENTRANCE_VH (заезд долистан) и PIN_HEIGHT_VH (там же, где
+        // раньше кольцо просто крутилось на месте без единой доп.
+        // анимации). Раньше этот же сдвиг был завязан на shrinkEase (см.
+        // ниже) и стартовал ОДНОВРЕМЕННО с блюром заголовка — кольцо
+        // визуально "улетало" вверх ровно в момент, когда начинал
+        // блюриться заголовок (жалоба пользователя). Теперь центровка
+        // полностью доигрывает здесь и заканчивается ДО начала хвоста
+        // «Beyond to Move», так что к моменту, когда заголовок начинает
+        // блюриться, кольцо уже стоит на месте и просто садится по scale.
+        const recenterEase = smoothstep(
+          clamp((vhScrolled - ENTRANCE_VH) / (PIN_HEIGHT_VH - ENTRANCE_VH)),
+        )
+
         // Хвост «Beyond to Move» начинается только после PIN_HEIGHT_VH —
         // до этого момента vhInMove отрицательный, все три clamp() ниже
         // держат кольцо/маску в состоянии покоя.
@@ -358,16 +385,14 @@ export default function BeyondSection() {
 
         // Фаза 1: кольцо досаживается до scale кадра 3 (см.
         // sampleRingScale — одна непрерывная кривая, без паузы на границе
-        // ENTRANCE_VH/PIN_HEIGHT_VH), заголовок — в блюр до значения кадра
-        // 4, и кольцо довдвигается к центру секции (centerOffsetPx, см.
-        // измерение выше) — по просьбе пользователя, к началу роста маски
-        // Move кольцо должно уже стоять по центру, а не в своей статичной
-        // "top-30" точке покоя.
+        // ENTRANCE_VH/PIN_HEIGHT_VH), заголовок — в блюр до значения
+        // кадра 4. Позиция (translateY) на этом этапе уже не двигается —
+        // recenterEase к этому моменту равен 1 (см. выше).
         const shrinkT = clamp(vhInMove / MOVE_PHASE1_VH)
         const shrinkEase = smoothstep(shrinkT)
         const { translateY } = sampleCarousel(entranceProgress)
         const scale = sampleRingScale(vhScrolled)
-        entrance.style.transform = `translateY(calc(${translateY}% + ${centerOffsetPx * shrinkEase}px)) scale(${scale})`
+        entrance.style.transform = `translateY(calc(${translateY}% + ${centerOffsetPx * recenterEase}px)) scale(${scale})`
         title.style.filter = `blur(${TITLE_BLUR_END_REM * shrinkEase}rem)`
 
         // Фаза 2: маска растёт из центра квадратом (ширина=высота в vw —

@@ -57,6 +57,7 @@ export default function Location2Section({ onBookNow }: Location2SectionProps) {
   const trackRef = useRef<HTMLDivElement>(null)
   const retreatRef = useRef<HTMLDivElement>(null)
   const galeryCol2Ref = useRef<HTMLDivElement>(null)
+  const location3Ref = useRef<HTMLElement>(null)
   const slideEls = useRef<(HTMLDivElement | null)[]>([])
   const [activeIndex, setActiveIndex] = useState(0)
   const location3SlideEls = useRef<(HTMLDivElement | null)[]>([])
@@ -101,9 +102,34 @@ export default function Location2Section({ onBookNow }: Location2SectionProps) {
     const wrap = wrapRef.current
     const section = sectionRef.current
     const track = trackRef.current
-    if (!wrap || !section || !track) return
+    const location3 = location3Ref.current
+    if (!wrap || !section || !track || !location3) return
 
     const mm = gsap.matchMedia()
+
+    // Location3Panel въезжает сбоку на Balance, "наездом" — тот же приём,
+    // что был у отдельной Location3Section.tsx до слияния в трек (см.
+    // комментарий в Location3Panel.tsx), но БЕЗ отдельного вертикального
+    // пина: скругление левых углов крутится от 50% до 0% ровно за то же
+    // время, что естественная трек-анимация довозит Location3Panel из-за
+    // правого края экрана до финальной, прижатой к Balance позиции —
+    // никакой отдельной дистанции/переменной не заводим, просто отслеживаем
+    // тот же trackPx на последнем viewport'е его пробега (панель полной
+    // ширины viewport, последняя в треке — trackPx достигает distance
+    // ровно тогда, когда её левый край доезжает до x=0). По просьбе
+    // пользователя.
+    const setLocation3Radius = (trackPx: number, distance: number) => {
+      const viewportWidth = window.innerWidth
+      const entranceStart = Math.max(0, distance - viewportWidth)
+      const t = gsap.utils.clamp(
+        0,
+        1,
+        (trackPx - entranceStart) / (distance - entranceStart || 1),
+      )
+      const radius = `${50 * (1 - smoothstep(t))}%`
+      location3.style.borderTopLeftRadius = radius
+      location3.style.borderBottomLeftRadius = radius
+    }
 
     const runCrossfade = (local: number) => {
       for (let i = 0; i < SLIDE_COUNT - 1; i++) {
@@ -161,6 +187,7 @@ export default function Location2Section({ onBookNow }: Location2SectionProps) {
         wrap.style.height = `${section.offsetHeight + getPinDistance()}px`
       }
       updateHeight()
+      setLocation3Radius(0, getDistance())
 
       const trigger = ScrollTrigger.create({
         trigger: wrap,
@@ -197,6 +224,7 @@ export default function Location2Section({ onBookNow }: Location2SectionProps) {
             (self.progress - splitCrossfade) / (splitDistance - splitCrossfade),
           )
           gsap.set(track, { x: -distance * scrollLocal })
+          setLocation3Radius(distance * scrollLocal, distance)
 
           // Фаза 3 (splitDistance → splitLocation3Crossfade): трек уже
           // целиком докатился (Location3Panel полностью в кадре) — теперь
@@ -221,6 +249,8 @@ export default function Location2Section({ onBookNow }: Location2SectionProps) {
         window.removeEventListener('resize', onResize)
         trigger.kill()
         wrap.style.height = ''
+        location3.style.borderTopLeftRadius = ''
+        location3.style.borderBottomLeftRadius = ''
       }
     })
 
@@ -264,6 +294,7 @@ export default function Location2Section({ onBookNow }: Location2SectionProps) {
       }
       updateHeight()
       setCol2(0)
+      setLocation3Radius(0, getDistance())
 
       const trigger = ScrollTrigger.create({
         trigger: wrap,
@@ -319,8 +350,10 @@ export default function Location2Section({ onBookNow }: Location2SectionProps) {
             squeezeProgress = 1
           }
 
-          gsap.set(track, { x: -gsap.utils.clamp(0, distance, trackPx) })
+          const clampedTrackPx = gsap.utils.clamp(0, distance, trackPx)
+          gsap.set(track, { x: -clampedTrackPx })
           setCol2(squeezeProgress)
+          setLocation3Radius(clampedTrackPx, distance)
 
           // Фаза 5: трек уже целиком докатился (trackPx достиг distance,
           // Location3Panel полностью в кадре) — теперь кроссфейд её
@@ -355,6 +388,8 @@ export default function Location2Section({ onBookNow }: Location2SectionProps) {
           col2.style.paddingTop = ''
           col2.style.paddingBottom = ''
         }
+        location3.style.borderTopLeftRadius = ''
+        location3.style.borderBottomLeftRadius = ''
       }
     })
 
@@ -388,6 +423,7 @@ export default function Location2Section({ onBookNow }: Location2SectionProps) {
           <Location2Pillars />
           <Location2Balance onBookNow={onBookNow} />
           <Location3Panel
+            ref={location3Ref}
             activeIndex={location3ActiveIndex}
             onBookNow={onBookNow}
             setSlideRef={setLocation3SlideRef}

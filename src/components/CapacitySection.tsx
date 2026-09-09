@@ -7,11 +7,16 @@ const ROTATE = '[transform-box:fill-box] [transform-origin:50%_50%]'
 /** Скролл-дистанция роста круглой маски (clip-path), в высотах вьюпорта —
  * диаметр стартует от диаметра уже сплошного (потолстевшего на максимум)
  * диска Above (см. AboveSection.tsx, .Above-circle-wrap) и растёт до
- * целевого, покрывающего весь вьюпорт. Сама секция всегда полностью
- * непрозрачна (по просьбе пользователя — раньше opacity секции шло 0→1
- * синхронно с ростом маски); вместо этого из scale:0 растут до scale:1
- * заголовок и декоративные кольца внутри, а у заголовка ещё и opacity 0→1
- * (см. riseTrigger ниже).
+ * целевого, покрывающего весь вьюпорт. Первую FADE_FRACTION этой
+ * дистанции секция стоит уже на месте (растущий clip не двигается) и
+ * только проявляется из opacity: 0 в 100% — до этого, пока секция ещё в
+ * обычном потоке физически едет вверх снизу экрана к своей sticky-точке,
+ * она невидима, так что не видно, как маленький клип-круг "приезжает"
+ * поверх диска Above; сам рост радиуса стартует только после того, как
+ * opacity долистал до 100% (по просьбе пользователя). Дальше, пока растёт
+ * радиус, секция остаётся полностью непрозрачной — из scale:0 растут до
+ * scale:1 заголовок и декоративные кольца внутри, а у заголовка ещё и
+ * opacity 0→1 (см. riseTrigger ниже).
  *
  * Это ПЕРВАЯ фаза собственной sticky-фазы Capacity, т.е. riseTrigger
  * стартует РОВНО в wrapTop, как и везде в остальной цепочке (Cliff/Above)
@@ -38,6 +43,10 @@ const GROW_VH = 2
  * Маска уже на целевом диаметре (opacity уже 100%), скругление углов
  * линейно уходит boxRadius → 0. */
 const UNWIND_VH = 1
+/** Доля GROW_VH, за которую секция проявляется из opacity: 0 (см.
+ * комментарий у GROW_VH выше) — та же идея/значение, что WRAP_FADE_FRACTION
+ * в AboveSection.tsx. */
+const FADE_FRACTION = 0.15
 
 /** Нижняя граница Desktop-брейкпоинта (--breakpoint-lg = 62rem в
  * src/index.css) — тот же порог и то же основание (100vw на Desktop,
@@ -46,6 +55,7 @@ const UNWIND_VH = 1
  * такого размера при round:0 всегда перекрывал весь вьюпорт целиком. */
 const DESKTOP_BREAKPOINT = 992
 
+const clamp = (v: number, min = 0, max = 1) => Math.min(max, Math.max(min, v))
 const easeInCubic = (t: number) => t * t * t
 const smoothstep = (t: number) => t * t * (3 - 2 * t)
 
@@ -100,16 +110,26 @@ export default function CapacitySection() {
     }
     window.addEventListener('resize', onResize)
 
-    // Секция сама всегда полностью непрозрачна (по просьбе пользователя —
-    // раньше opacity самой секции 0→1 шло синхронно с ростом маски) —
-    // "проявление" даёт только сам растущий clip-path. Заголовок и
-    // декоративные кольца внутри — отдельно, из scale:0 (кольца) / scale:0
-    // + opacity:0 (заголовок) до 1, тем же прогрессом, что и рост маски.
+    // Секция стартует невидимой (см. комментарий у GROW_VH/FADE_FRACTION
+    // выше) — пока она едет вверх обычным document flow к своей
+    // sticky-точке, её не видно; проявляется она уже неподвижно
+    // приклеенной, в начале riseTrigger. Заголовок и декоративные кольца
+    // внутри — отдельно, из scale:0 (кольца) / scale:0 + opacity:0
+    // (заголовок) до 1, вместе с ростом самой маски (после фазы fade).
+    section.style.opacity = '0'
     section.style.clipPath = `circle(${diskRadiusPx}px at 50% 50%)`
     title.style.opacity = '0'
     title.style.transform = 'scale(0)'
+    // Центровка (-translate-x/y-1/2) уже задана классом на самом SVG —
+    // в Tailwind v4 translate-утилиты используют CSS-свойство `translate`,
+    // а не `transform`, так что оно применяется независимо и ДО инлайнового
+    // `transform`, который мы крутим здесь. Раньше это же смещение
+    // дублировалось строкой ('translate(-50%, -50%) scale(...)'), из-за
+    // чего оно применялось дважды и кольца съезжали в левый верхний угол
+    // (баг, на который пожаловался пользователь) — здесь остаётся только
+    // scale.
     circles.forEach((circle) => {
-      if (circle) circle.style.transform = 'translate(-50%, -50%) scale(0)'
+      if (circle) circle.style.transform = 'scale(0)'
     })
 
     const wrapTop = () => {
@@ -129,19 +149,28 @@ export default function CapacitySection() {
       scrub: true,
       onUpdate: (self) => {
         const grow = self.progress
+
+        // Первая FADE_FRACTION — только проявление opacity, радиус ещё не
+        // растёт (см. комментарий у FADE_FRACTION выше).
+        const fade = clamp(grow / FADE_FRACTION)
+        section.style.opacity = String(fade)
+
+        // Сам рост радиуса — на остатке дистанции, после того как opacity
+        // уже долистал до 100%.
+        const growT = clamp((grow - FADE_FRACTION) / (1 - FADE_FRACTION))
         const radius =
-          diskRadiusPx + easeInCubic(grow) * (targetRadius() - diskRadiusPx)
+          diskRadiusPx + easeInCubic(growT) * (targetRadius() - diskRadiusPx)
         // Секция уже `position: sticky` и стоит неподвижно на весь
         // вьюпорт весь riseTrigger (см. комментарий у useEffect) — "at
         // 50% 50%" это буквально центр вьюпорта, без JS-компенсации.
         section.style.clipPath = `circle(${radius}px at 50% 50%)`
 
-        const contentEase = smoothstep(grow)
+        const contentEase = smoothstep(growT)
         title.style.opacity = String(contentEase)
         title.style.transform = `scale(${contentEase})`
         circles.forEach((circle) => {
           if (circle) {
-            circle.style.transform = `translate(-50%, -50%) scale(${contentEase})`
+            circle.style.transform = `scale(${contentEase})`
           }
         })
       },

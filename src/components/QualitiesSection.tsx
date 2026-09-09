@@ -1,4 +1,6 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { reduceMotion } from '../lib/anim'
 import qualitiesArchitecture from '../assets/qualities-architecture.webp'
 import qualitiesElementalRituals from '../assets/qualities-elemental-rituals.webp'
 import qualitiesProtectedSolitude from '../assets/qualities-protected-solitude.webp'
@@ -17,12 +19,61 @@ const QUALITIES = [
   { title: 'Mental Clarity', image: qualitiesMentalClarity },
 ]
 
+/** Скролл-дистанция скругления нижних углов Qualities, в высотах
+ * вьюпорта — начинается не сразу, а только когда Qualities, уезжая вверх
+ * обычным document flow, уже освободила под собой половину экрана (см.
+ * roundStart в useEffect ниже), по просьбе пользователя. Та же идея, что
+ * раньше уже была связана с AboveSection.tsx (см. историю git) — оттуда
+ * убрана по прошлой просьбе пользователя, теперь возвращается как
+ * самостоятельная анимация самой Qualities, ни от чего больше не
+ * зависящая (текущий AboveSection.tsx её больше не компенсирует и не
+ * ждёт — там теперь просто буферный RISE_VH). */
+const ROUND_VH = 1
+
+const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3)
+
 export default function QualitiesSection() {
+  const sectionRef = useRef<HTMLElement>(null)
   const [activeIndex, setActiveIndex] = useState(0)
+
+  useEffect(() => {
+    const section = sectionRef.current
+    if (!section) return
+    if (reduceMotion()) return
+
+    // Момент, когда нижний край Qualities поднялся ровно до середины
+    // вьюпорта (под ней уже открылось пол экрана Above) — getBoundingClientRect,
+    // не строковый маркер: тот же приём (и то же обоснование — реальная
+    // высота предыдущих pin-секций отличается на первом проходе), что
+    // recedeStart в старой версии AboveSection.tsx (см. git-историю).
+    const roundStart = () => {
+      const r = section.getBoundingClientRect()
+      return r.top + r.height - window.innerHeight / 2 + window.scrollY
+    }
+
+    const trigger = ScrollTrigger.create({
+      trigger: section,
+      start: roundStart,
+      end: () => `+=${window.innerHeight * ROUND_VH}`,
+      scrub: true,
+      onUpdate: (self) => {
+        const radius = `${50 * easeOutCubic(self.progress)}%`
+        section.style.borderBottomLeftRadius = radius
+        section.style.borderBottomRightRadius = radius
+      },
+    })
+
+    return () => {
+      trigger.kill()
+      section.style.borderBottomLeftRadius = ''
+      section.style.borderBottomRightRadius = ''
+    }
+  }, [])
 
   return (
     <section
       id="qualities"
+      ref={sectionRef}
       className="Qualities relative flex w-full flex-col items-center gap-15 overflow-hidden bg-light lg:gap-30"
     >
       <div className="Qualities-top relative flex w-full flex-col items-start px-2.5 pt-15 md:flex-row md:items-end md:justify-center md:gap-4 md:px-2.5 md:pt-30 lg:flex-col lg:items-end lg:justify-center lg:gap-10 lg:px-5">
