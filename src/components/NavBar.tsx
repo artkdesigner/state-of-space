@@ -19,6 +19,15 @@ export function NavLogo({ className }: { className?: string }) {
 const LEFT_LINKS = ['Experience', 'Spaces', 'About']
 const RIGHT_LINKS = ['Blog', 'Contact', 'Book now']
 
+/** Ссылки-переходы к секциям — по прямой просьбе пользователя (остальные
+ * пункты (Spaces/About/Blog) по-прежнему плейсхолдеры без действия, см.
+ * memory). Тот же `scrollToHash`, что уже используется для лого/`#hero`. */
+const LINK_HASHES: Record<string, string> = {
+  Experience: '#intro',
+  Spaces: '#location1',
+  Contact: '#footer',
+}
+
 /** Тема навбара по секции, под которой он сейчас проходит. Сам переход
  * hero→intro (пока Hero-оверлей ещё разворачивается) — скролл-driven, ту
  * часть ставит `setNavTheme` из HeroSection.tsx, не этот наблюдатель;
@@ -140,6 +149,11 @@ export default function NavBar({ onBookNow }: NavBarProps) {
           <button
             key={label}
             type="button"
+            onClick={
+              LINK_HASHES[label]
+                ? () => scrollToHash(LINK_HASHES[label])
+                : undefined
+            }
             className="Nav-link cursor-pointer whitespace-nowrap text-[0.9375rem] font-medium tracking-[-0.03em] transition-opacity duration-300 hover:opacity-70"
           >
             {label}
@@ -157,7 +171,13 @@ export default function NavBar({ onBookNow }: NavBarProps) {
           <button
             key={label}
             type="button"
-            onClick={label === 'Book now' ? onBookNow : undefined}
+            onClick={
+              label === 'Book now'
+                ? onBookNow
+                : LINK_HASHES[label]
+                  ? () => scrollToHash(LINK_HASHES[label])
+                  : undefined
+            }
             className="Nav-link cursor-pointer whitespace-nowrap text-[0.9375rem] font-medium tracking-[-0.03em] transition-opacity duration-300 hover:opacity-70"
           >
             {label}

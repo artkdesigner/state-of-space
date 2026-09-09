@@ -261,6 +261,7 @@ function innerEdgePercent(rotateDeg: number) {
 
 export default function BeyondSection() {
   const wrapRef = useRef<HTMLDivElement>(null)
+  const sectionRef = useRef<HTMLElement>(null)
   const titleRef = useRef<HTMLParagraphElement>(null)
   const carouselRef = useRef<HTMLDivElement>(null)
   const entranceRef = useRef<HTMLDivElement>(null)
@@ -287,6 +288,7 @@ export default function BeyondSection() {
 
   useEffect(() => {
     const wrap = wrapRef.current
+    const section = sectionRef.current
     const title = titleRef.current
     const carousel = carouselRef.current
     const entrance = entranceRef.current
@@ -295,6 +297,7 @@ export default function BeyondSection() {
     const cardsWrap = moveCardsWrapRef.current
     if (
       !wrap ||
+      !section ||
       !title ||
       !carousel ||
       !entrance ||
@@ -313,12 +316,40 @@ export default function BeyondSection() {
     // entrance, см. getBoundingClientRect ниже — transform ребёнка не
     // трогает layout-геометрию родителя) и центром вьюпорта, и добавляем
     // этот зазор как ещё один additive translateY (в px, поверх основного
-    // %-based) на PHASE1 (см. centerOffsetPx в onUpdate). На Mobile/Tablet
-    // зазор и так ~0 (кольцо уже по центру), поэтому JS не нужно ветвить
-    // по брейкпоинту отдельно.
+    // %-based) на весь заезд (см. centerOffsetPx * entranceEase в
+    // onUpdate). На Mobile/Tablet зазор и так ~0 (кольцо уже по центру),
+    // поэтому JS не нужно ветвить по брейкпоинту отдельно.
+    //
+    // ВАЖНО: считать через разницу rect'ов carousel и section (её же
+    // sticky-родителя), а не `carousel.getBoundingClientRect().top`
+    // напрямую относительно вьюпорта — эта функция вызывается один раз на
+    // маунте всей страницы (все секции монтируются сразу, Beyond в самом
+    // низу) и на resize, а не только когда Beyond реально доскроллена и
+    // приклеена. Секция ещё НЕ стала `sticky`-зафиксированной в момент
+    // маунта (скролл обычно 0, секция физически далеко внизу документа) —
+    // прямой `rect.top` в этот момент отражал бы её случайную
+    // "доскролленную" позицию, а не финальную (когда section прижата
+    // top:0 и `carousel`'s rect.top совпадает с её положением ВНУТРИ
+    // section). Разница `carousel.rect.top - section.rect.top` — тот же
+    // самый сдвиг независимо от того, докуда сейчас доскроллена страница
+    // (оба rect'а едут вместе на одну и ту же величину, пока section ещё
+    // не приклеена; после того как приклеена — section.rect.top===0
+    // всегда, а carousel едет вместе с ней как обычный потомок), поэтому
+    // безопасно мерить в любой момент, в т.ч. на маунте. Это и была
+    // настоящая причина ОБЕИХ жалоб пользователя подряд: неверный (часто
+    // огромный, посчитанный по недоскролленной странице на маунте)
+    // centerOffsetPx всегда был плохим числом — просто раньше он
+    // применялся отдельной, более поздней фазой (кольцо сперва нормально
+    // въезжало и вставало на место, а ПОТОМ улетало прочь этим неверным
+    // числом — жалоба "улетает после того как встала на место"); когда
+    // центровку вплели в сам заезд, то же неверное число стало определять
+    // положение кольца на протяжении ВСЕГО подъёма с первого кадра —
+    // отсюда "совсем поломалась, улетает и не видно". */
     const measureCenterOffset = () => {
-      const rect = carousel.getBoundingClientRect()
-      const carouselCenterY = rect.top + rect.height / 2
+      const carouselRect = carousel.getBoundingClientRect()
+      const sectionRect = section.getBoundingClientRect()
+      const carouselCenterY =
+        carouselRect.top - sectionRect.top + carouselRect.height / 2
       return window.innerHeight / 2 - carouselCenterY
     }
     let centerOffsetPx = measureCenterOffset()
@@ -469,6 +500,7 @@ export default function BeyondSection() {
     >
       <section
         id="beyond"
+        ref={sectionRef}
         className="Beyond sticky top-0 flex h-dvh w-full flex-col items-center justify-center overflow-hidden bg-blue"
       >
         <p

@@ -1,10 +1,16 @@
 import { useEffect, useState } from 'react'
-import { getLenis } from '../lib/scroll'
+import { getLenis, scrollToHash } from '../lib/scroll'
 import { NavLogo } from './NavBar'
 import Button from './Button'
 import navMenuBg from '../assets/nav-menu-bg.webp'
 
 const MENU_LINKS = ['Experience', 'Spaces', 'Contact']
+/** Тот же переход к секциям, что в NavBar.tsx. */
+const LINK_HASHES: Record<string, string> = {
+  Experience: '#intro',
+  Spaces: '#location1',
+  Contact: '#footer',
+}
 
 type NavMenuProps = {
   open: boolean
@@ -100,7 +106,11 @@ export default function NavMenu({ open, onClose, onBookNow }: NavMenuProps) {
           <button
             key={label}
             type="button"
-            onClick={onClose}
+            onClick={() => {
+              onClose()
+              const hash = LINK_HASHES[label]
+              if (hash) scrollToHash(hash)
+            }}
             className="Nav-menu-link cursor-pointer whitespace-nowrap text-[1.75rem] tracking-[-0.0525rem] transition-opacity duration-300 hover:opacity-70 md:text-[2.25rem] md:tracking-[-0.0675rem]"
           >
             {label}
