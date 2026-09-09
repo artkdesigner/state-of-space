@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { scrollToY } from '../lib/scroll'
 import Location2Retreat from './Location2Retreat'
 import Location2Galery from './Location2Galery'
 import Location2About from './Location2About'
@@ -52,6 +53,20 @@ const GALERY_COL2_SETTLED = { width: 38.375, paddingX: 0, paddingY: 3.75 }
  * см. CliffSection.tsx). Должно совпадать с RISE_VH в ResidenceSection.tsx. */
 const RESIDENCE_DWELL_VH = 100
 
+/** Императивный переход к Location2-about из навбара (по прямой просьбе
+ * пользователя) — тот же приём, что `externalSetTheme` в NavBar.tsx:
+ * простой `<a href="#location2-about">`/scrollIntoView тут не работает,
+ * её "истинная" вертикальная позиция зависит от того, сколько ещё
+ * горизонтального прогресса трека нужно докрутить (см. useEffect ниже),
+ * а не от статичного doc-offset. На mobile (нет пина/трека вообще, см.
+ * комментарий у useEffect) остаётся null — там About уже стоит обычным
+ * блоком в document flow, годится простой anchor-скролл, см. вызывающую
+ * сторону (NavBar.tsx). */
+let scrollToAboutImpl: (() => void) | null = null
+export function scrollToLocation2About() {
+  scrollToAboutImpl?.()
+}
+
 type Location2SectionProps = {
   onBookNow: () => void
 }
@@ -61,6 +76,7 @@ export default function Location2Section({ onBookNow }: Location2SectionProps) {
   const sectionRef = useRef<HTMLElement>(null)
   const trackRef = useRef<HTMLDivElement>(null)
   const retreatRef = useRef<HTMLDivElement>(null)
+  const aboutRef = useRef<HTMLDivElement>(null)
   const galeryCol2Ref = useRef<HTMLDivElement>(null)
   const location3Ref = useRef<HTMLElement>(null)
   const slideEls = useRef<(HTMLDivElement | null)[]>([])
@@ -116,8 +132,9 @@ export default function Location2Section({ onBookNow }: Location2SectionProps) {
     const wrap = wrapRef.current
     const section = sectionRef.current
     const track = trackRef.current
+    const about = aboutRef.current
     const location3 = location3Ref.current
-    if (!wrap || !section || !track || !location3) return
+    if (!wrap || !section || !track || !about || !location3) return
 
     const mm = gsap.matchMedia()
 
@@ -195,6 +212,19 @@ export default function Location2Section({ onBookNow }: Location2SectionProps) {
       }
       updateHeight()
       setLocation3Overlay(0)
+
+      // Тот же приём, что в desktop-ветке ниже (см. её комментарий) — без
+      // Galery/squeeze тут проще: трек линеен, целевой trackPx — это
+      // просто offsetLeft самой About внутри track (offsetLeft не зависит
+      // от текущего JS-transform, см. комментарий у desktop-варианта).
+      scrollToAboutImpl = () => {
+        const distance = getDistance()
+        if (!distance) return
+        const targetTrackPx = gsap.utils.clamp(0, distance, about.offsetLeft)
+        const scrolledPx = getCrossfadeBudget() + targetTrackPx
+        const wrapDocTop = wrap.getBoundingClientRect().top + window.scrollY
+        scrollToY(wrapDocTop + scrolledPx)
+      }
 
       const trigger = ScrollTrigger.create({
         trigger: wrap,
@@ -278,6 +308,7 @@ export default function Location2Section({ onBookNow }: Location2SectionProps) {
         location3.style.transform = ''
         location3.style.borderTopLeftRadius = ''
         location3.style.borderBottomLeftRadius = ''
+        scrollToAboutImpl = null
       }
     })
 
@@ -325,6 +356,24 @@ export default function Location2Section({ onBookNow }: Location2SectionProps) {
       updateHeight()
       setCol2(0)
       setLocation3Overlay(0)
+
+      // Императивный переход к Location2-about (см. scrollToLocation2About
+      // выше) — та же логика, что onUpdate ниже строит из trackPx, только
+      // в обратную сторону: задан целевой trackPx (offsetLeft самой About
+      // внутри track — статичная layout-позиция, JS-transform на track её
+      // не трогает), нужно восстановить соответствующий scrolledPx. About
+      // всегда идёт ПОСЛЕ Retreat/Galery/squeeze, поэтому squeeze уже
+      // полностью доигран (squeezeBudget — чистая "мёртвая" дистанция
+      // скролла, добавляется целиком, как в фазе 4 onUpdate).
+      scrollToAboutImpl = () => {
+        const distance = getDistance()
+        if (!distance) return
+        const targetTrackPx = gsap.utils.clamp(0, distance, about.offsetLeft)
+        const scrolledPx =
+          getCrossfadeBudget() + getSqueezeBudget() + targetTrackPx
+        const wrapDocTop = wrap.getBoundingClientRect().top + window.scrollY
+        scrollToY(wrapDocTop + scrolledPx)
+      }
 
       const trigger = ScrollTrigger.create({
         trigger: wrap,
@@ -434,6 +483,7 @@ export default function Location2Section({ onBookNow }: Location2SectionProps) {
         location3.style.transform = ''
         location3.style.borderTopLeftRadius = ''
         location3.style.borderBottomLeftRadius = ''
+        scrollToAboutImpl = null
       }
     })
 
@@ -462,7 +512,7 @@ export default function Location2Section({ onBookNow }: Location2SectionProps) {
               galeryCol2Ref.current = el
             }}
           />
-          <Location2About />
+          <Location2About ref={aboutRef} />
           <Location2History />
           <Location2Pillars />
           <Location2Balance onBookNow={onBookNow} />

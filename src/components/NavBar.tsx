@@ -3,6 +3,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { reduceMotion } from '../lib/anim'
 import { HERO_INTRO } from '../lib/heroIntro'
 import { scrollToHash } from '../lib/scroll'
+import { scrollToLocation2About } from './Location2Section'
 import NavMenu from './NavMenu'
 
 export function NavLogo({ className }: { className?: string }) {
@@ -19,13 +20,17 @@ export function NavLogo({ className }: { className?: string }) {
 const LEFT_LINKS = ['Experience', 'Spaces', 'About']
 const RIGHT_LINKS = ['Blog', 'Contact', 'Book now']
 
-/** Ссылки-переходы к секциям — по прямой просьбе пользователя (остальные
- * пункты (Spaces/About/Blog) по-прежнему плейсхолдеры без действия, см.
- * memory). Тот же `scrollToHash`, что уже используется для лого/`#hero`. */
-const LINK_HASHES: Record<string, string> = {
-  Experience: '#intro',
-  Spaces: '#location1',
-  Contact: '#footer',
+/** Ссылки-переходы к секциям — по прямой просьбе пользователя (Blog
+ * по-прежнему плейсхолдер без действия, см. memory). About — не простой
+ * `scrollToHash`: Location2-about лежит внутри горизонтально-скроллящегося
+ * пина Location2Section.tsx, её реальная вертикальная позиция зависит от
+ * того, сколько ещё горизонтального прогресса трека нужно докрутить, а не
+ * от статичного doc-offset — см. `scrollToLocation2About` там же. */
+const LINK_ACTIONS: Record<string, () => void> = {
+  Experience: () => scrollToHash('#intro'),
+  Spaces: () => scrollToHash('#location1'),
+  About: () => scrollToLocation2About(),
+  Contact: () => scrollToHash('#footer'),
 }
 
 /** Тема навбара по секции, под которой он сейчас проходит. Сам переход
@@ -149,11 +154,7 @@ export default function NavBar({ onBookNow }: NavBarProps) {
           <button
             key={label}
             type="button"
-            onClick={
-              LINK_HASHES[label]
-                ? () => scrollToHash(LINK_HASHES[label])
-                : undefined
-            }
+            onClick={LINK_ACTIONS[label]}
             className="Nav-link cursor-pointer whitespace-nowrap text-[0.9375rem] font-medium tracking-[-0.03em] transition-opacity duration-300 hover:opacity-70"
           >
             {label}
@@ -171,13 +172,7 @@ export default function NavBar({ onBookNow }: NavBarProps) {
           <button
             key={label}
             type="button"
-            onClick={
-              label === 'Book now'
-                ? onBookNow
-                : LINK_HASHES[label]
-                  ? () => scrollToHash(LINK_HASHES[label])
-                  : undefined
-            }
+            onClick={label === 'Book now' ? onBookNow : LINK_ACTIONS[label]}
             className="Nav-link cursor-pointer whitespace-nowrap text-[0.9375rem] font-medium tracking-[-0.03em] transition-opacity duration-300 hover:opacity-70"
           >
             {label}

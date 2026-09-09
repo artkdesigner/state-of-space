@@ -37,6 +37,28 @@ export function getLenis() {
 }
 
 /**
+ * Плавный скролл к абсолютной пиксельной позиции документа — тот же
+ * Lenis/easing, что и у scrollToHash (см. ниже), просто числом, а не
+ * селектором. Нужен для целей ВНУТРИ горизонтально-скроллящихся пин-секций
+ * (см. scrollToLocation2Panel в Location2Section.tsx) — там простой
+ * `<a href="#id">`/scrollIntoView к элементу не работает: элемент лежит в
+ * `position: sticky`-пине и его "истинная" вертикальная позиция зависит от
+ * того, сколько ещё горизонтального прогресса трека нужно докрутить, а не
+ * от статичного doc-offset, который вернул бы getBoundingClientRect.
+ */
+export function scrollToY(y: number) {
+  const instance = getLenis()
+  if (instance) {
+    instance.scrollTo(y, {
+      duration: 1.5,
+      easing: (t: number) => 1 - Math.pow(1 - t, 3),
+    })
+    return
+  }
+  window.scrollTo({ top: y, behavior: 'smooth' })
+}
+
+/**
  * Плавный скролл к якорю (клик по лого и т.п.) — обычный `<a href="#id">`
  * прыгает мгновенно, в обход Lenis. Если Lenis не инициализирован
  * (prefers-reduced-motion) — нативный scrollIntoView с behavior: smooth.
@@ -53,17 +75,16 @@ export function getLenis() {
  * страницы, "к началу Hero" однозначно значит "наверх документа".
  */
 export function scrollToHash(hash: string) {
-  const target = hash === '#hero' ? 0 : hash
+  if (hash === '#hero') {
+    scrollToY(0)
+    return
+  }
   const instance = getLenis()
   if (instance) {
-    instance.scrollTo(target, {
+    instance.scrollTo(hash, {
       duration: 1.5,
       easing: (t: number) => 1 - Math.pow(1 - t, 3),
     })
-    return
-  }
-  if (target === 0) {
-    window.scrollTo({ top: 0, behavior: 'smooth' })
     return
   }
   document.querySelector(hash)?.scrollIntoView({ behavior: 'smooth' })
