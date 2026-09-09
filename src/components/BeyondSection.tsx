@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { reduceMotion } from '../lib/anim'
 import img0 from '../assets/beyond/00.webp'
 import img1 from '../assets/beyond/01.webp'
 import img2 from '../assets/beyond/02.webp'
@@ -54,6 +55,59 @@ const IMAGES = [
 
 /** Высота скролла, за которую кольцо делает один полный оборот. */
 const PIN_HEIGHT_VH = 400
+/** Заезд (заголовок из прозрачности + подъезд/усадка кольца до текущего
+ * "покоя") занимает первые ENTRANCE_VH из общих PIN_HEIGHT_VH — дальше,
+ * до конца пина, кольцо просто продолжает крутиться на уже финальном
+ * месте (см. покадровую сцену «Анимация внутри Beyond (1..5)» в Figma,
+ * узел 11144:893/999/1028/1057/970). Вращение (rotation, ниже) идёт
+ * непрерывно на весь PIN_HEIGHT_VH и не зависит от ENTRANCE_VH — это
+ * отдельный, уже существовавший до заезда слой анимации. */
+const ENTRANCE_VH = 300
+
+/** Кадры 1..5 из Figma-сцены, взятые как точки прогресса 0/0.25/0.5/0.75/1
+ * внутри ENTRANCE_VH. Кадр 5 — уже закодированное состояние покоя
+ * (translateY: 0, scale: 1) — совпадает с текущими статичными
+ * `lg:top-30 lg:size-[118rem]` (120px/1888px в Figma, десктопный фрейм
+ * 1920). Остальные — смещение/масштаб ОТНОСИТЕЛЬНО этого покоя: scale —
+ * прямое отношение размеров кольца (кадр/кадр 5); translateY — в % от
+ * СОБСТВЕННОЙ (финальной, брейкпоинт-специфичной) высоты Beyond-carousel
+ * (не rem/px), поэтому один и тот же набор чисел одинаково прикладывается
+ * на всех трёх брейкпоинтах без отдельных mobile/tablet-фреймов — CSS
+ * `%` в `translate()` считается от layout-размера элемента, который на
+ * каждом брейкпоинте уже свой (23.125rem/59rem/118rem). */
+const CAROUSEL_KEYFRAMES: { translateY: number; scale: number }[] = [
+  { translateY: 127.97, scale: 2.4364 },
+  { translateY: 113.67, scale: 2.4364 },
+  { translateY: 82.42, scale: 2.1186 },
+  { translateY: 36.86, scale: 1.589 },
+  { translateY: 0, scale: 1 },
+]
+/** Доля ENTRANCE_VH, за которую Beyond-title долистывает до 100% opacity
+ * (на кадре 2 из 5 заголовок уже полностью виден, кольцо в это время
+ * только начинает подниматься — см. сцену). */
+const TITLE_FADE_WINDOW: [number, number] = [0, 0.25]
+
+const clamp = (v: number, min = 0, max = 1) => Math.min(max, Math.max(min, v))
+const smoothstep = (t: number) => t * t * (3 - 2 * t)
+const windowProgress = (p: number, [start, end]: [number, number]) =>
+  clamp((p - start) / (end - start))
+
+/** Кусочно-линейная интерполяция (со smoothstep внутри каждого отрезка)
+ * между 5 keyframe-точками сцены — сохраняет неравномерность самой
+ * Figma-анимации (например, между кадром 1 и 2 масштаб ещё не меняется,
+ * едет только позиция), а не сглаживает её одной кривой через все 5 точек. */
+function sampleCarousel(progress: number) {
+  const segments = CAROUSEL_KEYFRAMES.length - 1
+  const scaled = clamp(progress) * segments
+  const i = Math.min(segments - 1, Math.floor(scaled))
+  const local = smoothstep(scaled - i)
+  const a = CAROUSEL_KEYFRAMES[i]
+  const b = CAROUSEL_KEYFRAMES[i + 1]
+  return {
+    translateY: a.translateY + (b.translateY - a.translateY) * local,
+    scale: a.scale + (b.scale - a.scale) * local,
+  }
+}
 
 /**
  * top/left/size — % от квадратного контейнера Beyond-carousel (это уже
@@ -109,24 +163,61 @@ function innerEdgePercent(rotateDeg: number) {
 
 export default function BeyondSection() {
   const wrapRef = useRef<HTMLDivElement>(null)
+  const titleRef = useRef<HTMLParagraphElement>(null)
+  const entranceRef = useRef<HTMLDivElement>(null)
   const [rotation, setRotation] = useState(0)
 
   /* Кольцо крутится на PIN_HEIGHT_VH вьюпортов, пока Beyond приклеена
    * вверху (`position: sticky; top: 0` внутри Beyond-pin-wrap — без
-   * margin-top, тот же случай, что Location3Section.tsx). */
+   * margin-top, тот же случай, что Location3Section.tsx). Первые
+   * ENTRANCE_VH из них — заезд: Beyond-title из прозрачности +
+   * Beyond-carousel подъезжает/усаживается от кадра 1 до уже закодированного
+   * кадра 5 (см. CAROUSEL_KEYFRAMES/TITLE_FADE_WINDOW выше) — вращение
+   * (rotation) продолжает идти как и раньше, независимо от заезда. */
   useEffect(() => {
     const wrap = wrapRef.current
-    if (!wrap) return
+    const title = titleRef.current
+    const entrance = entranceRef.current
+    if (!wrap || !title || !entrance) return
+
+    if (reduceMotion()) {
+      title.style.opacity = '1'
+      entrance.style.transform = ''
+    } else {
+      // Синхронно, до первого onUpdate — тот же приём, что в
+      // Location1Section.tsx, иначе на reload кадр рисуется в состоянии
+      // покоя и заметно моргает при первом скролле.
+      title.style.opacity = '0'
+      const start = sampleCarousel(0)
+      entrance.style.transform = `translateY(${start.translateY}%) scale(${start.scale})`
+    }
 
     const trigger = ScrollTrigger.create({
       trigger: wrap,
       start: 'top top',
       end: () => '+=' + window.innerHeight * (PIN_HEIGHT_VH / 100),
       scrub: true,
-      onUpdate: (self) => setRotation(self.progress * 360),
+      onUpdate: (self) => {
+        setRotation(self.progress * 360)
+
+        if (reduceMotion()) return
+
+        const entranceProgress = clamp(
+          (self.progress * PIN_HEIGHT_VH) / ENTRANCE_VH,
+        )
+        title.style.opacity = String(
+          windowProgress(entranceProgress, TITLE_FADE_WINDOW),
+        )
+        const { translateY, scale } = sampleCarousel(entranceProgress)
+        entrance.style.transform = `translateY(${translateY}%) scale(${scale})`
+      },
     })
 
-    return () => trigger.kill()
+    return () => {
+      trigger.kill()
+      title.style.opacity = ''
+      entrance.style.transform = ''
+    }
   }, [])
 
   return (
@@ -139,7 +230,10 @@ export default function BeyondSection() {
         id="beyond"
         className="Beyond sticky top-0 flex h-dvh w-full flex-col items-center justify-center overflow-hidden bg-blue"
       >
-        <p className="Beyond-title relative z-1 text-center font-manrope text-[1.875rem] leading-none font-semibold tracking-[-0.075rem] text-light md:text-[3.375rem] md:tracking-[-0.135rem] lg:text-[8.375rem] lg:tracking-[-0.5025rem]">
+        <p
+          ref={titleRef}
+          className="Beyond-title relative z-1 text-center font-manrope text-[1.875rem] leading-none font-semibold tracking-[-0.075rem] text-light md:text-[3.375rem] md:tracking-[-0.135rem] lg:text-[8.375rem] lg:tracking-[-0.5025rem]"
+        >
           Beyond the
           <br />
           Usual Life
@@ -147,48 +241,53 @@ export default function BeyondSection() {
 
         <div className="Beyond-carousel absolute left-1/2 top-1/2 size-[23.125rem] -translate-x-1/2 -translate-y-1/2 md:size-[59rem] lg:top-30 lg:size-[118rem] lg:translate-y-0">
           <div
-            className="Beyond-carousel-spin absolute inset-0"
-            style={{ transform: `rotate(${rotation}deg)` }}
+            ref={entranceRef}
+            className="Beyond-carousel-entrance absolute inset-0"
           >
-            {ITEMS.map((item, i) => {
-              const edge = innerEdgePercent(item.rotate)
-              return (
-                <div
-                  key={i}
-                  className="Beyond-carousel-img absolute"
-                  style={{
-                    top: `${item.top}%`,
-                    left: `${item.left}%`,
-                    width: `${item.size}%`,
-                    height: `${item.size}%`,
-                  }}
-                >
+            <div
+              className="Beyond-carousel-spin absolute inset-0"
+              style={{ transform: `rotate(${rotation}deg)` }}
+            >
+              {ITEMS.map((item, i) => {
+                const edge = innerEdgePercent(item.rotate)
+                return (
                   <div
-                    className="absolute overflow-hidden rounded-[0.3125rem] md:rounded-[0.9375rem] lg:rounded-[1.8388rem]"
+                    key={i}
+                    className="Beyond-carousel-img absolute"
                     style={{
-                      top: '50%',
-                      left: '50%',
-                      width: `${edge}%`,
-                      height: `${edge}%`,
-                      transform: `translate(-50%, -50%) rotate(${item.rotate}deg)`,
+                      top: `${item.top}%`,
+                      left: `${item.left}%`,
+                      width: `${item.size}%`,
+                      height: `${item.size}%`,
                     }}
                   >
-                    <img
-                      src={IMAGES[item.image]}
-                      alt=""
-                      loading="lazy"
-                      className="absolute inset-0 size-full object-cover"
-                    />
-                    {item.tint && (
-                      <div
-                        className="absolute inset-0 bg-dark/30"
-                        aria-hidden
+                    <div
+                      className="absolute overflow-hidden rounded-[0.3125rem] md:rounded-[0.9375rem] lg:rounded-[1.8388rem]"
+                      style={{
+                        top: '50%',
+                        left: '50%',
+                        width: `${edge}%`,
+                        height: `${edge}%`,
+                        transform: `translate(-50%, -50%) rotate(${item.rotate}deg)`,
+                      }}
+                    >
+                      <img
+                        src={IMAGES[item.image]}
+                        alt=""
+                        loading="lazy"
+                        className="absolute inset-0 size-full object-cover"
                       />
-                    )}
+                      {item.tint && (
+                        <div
+                          className="absolute inset-0 bg-dark/30"
+                          aria-hidden
+                        />
+                      )}
+                    </div>
                   </div>
-                </div>
-              )
-            })}
+                )
+              })}
+            </div>
           </div>
         </div>
       </section>
