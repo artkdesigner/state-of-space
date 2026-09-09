@@ -34,6 +34,22 @@ const SLIDE_COUNT = 3
 const PIN_VH = SLIDE_COUNT
 /** Доля общего прогресса секции, за которую верхний слайд успевает уйти. */
 const CROSSFADE = 0.28
+/** Прогресс (0..1 в старом, PIN_VH-широком отсчёте), на котором долистывает
+ * последний кроссфейд (переход в SLIDE_COUNT-й, финальный слайд) — тот же
+ * `to` из цикла в trigger.onUpdate ниже, для последней (i = SLIDE_COUNT-2)
+ * границы. После него в старом отсчёте оставался «мёртвый» хвост скролла
+ * без единого изменения на экране (пользователь пожаловался на лишнее
+ * расстояние после 3-го слайда) — ACTIVE_VH ниже обрезает именно этот
+ * хвост. */
+const LAST_CROSSFADE_END =
+  (SLIDE_COUNT - 1) / SLIDE_COUNT + CROSSFADE / 2
+/** Реальная длина активной (слайдерной) фазы секции, в вьюпортах — короче
+ * PIN_VH ровно на величину мёртвого хвоста. Используется для высоты
+ * pin-wrap и конца scroll-trigger'а вместо PIN_VH; сам PIN_VH остаётся
+ * "виртуальным" знаменателем (ровно 1 экран на слайд) для формул границ
+ * ниже — так темп первых кроссфейдов не меняется, срезается только
+ * лишний хвост. */
+const ACTIVE_VH = PIN_VH * LAST_CROSSFADE_END
 /** Доля прогресса, за которую Location-карточка успевает проявиться из
  * прозрачности после того, как секция встала на место. */
 const CARD_FADE_IN = 0.2
@@ -59,7 +75,7 @@ export default function Location1Section({ onBookNow }: Location1SectionProps) {
 
   /* Скролл-переход Intro → Location1 → Cliff (см. покадровую сцену в
    * Figma). Location1 — `position: sticky; top: 0` внутри обёртки
-   * Location1-pin-wrap высотой (2 + PIN_VH) вьюпортов, сдвинутой на
+   * Location1-pin-wrap высотой (2 + ACTIVE_VH) вьюпортов, сдвинутой на
    * `margin-top: -100vh` — тот же приём, что у Hero-pin-wrap/Intro-pin-wrap
    * (см. HeroSection.tsx/IntroSection.tsx): margin утягивает документный
    * верх Location1-wrap ровно на 1 вьюпорт раньше, чем закончился бы
@@ -69,7 +85,7 @@ export default function Location1Section({ onBookNow }: Location1SectionProps) {
    * счёт этого Location1 въезжает снизу вверх (её `top` от `100vh` до `0`,
    * обычный document flow, без единой строчки JS) и полностью закрывает
    * уже неподвижную Intro под собой — настоящий cover-переход, а не
-   * последовательная прокрутка. `(2 + PIN_VH)` вместо `(1 + PIN_VH)` —
+   * последовательная прокрутка. `(2 + ACTIVE_VH)` вместо `(1 + ACTIVE_VH)` —
    * лишний вьюпорт держит Location1 приклеенной (уже полностью раскрытой)
    * ещё на всю дистанцию, пока Cliff (следующий сиблинг, подтянутый вверх
    * своим собственным `margin-top: -100vh`, см. CliffSection.tsx) сама
@@ -138,10 +154,16 @@ export default function Location1Section({ onBookNow }: Location1SectionProps) {
     const trigger = ScrollTrigger.create({
       trigger: wrap,
       start: wrapTop,
-      end: () => wrapTop() + window.innerHeight * PIN_VH,
+      end: () => wrapTop() + window.innerHeight * ACTIVE_VH,
       scrub: true,
       onUpdate: (self) => {
-        const progress = self.progress
+        // self.progress — 0..1 по укороченной (ACTIVE_VH) дистанции;
+        // пересчитываем обратно в 0..1 по "виртуальному" PIN_VH-отсчёту
+        // (умножая на ту же долю, что и укоротили), чтобы все формулы
+        // границ ниже (boundary = (i+1)/SLIDE_COUNT и т.п., линейные
+        // в PIN_VH-домене) остались нетронутыми, а темп первых
+        // кроссфейдов не изменился.
+        const progress = self.progress * LAST_CROSSFADE_END
 
         // Верхний слайд i плавно гаснет вокруг границы (i+1)/SLIDE_COUNT,
         // открывая слайд i+1, лежащий под ним в стеке.
@@ -191,7 +213,7 @@ export default function Location1Section({ onBookNow }: Location1SectionProps) {
     <div
       ref={wrapRef}
       className="Location1-pin-wrap relative z-[46]"
-      style={{ height: `${(2 + PIN_VH) * 100}vh`, marginTop: '-100vh' }}
+      style={{ height: `${(2 + ACTIVE_VH) * 100}vh`, marginTop: '-100vh' }}
     >
       <section
         id="location1"
