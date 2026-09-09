@@ -10,14 +10,24 @@ import cliff5 from '../assets/cliff-5.webp'
 const IMAGE_RADIUS =
   'overflow-hidden rounded-[0.5625rem] md:rounded-[0.9375rem] lg:rounded-[1.875rem]'
 
-/** Скролл-дистанция "наезда" Location1 на Cliff — ровно 1 вьюпорт, СТОЛЬКО
- * же физически проезжает Location1 (см. Location1Section.tsx), пока
- * отклеивается и естественным document flow уезжает вверх (никакого JS на
- * саму позицию — за неё отвечает разница между высотой Location1-wrap и
- * margin-top на Cliff-wrap ниже). Этот триггер — чистая косметика поверх
- * бесплатного наезда: скругление нижних углов Location1 + проявление
- * Cliff-title/картинок из прозрачности, синхронно с тем, как Location1
- * физически уезжает. */
+/** Первые RISE_VH вьюпорта СОБСТВЕННОЙ (уже приклеенной, см. wrapTop ниже)
+ * sticky-фазы Cliff — НЕ отдельный riseTrigger до wrapTop, как раньше. По
+ * структуре обёрток (Location1-wrap кончается вплотную к Cliff-wrap, у
+ * обоих margin-top: -100vh) Location1 отклеивается и естественным document
+ * flow уезжает вверх РОВНО в тот момент, когда Cliff сама встаёт на sticky
+ * (см. Location1Section.tsx: её `(2 + PIN_VH)` — тот же самый момент, что
+ * `wrapTop()` здесь, совпадение не случайное и не требует синхронизации
+ * JS'ом). Раньше здесь стоял riseTrigger ДО wrapTop — в его окне Location1
+ * ещё гарантированно не отклеилась (это случается только в конце окна), а
+ * сама Cliff, тоже ещё не приклеенная, в этот момент физически въезжала
+ * снизу как обычный doc-flow блок — баг, на который пожаловался
+ * пользователь: Location1 стоит на месте, а Cliff вместо этого едет снизу,
+ * хотя должно быть наоборот. Перенос фазы на ПОСЛЕ wrapTop чинит оба
+ * симптома сразу: здесь Cliff уже стоит на месте (sticky), а Location1 уже
+ * гарантированно отклеена и едет вверх сама, без единой строчки JS на её
+ * позицию — скругление нижних углов Location1 (см. onUpdate ниже) просто
+ * синхронизировано с этим уже идущим отъездом, плюс проявление
+ * Cliff-title/картинок из прозрачности. */
 const RISE_VH = 1
 /** Собственная (внутренняя) хореография Cliff — title уходит вверх и
  * пропадает за кадром, sub-title/description въезжают с боков, 5 фото
@@ -66,34 +76,36 @@ export default function CliffSection() {
   /* Скролл-переход Location1 → Cliff (см. покадровую сцену в Figma
    * «Location1 to Cliff» 1..5, затем «Cliff» 1..5). Cliff — `position:
    * sticky; top: 0` внутри обёртки Cliff-pin-wrap высотой
-   * (1 + REVEAL_VH) вьюпортов, сдвинутой на `margin-top: -100vh` — тот же
-   * приём, что у Location1-pin-wrap (см. Location1Section.tsx): margin
-   * утягивает документный верх Cliff-wrap ровно на 1 вьюпорт раньше, чем
-   * закончился бы Location1-wrap "по прямому потоку" — то есть ровно
-   * туда, где начинается последний (замороженный) вьюпорт Location1. За
-   * счёт этого Cliff, уже приклеенная под Location1 (ниже z-index — тут
-   * явного z не нужно, у Location1-wrap он явный и выше, см.
-   * Location1Section.tsx), просто ждёт, пока Location1 отклеится и
-   * естественным document flow уедет вверх — никакого JS на саму позицию
-   * ни у той, ни у другой стороны.
+   * (1 + RISE_VH + REVEAL_VH) вьюпортов, сдвинутой на `margin-top: -100vh`
+   * — тот же приём, что у Location1-pin-wrap (см. Location1Section.tsx):
+   * margin утягивает документный верх Cliff-wrap ровно на 1 вьюпорт
+   * раньше, чем закончился бы Location1-wrap "по прямому потоку" — то
+   * есть ровно туда, где начинается последний (замороженный) вьюпорт
+   * Location1, и Cliff сама тут же встаёт на sticky. В тот же самый момент
+   * Location1 (выше по z-index, см. Location1Section.tsx) отклеивается и
+   * естественным document flow уезжает вверх — никакого JS на саму
+   * позицию ни у той, ни у другой стороны, обе стороны просто следствие
+   * структуры обёрток.
    *
    * `wrapTop()` — та же абсолютная doc-flow позиция wrap, что и в
    * Location1Section.tsx/IntroSection.tsx/PresenceSection.tsx.
    *
-   * 1) riseTrigger (RISE_VH вьюпорт ПЕРЕД wrapTop, т.е. пока Location1 ещё
-   *    физически уезжает) — чистая косметика: скругление нижних углов
-   *    Location1 (зеркально тому, как распрямлялся верхний край в
-   *    IntroSection.tsx, но снизу, как раньше) + проявление
-   *    Cliff-title/картинок из непрозрачности, оба дотягивают до 100%
-   *    ровно к концу фазы, к моменту, когда Location1 уже полностью
-   *    уехала (см. Location1Section.tsx — та же RISE_VH-дистанция там же
-   *    физически проезжает).
-   * 2) trigger (REVEAL_VH вьюпортов, Cliff уже приклеена) — внутренняя
-   *    хореография: Cliff-title уходит вверх и пропадает за кадром;
-   *    Cliff-sub-title/-description въезжают с боков (изначально за
-   *    кадром слева/справа); 5 фото из Cliff-img-wrap сходятся в стопку
-   *    точно в центре обёртки (в Figma центры всех 5 фото в кадре 5
-   *    совпадают с центром Cliff-img-wrap с точностью до пикселя). */
+   * 1) riseTrigger (первые RISE_VH вьюпорта СОБСТВЕННОЙ sticky-фазы Cliff,
+   *    т.е. ПОСЛЕ wrapTop, не до) — Cliff уже неподвижна, а Location1 в
+   *    этом же окне физически уезжает вверх сама (см. константу RISE_VH
+   *    выше). Чистая косметика синхронно с этим уже идущим отъездом:
+   *    скругление нижних углов Location1 (зеркально тому, как
+   *    распрямлялся верхний край в IntroSection.tsx, но снизу) + проявление
+   *    Cliff-title/картинок из прозрачности, оба дотягивают до 100% ровно
+   *    к концу фазы, к моменту, когда Location1 уже полностью скрылась за
+   *    верхним краем экрана.
+   * 2) trigger (REVEAL_VH вьюпортов сразу следом, Cliff всё так же
+   *    приклеена) — внутренняя хореография: Cliff-title уходит вверх и
+   *    пропадает за кадром; Cliff-sub-title/-description въезжают с боков
+   *    (изначально за кадром слева/справа); 5 фото из Cliff-img-wrap
+   *    сходятся в стопку точно в центре обёртки (в Figma центры всех 5
+   *    фото в кадре 5 совпадают с центром Cliff-img-wrap с точностью до
+   *    пикселя). */
   useEffect(() => {
     const wrap = wrapRef.current
     const section = sectionRef.current
@@ -165,8 +177,8 @@ export default function CliffSection() {
 
     const riseTrigger = ScrollTrigger.create({
       trigger: wrap,
-      start: () => wrapTop() - window.innerHeight * RISE_VH,
-      end: wrapTop,
+      start: wrapTop,
+      end: () => wrapTop() + window.innerHeight * RISE_VH,
       scrub: true,
       onUpdate: (self) => {
         const t = easeOutCubic(self.progress)
@@ -186,8 +198,8 @@ export default function CliffSection() {
 
     const trigger = ScrollTrigger.create({
       trigger: wrap,
-      start: wrapTop,
-      end: () => wrapTop() + window.innerHeight * REVEAL_VH,
+      start: () => wrapTop() + window.innerHeight * RISE_VH,
+      end: () => wrapTop() + window.innerHeight * (RISE_VH + REVEAL_VH),
       scrub: true,
       onUpdate: (self) => {
         const reveal = self.progress
@@ -233,7 +245,10 @@ export default function CliffSection() {
     <div
       ref={wrapRef}
       className="Cliff-pin-wrap relative"
-      style={{ height: `${(1 + REVEAL_VH) * 100}vh`, marginTop: '-100vh' }}
+      style={{
+        height: `${(1 + RISE_VH + REVEAL_VH) * 100}vh`,
+        marginTop: '-100vh',
+      }}
     >
       <section
         id="cliff"
