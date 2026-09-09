@@ -16,14 +16,18 @@ const RING_RADIUS = RING_OUTER - RING_STROKE_RESTING / 2
 const RING_INNER_RESTING = RING_OUTER - RING_STROKE_RESTING
 const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS
 
-/** Скролл-дистанция наезда Qualities на Above, в высотах вьюпорта — тот же
- * приём, что у Hero→Intro/Intro→Location1 (см. HeroSection.tsx/
- * IntroSection.tsx): статический `margin-top: -100vh` на Above-pin-wrap
- * утягивает её документный верх ровно на этот же 1 вьюпорт раньше, чем
- * закончился бы естественный поток после Qualities — Above естественно
- * въезжает снизу вверх поверх ещё видимой Qualities (у неё временно выше
- * z-index, см. эффект ниже) и полностью закрывает её, без единой строчки
- * JS на саму позицию ни у той, ни у другой стороны. */
+/** Первые RISE_VH вьюпорта СОБСТВЕННОЙ (уже приклеенной) sticky-фазы
+ * Above — тот же приём "riseTrigger ПОСЛЕ wrapTop, не до", что и в
+ * CliffSection.tsx (см. её комментарий у константы RISE_VH — тот же
+ * класс бага и тот же фикс): по структуре обёрток Qualities (обычный
+ * поток, без sticky) в этот момент уже гарантированно дочитывает свой
+ * последний вьюпорт и уезжает вверх сама — Above просто ждёт этого,
+ * уже неподвижно приклеенная, скругляя её нижние углы синхронно с этим
+ * уже идущим отъездом (зеркально тому, как распрямляется верхний край в
+ * IntroSection.tsx, но снизу, как в CliffSection.tsx). Раньше здесь стоял
+ * riseTrigger ДО wrapTop — тогда до Qualities оставался ещё целый лишний
+ * вьюпорт натурального скролла, и скругление начиналось на кадр-другой
+ * раньше, чем нужно (баг, на который пожаловался пользователь). */
 const RISE_VH = 1
 /** Собственная (reveal) фаза Above — раскрытие: circle-wrap проявляется
  * из прозрачности, заливка кольца растёт 0 → 100%, левый заголовок
@@ -38,6 +42,14 @@ const THICKEN_VH = 2
 const TOTAL_PIN_VH = REVEAL_VH + THICKEN_VH
 /** Граница фаз 1/2 внутри общего прогресса самопина Above, 0..1. */
 const REVEAL_BOUNDARY = REVEAL_VH / TOTAL_PIN_VH
+/** Должно совпадать с GROW_VH в CapacitySection.tsx — рост её круглой
+ * маски (от уже сплошного диска Above до полного покрытия вьюпорта)
+ * идёт в её riseTrigger ДО её собственного wrapTop, т.е. пока Above ещё
+ * физически приклеена (см. коммент у высоты wrap'а ниже) — маска должна
+ * успеть ПОЛНОСТЬЮ вырасти и закрыть экран ДО того, как Above отклеится,
+ * иначе на кадр-другой видно, как Above уже едет из-под ещё маленькой,
+ * только начавшей расти маски. */
+const CAPACITY_GROW_VH = 2
 
 /** Доля фазы 1, за которую Above-circle-wrap успевает проявиться из
  * прозрачности (см. покадровую сцену в Figma — заметно опережает оба
@@ -70,33 +82,37 @@ export default function AboveSection() {
   /* Переход Qualities → Above → Capacity (см. покадровую сцену в Figma,
    * «Qualities to Above 1..8» и «Above to Capacity 1..7»). Above —
    * `position: sticky; top: 0` внутри обёртки Above-pin-wrap высотой
-   * (3 + TOTAL_PIN_VH) вьюпортов, сдвинутой на `margin-top: -100vh» — тот
-   * же приём, что у Location1-pin-wrap/Cliff-pin-wrap (см.
-   * Location1Section.tsx/CliffSection.tsx). Обычная "своя" надбавка для
-   * такой cover-цепочки — `+2` (см. остальные секции): "+1" покрывает
-   * СВОЙ riseTrigger соседа (RISE_VH=1 вьюпорт), "+1" — стандартный
-   * запас. Здесь — `+3`, на 1 больше: у CapacitySection свой "riseTrigger"
-   * (там он называется riseTrigger и растит круглую маску от диска Above
-   * до полного покрытия вьюпорта, см. CapacitySection.tsx) длиной
-   * GROW_VH=2 вьюпорта, а не стандартный 1 — маска должна успеть
-   * ПОЛНОСТЬЮ вырасти и закрыть экран ДО того, как Above отклеится,
-   * иначе Above на кадр-другой видно уезжающим из-под ещё маленькой,
-   * только начавшей расти маски (баг, на который пожаловался
-   * пользователь: "Above начинает движение на 100vh раньше, чем нужно").
-   * Лишний вьюпорт держит Above приклеенной (уже полностью раскрытой,
-   * диск сплошной) ровно на всю длительность роста маски Capacity — и ни
-   * кадром меньше.
+   * (1 + RISE_VH + TOTAL_PIN_VH + CAPACITY_GROW_VH) вьюпортов, сдвинутой
+   * на `margin-top: -100vh» — тот же приём, что у Location1-pin-wrap/
+   * Cliff-pin-wrap (см. Location1Section.tsx/CliffSection.tsx). `+1` —
+   * стандартный запас; `RISE_VH` — теперь СВОЙ бюджет Above (см.
+   * константу выше, riseTrigger переехал на ПОСЛЕ wrapTop), а не
+   * бесплатная фаза на чужом натуральном скролле, как было раньше;
+   * `CAPACITY_GROW_VH` — тот же лишний запас, что и был: Above остаётся
+   * приклеенной (уже полностью раскрытой, диск сплошной) ровно на всю
+   * длительность роста маски Capacity, растущей ДО собственного wrapTop
+   * Capacity (см. CapacitySection.tsx) — маска должна успеть ПОЛНОСТЬЮ
+   * закрыть экран до того, как Above отклеится и сама начнёт естественным
+   * потоком уезжать (иначе на кадр-другой видно её движение из-под ещё
+   * маленькой маски). Сам центр этой маски теперь компенсирует
+   * собственное движение Capacity, пока та ещё не приклеена (см.
+   * CapacitySection.tsx) — раньше он был привязан к центру её же
+   * (движущегося) бокса и на глаз "наезжал"/сползал, а не рос на месте
+   * из уже неподвижного диска Above, как должно быть по макету.
    *
-   * 1) riseTrigger (RISE_VH вьюпорт ПЕРЕД wrapTop, пока Above ещё
-   *    физически въезжает поверх Qualities) — чистая косметика:
-   *    скругление НИЖНИХ углов Qualities по мере того, как она пропадает
-   *    за верхней границей (зеркально тому, как распрямляется верхний
-   *    край в IntroSection.tsx, но снизу, как в CliffSection.tsx).
-   *    z-index Qualities поднят один раз при монтировании (не по кадрам)
-   *    — при их обычном position:relative без этого Above (позже в DOM)
-   *    перекрыла бы Qualities по умолчанию.
-   * 2) trigger (TOTAL_PIN_VH вьюпортов, Above уже приклеена) — раскрытие
-   *    + утолщение, см. onUpdate ниже. */
+   * 1) riseTrigger (первые RISE_VH вьюпорта собственной sticky-фазы,
+   *    т.е. ПОСЛЕ wrapTop, не до) — чистая косметика: скругление НИЖНИХ
+   *    углов Qualities по мере того, как она (обычный поток, без sticky)
+   *    сама уезжает вверх и пропадает за верхней границей (зеркально
+   *    тому, как распрямляется верхний край в IntroSection.tsx, но снизу,
+   *    как в CliffSection.tsx). z-index Qualities поднят один раз при
+   *    монтировании (не по кадрам) — при их обычном position:relative без
+   *    этого Above (позже в DOM) перекрыла бы Qualities по умолчанию.
+   * 2) trigger (TOTAL_PIN_VH вьюпортов сразу следом, Above уже приклеена)
+   *    — раскрытие + утолщение, см. onUpdate ниже. Остальные
+   *    CAPACITY_GROW_VH вьюпорта после этого — чистый запас: Above уже
+   *    полностью раскрыта и просто ждёт, пока Capacity дорастит маску
+   *    (см. выше). */
   useEffect(() => {
     const wrap = wrapRef.current
     const section = sectionRef.current
@@ -136,8 +152,8 @@ export default function AboveSection() {
 
     const riseTrigger = ScrollTrigger.create({
       trigger: wrap,
-      start: () => wrapTop() - window.innerHeight * RISE_VH,
-      end: wrapTop,
+      start: wrapTop,
+      end: () => wrapTop() + window.innerHeight * RISE_VH,
       scrub: true,
       onUpdate: (self) => {
         const radius = easeOutCubic(self.progress) * 45
@@ -148,8 +164,8 @@ export default function AboveSection() {
 
     const trigger = ScrollTrigger.create({
       trigger: wrap,
-      start: wrapTop,
-      end: () => wrapTop() + window.innerHeight * TOTAL_PIN_VH,
+      start: () => wrapTop() + window.innerHeight * RISE_VH,
+      end: () => wrapTop() + window.innerHeight * (RISE_VH + TOTAL_PIN_VH),
       scrub: true,
       onUpdate: (self) => {
         const p = self.progress
@@ -222,7 +238,10 @@ export default function AboveSection() {
     <div
       ref={wrapRef}
       className="Above-pin-wrap relative"
-      style={{ height: `${(3 + TOTAL_PIN_VH) * 100}vh`, marginTop: '-100vh' }}
+      style={{
+        height: `${(1 + RISE_VH + TOTAL_PIN_VH + CAPACITY_GROW_VH) * 100}vh`,
+        marginTop: '-100vh',
+      }}
     >
       <section
         id="above"

@@ -18,6 +18,12 @@ const ROTATE = '[transform-box:fill-box] [transform-origin:50%_50%]'
  * Above уже едет из-под ещё маленькой, только начавшей расти маски (баг,
  * на который пожаловался пользователь). */
 const GROW_VH = 2
+/** Пока секция не приклеена (весь riseTrigger ниже), её собственный
+ * бокс физически едет вверх по нормальному потоку — центр clip-path
+ * компенсирует это движение на каждом тике (см. onUpdate), чтобы
+ * видимый круг рос на месте, вокруг уже неподвижного центра диска Above,
+ * а не полз вверх вместе с боксом (баг, на который пожаловался
+ * пользователь: маска визуально "подъезжала", а не росла из центра). */
 /** Скролл-дистанция распрямления маски следом за ростом — та же
  * двухфазная идея, что у Hero-img (см. HeroSection.tsx: GROWTH_PIN_VH
  * растит диаметр, UNWIND_PIN_VH распрямляет уже застывший border-radius),
@@ -101,7 +107,18 @@ export default function CapacitySection() {
         section.style.opacity = String(grow)
         const radius =
           diskRadiusPx + easeInCubic(grow) * (targetRadius() - diskRadiusPx)
-        section.style.clipPath = `circle(${radius}px at 50% 50%)`
+        // Секция весь riseTrigger ещё НЕ приклеена (обычный поток, сама
+        // физически поднимается снизу вверх, см. комментарий у useEffect)
+        // — если центрировать по "50% 50%" её же (движущегося) бокса,
+        // видимый круг будет ползти вместе с ней, а не расти на месте
+        // вокруг уже неподвижного диска Above. Компенсируем текущий
+        // вьюпорт-относительный top секции, чтобы "at" указывал на
+        // ФИКСИРОВАННЫЙ центр вьюпорта (= центр диска Above) на любом
+        // шаге. По горизонтали компенсация не нужна — секция w-full,
+        // левый край и так совпадает с левым краем вьюпорта на любом шаге.
+        const sectionTop = section.getBoundingClientRect().top
+        const centerY = window.innerHeight / 2 - sectionTop
+        section.style.clipPath = `circle(${radius}px at 50% ${centerY}px)`
       },
     })
 

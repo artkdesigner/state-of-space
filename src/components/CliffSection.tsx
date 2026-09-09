@@ -25,21 +25,30 @@ const IMAGE_RADIUS =
  * хотя должно быть наоборот. Перенос фазы на ПОСЛЕ wrapTop чинит оба
  * симптома сразу: здесь Cliff уже стоит на месте (sticky), а Location1 уже
  * гарантированно отклеена и едет вверх сама, без единой строчки JS на её
- * позицию — скругление нижних углов Location1 (см. onUpdate ниже) просто
- * синхронизировано с этим уже идущим отъездом, плюс проявление
- * Cliff-title/картинок из прозрачности. */
+ * позицию — скругление нижних углов Location1 (см. departTrigger ниже)
+ * просто синхронизировано с этим уже идущим отъездом. Это окно —
+ * ИСКЛЮЧИТЕЛЬНО про отъезд Location1, содержимое самого Cliff (title/
+ * картинки) в нём больше не трогается (см. FADE_VH ниже) — по жалобе
+ * пользователя они начинали проявляться прямо во время этого отъезда,
+ * когда Location1 ещё не скрылась за верхним краем экрана. */
 const RISE_VH = 1
+/** Cliff-title/картинки начинают проявляться из прозрачности только
+ * ПОСЛЕ RISE_VH — то есть только когда Location1 уже гарантированно
+ * полностью скрылась за верхним краем экрана (см. RISE_VH выше), а не
+ * одновременно с её отъездом, как было раньше. Долгота окна — тот же
+ * 1 вьюпорт, что и раньше был у fade внутри RISE_VH, просто целиком
+ * сдвинутый на RISE_VH позже. */
+const FADE_VH = 1
 /** Собственная (внутренняя) хореография Cliff — title уходит вверх и
  * пропадает за кадром, sub-title/description въезжают с боков, 5 фото
  * сходятся в стопку по центру — пока Cliff приклеена вверху, в высотах
  * вьюпорта. */
 const REVEAL_VH = 2
 
-/** Окна fade-in title/картинок внутри RISE_VH (0..1 = наезд Location1), с
- * нахлёстом — тот же приём каскада, что у TITLE_WINDOW/LOGO_WINDOW в
- * IntroSection.tsx: title начинает первым, картинки подхватывают на 40% и
- * дотягивают ровно к концу фазы (к моменту, когда Location1 уже полностью
- * уехала). */
+/** Окна fade-in title/картинок внутри FADE_VH (0..1), с нахлёстом — тот
+ * же приём каскада, что у TITLE_WINDOW/LOGO_WINDOW в IntroSection.tsx:
+ * title начинает первым, картинки подхватывают на 40% и дотягивают ровно
+ * к концу фазы. */
 const TITLE_FADE_WINDOW: [number, number] = [0, 0.6]
 const IMAGES_FADE_WINDOW: [number, number] = [0.4, 1]
 
@@ -76,7 +85,7 @@ export default function CliffSection() {
   /* Скролл-переход Location1 → Cliff (см. покадровую сцену в Figma
    * «Location1 to Cliff» 1..5, затем «Cliff» 1..5). Cliff — `position:
    * sticky; top: 0` внутри обёртки Cliff-pin-wrap высотой
-   * (1 + RISE_VH + REVEAL_VH) вьюпортов, сдвинутой на `margin-top: -100vh`
+   * (1 + RISE_VH + FADE_VH + REVEAL_VH) вьюпортов, сдвинутой на `margin-top: -100vh`
    * — тот же приём, что у Location1-pin-wrap (см. Location1Section.tsx):
    * margin утягивает документный верх Cliff-wrap ровно на 1 вьюпорт
    * раньше, чем закончился бы Location1-wrap "по прямому потоку" — то
@@ -95,11 +104,14 @@ export default function CliffSection() {
    *    этом же окне физически уезжает вверх сама (см. константу RISE_VH
    *    выше). Чистая косметика синхронно с этим уже идущим отъездом:
    *    скругление нижних углов Location1 (зеркально тому, как
-   *    распрямлялся верхний край в IntroSection.tsx, но снизу) + проявление
-   *    Cliff-title/картинок из прозрачности, оба дотягивают до 100% ровно
-   *    к концу фазы, к моменту, когда Location1 уже полностью скрылась за
-   *    верхним краем экрана.
-   * 2) trigger (REVEAL_VH вьюпортов сразу следом, Cliff всё так же
+   *    распрямлялся верхний край в IntroSection.tsx, но снизу), дотягивает
+   *    до 100% ровно к концу фазы, к моменту, когда Location1 уже
+   *    полностью скрылась за верхним краем экрана. Содержимое самого
+   *    Cliff здесь не трогается — см. fadeTrigger ниже.
+   * 2) fadeTrigger (следующие FADE_VH вьюпорта, сразу после riseTrigger) —
+   *    только теперь, когда Location1 гарантированно уже скрылась,
+   *    начинают проявляться из прозрачности Cliff-title/картинки.
+   * 3) trigger (REVEAL_VH вьюпортов сразу следом, Cliff всё так же
    *    приклеена) — внутренняя хореография: Cliff-title уходит вверх и
    *    пропадает за кадром; Cliff-sub-title/-description въезжают с боков
    *    (изначально за кадром слева/справа); 5 фото из Cliff-img-wrap
@@ -185,7 +197,15 @@ export default function CliffSection() {
         const radius = t * 45
         location1.style.borderBottomLeftRadius = `${radius}vw`
         location1.style.borderBottomRightRadius = `${radius}vw`
+      },
+    })
 
+    const fadeTrigger = ScrollTrigger.create({
+      trigger: wrap,
+      start: () => wrapTop() + window.innerHeight * RISE_VH,
+      end: () => wrapTop() + window.innerHeight * (RISE_VH + FADE_VH),
+      scrub: true,
+      onUpdate: (self) => {
         title.style.opacity = String(
           windowProgress(self.progress, TITLE_FADE_WINDOW),
         )
@@ -198,8 +218,9 @@ export default function CliffSection() {
 
     const trigger = ScrollTrigger.create({
       trigger: wrap,
-      start: () => wrapTop() + window.innerHeight * RISE_VH,
-      end: () => wrapTop() + window.innerHeight * (RISE_VH + REVEAL_VH),
+      start: () => wrapTop() + window.innerHeight * (RISE_VH + FADE_VH),
+      end: () =>
+        wrapTop() + window.innerHeight * (RISE_VH + FADE_VH + REVEAL_VH),
       scrub: true,
       onUpdate: (self) => {
         const reveal = self.progress
@@ -225,6 +246,7 @@ export default function CliffSection() {
     return () => {
       window.removeEventListener('resize', onResize)
       riseTrigger.kill()
+      fadeTrigger.kill()
       trigger.kill()
       location1.style.borderBottomLeftRadius = ''
       location1.style.borderBottomRightRadius = ''
@@ -246,7 +268,7 @@ export default function CliffSection() {
       ref={wrapRef}
       className="Cliff-pin-wrap relative"
       style={{
-        height: `${(1 + RISE_VH + REVEAL_VH) * 100}vh`,
+        height: `${(1 + RISE_VH + FADE_VH + REVEAL_VH) * 100}vh`,
         marginTop: '-100vh',
       }}
     >
