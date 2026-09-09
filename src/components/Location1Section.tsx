@@ -89,16 +89,20 @@ export default function Location1Section({ onBookNow }: Location1SectionProps) {
    * `margin-top: -100vh`, и getBoundingClientRect отражает итоговую,
    * уже свёрнутую этим margin'ом позицию, какой бы она ни была.
    *
-   * Наезд Location1 на Intro (последний вьюпорт ПЕРЕД wrapTop) сам по себе
-   * ничего здесь не анимирует — Location-slider остаётся плоским
-   * (без radius) всё время. Скругление на этом отрезке — на СТОРОНЕ Intro
-   * (её нижние углы, зеркально Cliff-riseTrigger, см. exitTrigger в
-   * IntroSection.tsx), а не на растущем сюда Location1 — так матчится
-   * референсное видео пользователя (см. историю чата), где ровно
-   * прямоугольный, не эллиптический, край. Location-карточка (LocationCard)
-   * в это время не трогается — она остаётся в opacity: 0 и проявляется
-   * отдельно, уже ПОСЛЕ наезда, в первые CARD_FADE_IN прогресса основного
-   * слайдера (см. ниже). */
+   * Пока идёт сам наезд (последний вьюпорт ПЕРЕД wrapTop, ещё до
+   * приклеивания — см. riseTrigger ниже), Location-slider раскруглятся:
+   * тот же приём, что у Hero-img (см. HeroSection.tsx) — `border-radius:
+   * 50%` на уже full-bleed (`absolute inset-0`) картинке с
+   * `overflow-hidden` даёт вписанный эллипс, а поскольку сама секция в
+   * этот момент только частично видна (въезжает снизу обычным document
+   * flow), на экране это выглядит как растущая снизу дуга — линейно к
+   * border-radius: 0% ровно к моменту, когда наезд завершён (см.
+   * покадровую сцену в Figma «Intro to Location1» 1..7). Location-карточка
+   * (LocationCard) в это время не трогается — она остаётся в opacity: 0 и
+   * проявляется отдельно, уже ПОСЛЕ наезда, в первые CARD_FADE_IN
+   * прогресса основного слайдера (см. ниже) — по той же покадровой сцене
+   * card остаётся невидимой даже на кадре, где наезд уже полностью
+   * завершён (радиус уже 0%), и появляется только на следующем. */
   useEffect(() => {
     const wrap = wrapRef.current
     const section = sectionRef.current
@@ -106,10 +110,11 @@ export default function Location1Section({ onBookNow }: Location1SectionProps) {
     const card = cardRef.current
     if (!wrap || !section || !slider) return
 
-    // Синхронно, до первого срабатывания onUpdate — иначе на reload/refresh
-    // карточка на первый кадр рисуется с дефолтной непрозрачностью
-    // (className её не задаёт) и заметно "моргает" перед тем, как GSAP
-    // выставит настоящий opacity.
+    slider.style.borderRadius = '50%'
+    // Синхронно, до первого срабатывания onUpdate (тот же приём, что и
+    // borderRadius выше) — иначе на reload/refresh карточка на первый
+    // кадр рисуется с дефолтной непрозрачностью (className её не задаёт)
+    // и заметно "моргает" перед тем, как GSAP выставит настоящий opacity.
     if (card) {
       card.style.opacity = '0'
       card.style.setProperty('--location-blur', '0rem')
@@ -119,6 +124,16 @@ export default function Location1Section({ onBookNow }: Location1SectionProps) {
       const r = wrap.getBoundingClientRect()
       return r.top + window.scrollY
     }
+
+    const riseTrigger = ScrollTrigger.create({
+      trigger: wrap,
+      start: () => wrapTop() - window.innerHeight,
+      end: wrapTop,
+      scrub: true,
+      onUpdate: (self) => {
+        slider.style.borderRadius = `${(1 - self.progress) * 50}%`
+      },
+    })
 
     const trigger = ScrollTrigger.create({
       trigger: wrap,
@@ -162,7 +177,9 @@ export default function Location1Section({ onBookNow }: Location1SectionProps) {
     })
 
     return () => {
+      riseTrigger.kill()
       trigger.kill()
+      slider.style.borderRadius = ''
       if (card) {
         card.style.opacity = ''
         card.style.removeProperty('--location-blur')

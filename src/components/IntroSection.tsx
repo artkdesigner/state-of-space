@@ -29,25 +29,9 @@ const BOTTOM_WRAP_WINDOW: [number, number] = [0.5, 1]
  * растягиваются на (1 + EARLY_SHIFT) × PIN_VH вместо PIN_VH. */
 const EARLY_SHIFT = 0.25
 
-/** Окно (0..1 внутри своего 1-вьюпортного exitTrigger, см. ниже), за
- * которое Intro-title/-logo/-bottom-wrap гаснут до конца — по референсному
- * видео пользователя (см. историю чата) к моменту, когда снизу начинает
- * наезжать скруглённый край Location1, текста уже не видно. */
-const TEXT_EXIT_WINDOW: [number, number] = [0, 0.3]
-/** Окно того же exitTrigger, за которое Intro "схлопывается" снизу вверх
- * (clip-path inset) — стартует уже после TEXT_EXIT_WINDOW, чтобы текст
- * гарантированно погас раньше, чем начнётся заметное схлопывание. */
-const RETREAT_WINDOW: [number, number] = [0.3, 1]
-/** Максимальный радиус нижних углов на пике схлопывания — тот же приём и
- * то же значение, что RISE_VH-скругление Location1 в CliffSection.tsx
- * (см. riseTrigger там), для единого визуального языка между всеми
- * переходами цепочки. */
-const RETREAT_RADIUS_VW = 45
-
 const clamp = (v: number, min = 0, max = 1) => Math.min(max, Math.max(min, v))
 const windowProgress = (p: number, [start, end]: [number, number]) =>
   clamp((p - start) / (end - start))
-const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3)
 
 export default function IntroSection() {
   const wrapRef = useRef<HTMLDivElement>(null)
@@ -86,22 +70,9 @@ export default function IntroSection() {
    * вверх своим собственным статическим `margin-top: -100vh`, см.
    * Location1Section.tsx) въезжает снизу и полностью закрывает Intro —
    * тот же настоящий cover-переход, что у Hero → Intro, а не
-   * последовательная прокрутка.
-   *
-   * Этот лишний вьюпорт — не просто пассивный hold: это ещё и окно
-   * exitTrigger (см. ниже), где Intro сама визуально "передаёт" наезжающему
-   * снизу Location1 скруглённый край — по референсному видео пользователя
-   * (см. историю чата), зеркально тому, как Location1 передаёт его дальше
-   * Cliff (см. riseTrigger в CliffSection.tsx). Intro при этом физически
-   * никуда не едет (остаётся sticky) — "схлопывание" снизу вверх имитирует
-   * clip-path inset на самой секции, с округлением на двух нижних углах
-   * (RETREAT_RADIUS_VW, тот же приём и то же значение, что у Cliff). Текст
-   * (title/logo/bottom-wrap) гаснет ДО начала схлопывания (TEXT_EXIT_WINDOW
-   * заканчивается раньше, чем стартует RETREAT_WINDOW) — в референсе к
-   * моменту, когда виден скруглённый край, текста уже нет. Только после
-   * того как clip-path схлопнулся полностью (Intro визуально исчезла под
-   * уже непрозрачной Location1), Intro отклеивается и естественно уезжает
-   * прочь — уже незаметно.
+   * последовательная прокрутка. Только после того как Location1 уже
+   * полностью закрыла экран, Intro отклеивается и естественно уезжает
+   * прочь — незаметно, под уже непрозрачной Location1.
    *
    * ScrollTrigger здесь без `pin: true` — он не трогает position/pin-
    * спейсеры вообще, только читает scroll и вызывает onUpdate, поэтому
@@ -109,11 +80,10 @@ export default function IntroSection() {
    * в scrollChain.ts). */
   useEffect(() => {
     const wrap = wrapRef.current
-    const section = sectionRef.current
     const title = titleRef.current
     const logo = logoRef.current
     const bottomWrap = bottomWrapRef.current
-    if (!wrap || !section || !title || !logo || !bottomWrap) return
+    if (!wrap || !title || !logo || !bottomWrap) return
 
     if (reduceMotion()) {
       title.style.opacity = '1'
@@ -149,33 +119,11 @@ export default function IntroSection() {
       },
     })
 
-    const exitTrigger = ScrollTrigger.create({
-      trigger: wrap,
-      start: () => wrapTop() + window.innerHeight * PIN_VH,
-      end: () => wrapTop() + window.innerHeight * (PIN_VH + 1),
-      scrub: true,
-      onUpdate: (self) => {
-        const exitProgress = self.progress
-
-        const textT = 1 - windowProgress(exitProgress, TEXT_EXIT_WINDOW)
-        title.style.opacity = String(textT)
-        logo.style.opacity = String(textT)
-        bottomWrap.style.opacity = String(textT)
-
-        const retreat = windowProgress(exitProgress, RETREAT_WINDOW)
-        const radius = easeOutCubic(retreat) * RETREAT_RADIUS_VW
-        section.style.clipPath =
-          `inset(0 0 ${retreat * 100}% 0 round 0 0 ${radius}vw ${radius}vw)`
-      },
-    })
-
     return () => {
       trigger.kill()
-      exitTrigger.kill()
       title.style.opacity = ''
       logo.style.opacity = ''
       bottomWrap.style.opacity = ''
-      section.style.clipPath = ''
     }
   }, [])
 
