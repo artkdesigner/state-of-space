@@ -42,8 +42,23 @@ const FADE_VH = 1
 /** Собственная (внутренняя) хореография Cliff — title уходит вверх и
  * пропадает за кадром, sub-title/description въезжают с боков, 5 фото
  * сходятся в стопку по центру — пока Cliff приклеена вверху, в высотах
- * вьюпорта. */
+ * вьюпорта. Это окно (и его pacing, TITLE_EXIT_FRACTION/TITLE_EXIT_VH) —
+ * ТОЛЬКО у Cliff-title, свой отдельный titleTrigger (см. ниже); картинки и
+ * sub-title/description теперь на своём отдельном imagesTrigger со сдвигом
+ * и большей длиной — см. IMAGES_START_OFFSET_VH/IMAGES_REVEAL_VH. */
 const REVEAL_VH = 2
+/** Насколько позже (в вьюпортах) относительно Cliff-title стартует
+ * imagesTrigger — по просьбе пользователя: title должен начать уезжать
+ * раньше, чем появляются и начинают двигаться картинки. titleTrigger
+ * стартует как раньше (сразу после FADE_VH), imagesTrigger — на эту
+ * дистанцию позже. */
+const IMAGES_START_OFFSET_VH = 0.5
+/** Дополнительный бюджет на движение картинок (и sub-title/description,
+ * которые едут в этом же окне) поверх исходных REVEAL_VH — по просьбе
+ * пользователя: "дай на движение изображений дополнительные 100vh". */
+const IMAGES_EXTRA_VH = 1
+/** Итоговая длина imagesTrigger. */
+const IMAGES_REVEAL_VH = REVEAL_VH + IMAGES_EXTRA_VH
 
 /** Окно fade-in title внутри FADE_VH (0..1). Картинки сюда больше не
  * входят — их opacity теперь меняется одновременно с их же движением в
@@ -84,8 +99,11 @@ export default function CliffSection() {
   /* Скролл-переход Location1 → Cliff (см. покадровую сцену в Figma
    * «Location1 to Cliff» 1..5, затем «Cliff» 1..5). Cliff — `position:
    * sticky; top: 0` внутри обёртки Cliff-pin-wrap высотой
-   * (1 + RISE_VH + FADE_VH + REVEAL_VH) вьюпортов, сдвинутой на `margin-top: -100vh`
-   * — тот же приём, что у Location1-pin-wrap (см. Location1Section.tsx):
+   * (1 + RISE_VH + FADE_VH + IMAGES_START_OFFSET_VH + IMAGES_REVEAL_VH)
+   * вьюпортов (imagesTrigger заканчивается позже titleTrigger — именно она
+   * теперь определяет общую длину, см. константы выше), сдвинутой на
+   * `margin-top: -100vh` — тот же приём, что у Location1-pin-wrap (см.
+   * Location1Section.tsx):
    * margin утягивает документный верх Cliff-wrap ровно на 1 вьюпорт
    * раньше, чем закончился бы Location1-wrap "по прямому потоку" — то
    * есть ровно туда, где начинается последний (замороженный) вьюпорт
@@ -110,15 +128,20 @@ export default function CliffSection() {
    * 2) fadeTrigger (следующие FADE_VH вьюпорта, сразу после riseTrigger) —
    *    только теперь, когда Location1 гарантированно уже скрылась,
    *    начинает проявляться из прозрачности Cliff-title.
-   * 3) trigger (REVEAL_VH вьюпортов сразу следом, Cliff всё так же
-   *    приклеена) — внутренняя хореография: Cliff-title уходит вверх и
-   *    пропадает за кадром; Cliff-sub-title/-description въезжают с боков
-   *    (изначально за кадром слева/справа); 5 фото из Cliff-img-wrap
-   *    одновременно проявляются из прозрачности и сходятся в стопку точно
-   *    в центре обёртки (opacity и transform завязаны на один и тот же
-   *    imagesEase, а не на отдельные более быстрые фазы) — в Figma центры
-   *    всех 5 фото в кадре 5 совпадают с центром Cliff-img-wrap с
-   *    точностью до пикселя. */
+   * 3) titleTrigger (REVEAL_VH вьюпортов сразу следом) — Cliff-title
+   *    уходит вверх и пропадает за кадром (та же пара TITLE_EXIT_FRACTION/
+   *    TITLE_EXIT_VH, что и раньше).
+   * 4) imagesTrigger — стартует на IMAGES_START_OFFSET_VH позже
+   *    titleTrigger (title должен начать уезжать раньше, чем появляются и
+   *    двигаются картинки, по просьбе пользователя) и длится
+   *    IMAGES_REVEAL_VH (REVEAL_VH + доп. бюджет IMAGES_EXTRA_VH, тоже по
+   *    просьбе): Cliff-sub-title/-description въезжают с боков (изначально
+   *    за кадром слева/справа); 5 фото из Cliff-img-wrap одновременно
+   *    проявляются из прозрачности и сходятся в стопку точно в центре
+   *    обёртки (opacity и transform завязаны на один и тот же imagesEase,
+   *    а не на отдельные более быстрые фазы) — в Figma центры всех 5 фото
+   *    в кадре 5 совпадают с центром Cliff-img-wrap с точностью до
+   *    пикселя. */
   useEffect(() => {
     const wrap = wrapRef.current
     const section = sectionRef.current
@@ -222,17 +245,30 @@ export default function CliffSection() {
       },
     })
 
-    const trigger = ScrollTrigger.create({
+    const titleTrigger = ScrollTrigger.create({
       trigger: wrap,
       start: () => wrapTop() + window.innerHeight * (RISE_VH + FADE_VH),
       end: () =>
         wrapTop() + window.innerHeight * (RISE_VH + FADE_VH + REVEAL_VH),
       scrub: true,
       onUpdate: (self) => {
-        const reveal = self.progress
-
-        const titleEase = easeOutCubic(clamp(reveal / TITLE_EXIT_FRACTION))
+        const titleEase = easeOutCubic(clamp(self.progress / TITLE_EXIT_FRACTION))
         title.style.transform = `translateY(${-titleEase * TITLE_EXIT_VH}vh)`
+      },
+    })
+
+    const imagesTrigger = ScrollTrigger.create({
+      trigger: wrap,
+      start: () =>
+        wrapTop() +
+        window.innerHeight * (RISE_VH + FADE_VH + IMAGES_START_OFFSET_VH),
+      end: () =>
+        wrapTop() +
+        window.innerHeight *
+          (RISE_VH + FADE_VH + IMAGES_START_OFFSET_VH + IMAGES_REVEAL_VH),
+      scrub: true,
+      onUpdate: (self) => {
+        const reveal = self.progress
 
         const textEase = easeOutCubic(
           clamp((reveal - TEXT_ENTER_START) / (1 - TEXT_ENTER_START)),
@@ -254,7 +290,8 @@ export default function CliffSection() {
       window.removeEventListener('resize', onResize)
       riseTrigger.kill()
       fadeTrigger.kill()
-      trigger.kill()
+      titleTrigger.kill()
+      imagesTrigger.kill()
       location1.style.borderBottomLeftRadius = ''
       location1.style.borderBottomRightRadius = ''
       title.style.opacity = ''
@@ -275,7 +312,7 @@ export default function CliffSection() {
       ref={wrapRef}
       className="Cliff-pin-wrap relative"
       style={{
-        height: `${(1 + RISE_VH + FADE_VH + REVEAL_VH) * 100}vh`,
+        height: `${(1 + RISE_VH + FADE_VH + IMAGES_START_OFFSET_VH + IMAGES_REVEAL_VH) * 100}vh`,
         marginTop: '-100vh',
       }}
     >
