@@ -91,7 +91,7 @@ export default function AdvantagesSection() {
     >
       <section
         id="advantages"
-        className="Advantages sticky top-0 flex h-dvh w-full items-center justify-center overflow-hidden bg-light"
+        className="Advantages sticky top-0 z-[60] flex h-dvh w-full items-center justify-center overflow-hidden bg-light"
       >
         <div className="Advantages-pin flex h-full w-full flex-col gap-2.5 p-2.5 lg:grid lg:grid-cols-2 lg:gap-5 lg:p-5">
           <div className="Advantages-left relative flex-1 overflow-hidden rounded-[0.625rem] bg-gradient-to-b from-blue to-[#081e45] lg:rounded-[1.875rem]">

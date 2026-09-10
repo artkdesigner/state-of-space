@@ -154,7 +154,15 @@ export default function BookingPopup({ open, onClose }: BookingPopupProps) {
                   <span className="sr-only">{field}</span>
                   <input
                     type={field === 'Phone' ? 'tel' : 'text'}
+                    inputMode={field === 'Phone' ? 'numeric' : undefined}
                     placeholder={field}
+                    onChange={
+                      field === 'Phone'
+                        ? (e) => {
+                            e.target.value = e.target.value.replace(/\D/g, '')
+                          }
+                        : undefined
+                    }
                     className="w-full bg-transparent text-dark placeholder:text-dark/60 focus:outline-none"
                   />
                 </label>
