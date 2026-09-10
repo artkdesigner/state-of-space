@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { getLenis, scrollToHash } from '../lib/scroll'
+import { lockScroll, scrollToHash, unlockScroll } from '../lib/scroll'
 import { NavLogo } from './NavBar'
 import Button from './Button'
 import navMenuBg from '../assets/nav-menu-bg.webp'
@@ -40,14 +40,8 @@ export default function NavMenu({ open, onClose, onBookNow }: NavMenuProps) {
 
   useEffect(() => {
     if (!mounted) return
-
-    document.documentElement.style.overflow = 'hidden'
-    getLenis()?.stop()
-
-    return () => {
-      document.documentElement.style.overflow = ''
-      getLenis()?.start()
-    }
+    lockScroll()
+    return () => unlockScroll()
   }, [mounted])
 
   useEffect(() => {
@@ -63,8 +57,8 @@ export default function NavMenu({ open, onClose, onBookNow }: NavMenuProps) {
 
   return (
     <div
-      className={`Nav-menu fixed inset-0 z-100 flex origin-center flex-col items-center justify-between overflow-hidden p-2.5 transition-[transform,opacity] duration-500 ease-out lg:hidden ${
-        visible ? 'scale-100 opacity-100' : 'scale-0 opacity-0'
+      className={`Nav-menu fixed inset-0 z-100 flex origin-right flex-col items-center justify-between overflow-hidden p-2.5 transition-transform duration-500 ease-out will-change-transform lg:hidden ${
+        visible ? '[transform:scaleX(1)]' : '[transform:scaleX(0)]'
       }`}
       role="dialog"
       aria-modal="true"
@@ -95,7 +89,7 @@ export default function NavMenu({ open, onClose, onBookNow }: NavMenuProps) {
         <button
           type="button"
           onClick={onClose}
-          className="Nav-menu-close absolute right-6 top-1/2 -translate-y-1/2 cursor-pointer whitespace-nowrap font-manrope text-[0.875rem] font-medium tracking-[-0.03em] text-light md:text-[1.125rem] md:tracking-[-0.03em]"
+          className="Nav-menu-close absolute right-0 top-1/2 -translate-y-1/2 cursor-pointer whitespace-nowrap font-manrope text-[0.875rem] font-medium tracking-[-0.03em] text-light md:text-[1.125rem] md:tracking-[-0.03em]"
         >
           Close
         </button>
@@ -128,13 +122,7 @@ export default function NavMenu({ open, onClose, onBookNow }: NavMenuProps) {
             <br />
             the Space
           </span>
-          <Button
-            variant="light"
-            onClick={() => {
-              onClose()
-              onBookNow()
-            }}
-          >
+          <Button variant="light" onClick={onBookNow}>
             Book now
           </Button>
         </div>

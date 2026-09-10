@@ -36,6 +36,30 @@ export function getLenis() {
   return lenis
 }
 
+let scrollLockCount = 0
+
+/**
+ * Счётчик блокировок скролла — нужен там, где один модал (BookingPopup)
+ * может открыться поверх другого уже открытого (NavMenu), не закрывая его.
+ * Снимать блокировку можно только когда закрылись оба, иначе закрытие
+ * верхнего модала преждевременно возвращает скролл при ещё открытом нижнем.
+ */
+export function lockScroll() {
+  scrollLockCount++
+  if (scrollLockCount === 1) {
+    document.documentElement.style.overflow = 'hidden'
+    getLenis()?.stop()
+  }
+}
+
+export function unlockScroll() {
+  scrollLockCount = Math.max(0, scrollLockCount - 1)
+  if (scrollLockCount === 0) {
+    document.documentElement.style.overflow = ''
+    getLenis()?.start()
+  }
+}
+
 /**
  * Плавный скролл к абсолютной пиксельной позиции документа — тот же
  * Lenis/easing, что и у scrollToHash (см. ниже), просто числом, а не

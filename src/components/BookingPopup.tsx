@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { getLenis } from '../lib/scroll'
+import { lockScroll, unlockScroll } from '../lib/scroll'
 
 function CloseIcon({ className }: { className?: string }) {
   return (
@@ -69,14 +69,8 @@ export default function BookingPopup({ open, onClose }: BookingPopupProps) {
 
   useEffect(() => {
     if (!mounted) return
-
-    document.documentElement.style.overflow = 'hidden'
-    getLenis()?.stop()
-
-    return () => {
-      document.documentElement.style.overflow = ''
-      getLenis()?.start()
-    }
+    lockScroll()
+    return () => unlockScroll()
   }, [mounted])
 
   useEffect(() => {
@@ -114,8 +108,8 @@ export default function BookingPopup({ open, onClose }: BookingPopupProps) {
         </button>
 
         <div
-          className={`Popup-body relative flex h-full w-full shrink-0 flex-col items-start justify-between gap-10 overflow-y-auto bg-light p-2.5 text-dark transition-transform duration-500 ease-out md:w-125 md:p-5 lg:w-322.5 lg:gap-20 lg:p-10 ${
-            visible ? 'translate-x-0' : 'translate-x-full'
+          className={`Popup-body relative flex h-full w-full shrink-0 flex-col items-start justify-between gap-10 overflow-y-auto bg-light p-2.5 text-dark transition-transform duration-500 ease-out will-change-transform md:w-125 md:p-5 lg:w-322.5 lg:gap-20 lg:p-10 ${
+            visible ? '[transform:translateX(0)]' : '[transform:translateX(100%)]'
           }`}
         >
           <button
