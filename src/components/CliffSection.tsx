@@ -343,7 +343,7 @@ export default function CliffSection() {
           The Cliff Villa
         </h2>
 
-        <div className="Cliff-content-wrap relative z-2 flex w-full flex-col items-center lg:flex-row lg:items-center lg:justify-center lg:gap-5">
+        <div className="Cliff-content-wrap relative z-2 flex w-full flex-col items-center gap-15 lg:flex-row lg:items-center lg:justify-center lg:gap-5">
           <div
             ref={subTitleRef}
             className="Cliff-sub-title w-full md:w-72.5 lg:w-[38.75rem]"
@@ -356,7 +356,7 @@ export default function CliffSection() {
             </p>
           </div>
 
-          <div className="Cliff-img-wrap relative mt-[23rem] mb-[26rem] h-35.5 w-42.5 shrink-0 md:mt-[26rem] md:mb-[32rem] md:h-50 md:w-60 lg:m-0 lg:h-125 lg:w-150">
+          <div className="Cliff-img-wrap relative h-35.5 w-42.5 shrink-0 md:h-50 md:w-60 lg:h-125 lg:w-150">
             <div
               ref={setImgRef(0)}
               className="Cliff-img-1 absolute left-[-8.0625rem] top-[calc(50%-21.78125rem)] opacity-0 md:left-[-17.625rem] md:top-[calc(50%-24.75rem)] lg:left-[-45.1875rem] lg:top-[calc(50%-20.625rem)]"
