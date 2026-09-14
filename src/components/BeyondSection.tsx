@@ -375,6 +375,7 @@ export default function BeyondSection() {
       title.style.opacity = '1'
       title.style.filter = ''
       entrance.style.transform = ''
+      entrance.style.filter = ''
       mask.style.width = '100vw'
       mask.style.height = '100dvh'
       mask.style.borderRadius = '0'
@@ -444,6 +445,7 @@ export default function BeyondSection() {
         const { translateY } = sampleCarousel(entranceEase)
         const scale = sampleRingScale(vhScrolled)
         entrance.style.transform = `translateY(calc(${translateY}% + ${centerOffsetPx * entranceEase}px)) scale(${scale})`
+        entrance.style.filter = `blur(${TITLE_BLUR_END_REM * shrinkEase}rem)`
         title.style.filter = `blur(${TITLE_BLUR_END_REM * shrinkEase}rem)`
 
         // Фаза 2: маска растёт из центра квадратом (ширина=высота в vw —
@@ -502,6 +504,7 @@ export default function BeyondSection() {
       title.style.opacity = ''
       title.style.filter = ''
       entrance.style.transform = ''
+      entrance.style.filter = ''
       mask.style.width = ''
       mask.style.height = ''
       mask.style.borderRadius = ''
