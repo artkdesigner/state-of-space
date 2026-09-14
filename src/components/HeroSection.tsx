@@ -1,7 +1,7 @@
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useEffect, useLayoutEffect, useRef } from 'react'
-import heroPortrait from '../assets/hero-portrait-b.webp'
+import heroPortrait from '../assets/hero-portrait-c.webp'
 import { reduceMotion, SplitChars } from '../lib/anim'
 import { HERO_INTRO, typeReveal } from '../lib/heroIntro'
 import { HERO_PIN_VH } from '../lib/scrollChain'
