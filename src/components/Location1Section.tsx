@@ -128,12 +128,16 @@ export default function Location1Section({ onBookNow }: Location1SectionProps) {
    *
    * Пока идёт сам наезд (последний вьюпорт ПЕРЕД wrapTop, ещё до
    * приклеивания — см. riseTrigger ниже), Location-slider раскруглятся:
-   * тот же приём, что у Hero-img (см. HeroSection.tsx) — `border-radius:
-   * 50%` на уже full-bleed (`absolute inset-0`) картинке с
-   * `overflow-hidden` даёт вписанный эллипс, а поскольку сама секция в
-   * этот момент только частично видна (въезжает снизу обычным document
-   * flow), на экране это выглядит как растущая снизу дуга — линейно к
-   * border-radius: 0% ровно к моменту, когда наезд завершён (см.
+   * `border-radius` в `vmin`, не в `%` (та же правка, что в
+   * QualitiesSection.tsx/CliffSection.tsx/Location2Section.tsx) — сама
+   * Location-slider всегда ровно `100vw × 100dvh` (inset-0 в h-dvh
+   * w-full секции), а на портретных mobile/tablet вьюпортах высота
+   * заметно больше ширины; `%` считается отдельно по каждой оси и даёт
+   * вытянутый эллипс вместо круглой дуги (жалоба пользователя — на
+   * tablet скругление выглядело непропорционально). `vmin` — 1% от
+   * МЕНЬШЕЙ стороны вьюпорта на обеих осях сразу, даёт настоящую дугу
+   * окружности. На экране это выглядит как растущая снизу дуга —
+   * линейно к border-radius: 0 ровно к моменту, когда наезд завершён (см.
    * покадровую сцену в Figma «Intro to Location1» 1..7). Location-карточка
    * (LocationCard) в это время не трогается — она остаётся в opacity: 0 и
    * проявляется отдельно, уже ПОСЛЕ наезда, в первые CARD_FADE_IN
@@ -154,7 +158,7 @@ export default function Location1Section({ onBookNow }: Location1SectionProps) {
     const overlay = intro?.querySelector<HTMLElement>('.Intro-overlay')
     if (!wrap || !section || !slider || !overlay) return
 
-    slider.style.borderRadius = '50%'
+    slider.style.borderRadius = '50vmin'
     // Синхронно, до первого срабатывания onUpdate (тот же приём, что и
     // borderRadius выше) — иначе на reload/refresh карточка на первый
     // кадр рисуется с дефолтной непрозрачностью (className её не задаёт)
@@ -179,7 +183,7 @@ export default function Location1Section({ onBookNow }: Location1SectionProps) {
       end: wrapTop,
       scrub: true,
       onUpdate: (self) => {
-        slider.style.borderRadius = `${(1 - self.progress) * 50}%`
+        slider.style.borderRadius = `${(1 - self.progress) * 50}vmin`
         overlay.style.opacity = String(gsap.utils.clamp(0, 1, self.progress / 0.5))
       },
     })
