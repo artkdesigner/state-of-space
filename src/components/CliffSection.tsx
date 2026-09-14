@@ -411,7 +411,7 @@ export default function CliffSection() {
             ref={subTitleRef}
             className="Cliff-sub-title w-full md:w-72.5 lg:w-[38.75rem]"
           >
-            <p className="translate-y-[1.6406rem] text-center font-manrope text-[1.25rem] font-semibold leading-[1.1] tracking-[-0.02em] text-dark md:translate-y-[1.7598rem] lg:translate-y-0 lg:text-left lg:text-[2.875rem]">
+            <p className="translate-y-[1.6406rem] text-center font-manrope text-[1.25rem] font-semibold leading-[1.1] tracking-[-0.02em] text-dark md:translate-y-0 lg:text-left lg:text-[2.875rem]">
               Not an Escape,
               <br />
               but a Return <br className="hidden lg:block" />
@@ -505,7 +505,7 @@ export default function CliffSection() {
             ref={descriptionWrapRef}
             className="Cliff-description-wrap w-full lg:w-[38.75rem]"
           >
-            <div className="flex -translate-y-[0.9814rem] justify-center md:-translate-y-[2.2373rem] lg:translate-y-0 lg:justify-end">
+            <div className="flex -translate-y-[0.9814rem] justify-center md:translate-y-0 lg:justify-end">
               <p className="Cliff-description w-full text-center font-manrope text-[0.875rem] leading-[1.3] font-medium tracking-[-0.01em] text-dark md:w-[35.75rem] lg:w-[23.125rem] lg:text-left lg:text-[1.125rem]">
                 This space is not about retreating from life, but about removing
                 what distracts you from it. Here, attention becomes stable.
