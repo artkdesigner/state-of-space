@@ -16,7 +16,7 @@ export function initSmoothScroll() {
     return () => {}
   }
 
-  lenis = new Lenis({ lerp: 0.1, wheelMultiplier: 1 })
+  lenis = new Lenis({ lerp: 0.1, wheelMultiplier: 1.2 })
   lenis.on('scroll', ScrollTrigger.update)
 
   const raf = (time: number) => {
