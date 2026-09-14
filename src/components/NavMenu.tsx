@@ -67,7 +67,7 @@ export default function NavMenu({ open, onClose, onBookNow }: NavMenuProps) {
   return (
     <div
       className={`Nav-menu fixed inset-0 z-100 flex flex-col items-center justify-between overflow-hidden p-2.5 transition-transform duration-500 ease-out will-change-transform lg:hidden ${
-        visible ? '[transform:translateX(0%)]' : '[transform:translateX(-100%)]'
+        visible ? '[transform:translateX(0%)]' : '[transform:translateX(100%)]'
       }`}
       role="dialog"
       aria-modal="true"
