@@ -140,7 +140,7 @@ export default function IntroSection() {
       >
         <h2
           ref={titleRef}
-          className="Intro-title mx-auto max-w-[94rem] text-center font-manrope text-[1.25rem] font-semibold leading-[1.2] tracking-[-0.03em] opacity-0 md:text-[1.875rem] lg:text-[3.75rem]"
+          className="Intro-title mx-auto max-w-[94rem] text-center font-manrope text-[1.25rem] font-semibold leading-[1.2] tracking-[-0.03em] opacity-0 md:mt-15 md:text-[1.875rem] lg:mt-0 lg:text-[3.75rem]"
         >
           Live a unique experience inspired by the natural rhythm of the
           ocean. An experience where the important thing is not a change of
