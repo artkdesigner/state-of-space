@@ -367,25 +367,35 @@ export default function BeyondSection() {
     }
     let centerOffsetPx = measureCenterOffset()
 
-    /** Tablet (md, не lg): статичный размер кольца (md:size-[59rem])
-     * настолько велик относительно типичной высоты tablet-вьюпорта, что
-     * даже CAROUSEL_KEYFRAMES[0].translateY (127.97%, общее число на все
-     * брейкпоинты, см. её комментарий) не уводит кольцо целиком за нижний
-     * край экрана на первом кадре захода — верхний край остаётся в кадре
-     * (жалоба пользователя: "должна стартовать за нижней границей экрана,
-     * а не от её середины"). Добавка — ТОЛЬКО tablet, в px, поверх
-     * centerOffsetPx: считает, сколько ещё не хватает, чтобы top кольца
-     * оказался вровень с нижним краем вьюпорта ровно при entranceEase=0, и
-     * гасится с той же скоростью, с которой сам keyframe[0] естественно
-     * сходит на нет в первом сегменте sampleCarousel (см. kf0Weight в
-     * onUpdate) — без отдельной fade-кривой, чтобы не давать лишний
-     * "рывок" в темпе движения. Desktop/mobile не трогает — там уже
-     * видно/подтверждено на референсе, и магическое число, посчитанное
-     * под tablet-масштаб кольца, для них не годится. */
-    const isTabletRange = () =>
-      window.innerWidth >= 768 && window.innerWidth < 992
-    const measureTabletStartExtraPx = () => {
-      if (!isTabletRange()) return 0
+    /** Mobile+tablet (< lg): статичный размер кольца (size-[23.125rem] на
+     * mobile, md:size-[59rem] на tablet) настолько велик относительно
+     * высоты вьюпорта в обеих зонах — и особенно с учётом SCALE_START
+     * (2.4364× на первом кадре, см. её объявление), который раздувает
+     * рендерящийся размер ещё сильнее, — что даже CAROUSEL_KEYFRAMES[0]
+     * .translateY (127.97%, общее число на все брейкпоинты, см. её
+     * комментарий) не уводит кольцо целиком за нижний край экрана на
+     * первом кадре захода — верхний край остаётся в кадре (жалоба
+     * пользователя, сперва про tablet, затем то же самое про mobile:
+     * "должна стартовать за нижней границей экрана, а не от её
+     * середины"). Изначально чинили только tablet (казалось, что на
+     * mobile меньшее кольцо не даёт того же эффекта) — оказалось, что при
+     * SCALE_START=2.4364 кольцо всё равно вылезает и там, посчитано
+     * аналитически и подтверждено измерением (top кольца при
+     * entranceEase=0 — 444.75px внутри 844px вьюпорта). Добавка — в px,
+     * поверх centerOffsetPx: считает, сколько ещё не хватает, чтобы top
+     * кольца оказался вровень с нижним краем вьюпорта ровно при
+     * entranceEase=0, и гасится с той же скоростью, с которой сам
+     * keyframe[0] естественно сходит на нет в первом сегменте
+     * sampleCarousel (см. kf0Weight в onUpdate) — без отдельной
+     * fade-кривой, чтобы не давать лишний "рывок" в темпе движения.
+     * Desktop не трогает — там уже видно/подтверждено на референсе, и
+     * сама формула (через carousel.offsetHeight/sampleRingScale) —
+     * измерение в реальном времени, а не магическое число под конкретный
+     * брейкпоинт, так что одна и та же формула одинаково годится что для
+     * mobile, что для tablet. */
+    const isColumnLayoutRange = () => window.innerWidth < 992
+    const measureStartExtraPx = () => {
+      if (!isColumnLayoutRange()) return 0
       const layoutHeight = carousel.offsetHeight
       const carouselCenterY = window.innerHeight / 2 - centerOffsetPx
       const kf0Px = (CAROUSEL_KEYFRAMES[0].translateY / 100) * layoutHeight
@@ -393,11 +403,11 @@ export default function BeyondSection() {
         carouselCenterY + kf0Px - (layoutHeight * sampleRingScale(0)) / 2
       return Math.max(0, window.innerHeight - topAtStart)
     }
-    let tabletStartExtraPx = measureTabletStartExtraPx()
+    let startExtraPx = measureStartExtraPx()
 
     const onResize = () => {
       centerOffsetPx = measureCenterOffset()
-      tabletStartExtraPx = measureTabletStartExtraPx()
+      startExtraPx = measureStartExtraPx()
     }
     window.addEventListener('resize', onResize)
 
@@ -418,7 +428,7 @@ export default function BeyondSection() {
       // покоя и заметно моргает при первом скролле.
       title.style.opacity = '0'
       const start = sampleCarousel(0)
-      entrance.style.transform = `translateY(calc(${start.translateY}% + ${tabletStartExtraPx}px)) scale(${sampleRingScale(0)})`
+      entrance.style.transform = `translateY(calc(${start.translateY}% + ${startExtraPx}px)) scale(${sampleRingScale(0)})`
       mask.style.width = '0px'
       mask.style.height = '0px'
       mask.style.borderRadius = '50%'
@@ -476,13 +486,13 @@ export default function BeyondSection() {
         const scale = sampleRingScale(vhScrolled)
         // kf0Weight — та же доля, с которой keyframe[0] сам участвует в
         // линейной интерполяции sampleCarousel (1 на entranceEase=0, 0 уже
-        // к концу первого сегмента) — гасит tabletStartExtraPx в том же
-        // темпе, без отдельной fade-кривой (см. её комментарий выше).
+        // к концу первого сегмента) — гасит startExtraPx в том же темпе,
+        // без отдельной fade-кривой (см. её комментарий выше).
         const kf0Segments = CAROUSEL_KEYFRAMES.length - 1
         const kf0Scaled = clamp(entranceEase) * kf0Segments
         const kf0Weight = kf0Scaled < 1 ? 1 - kf0Scaled : 0
         const extraPx =
-          centerOffsetPx * entranceEase + tabletStartExtraPx * kf0Weight
+          centerOffsetPx * entranceEase + startExtraPx * kf0Weight
         entrance.style.transform = `translateY(calc(${translateY}% + ${extraPx}px)) scale(${scale})`
         entrance.style.filter = `blur(${TITLE_BLUR_END_REM * shrinkEase}rem)`
         title.style.filter = `blur(${TITLE_BLUR_END_REM * shrinkEase}rem)`
