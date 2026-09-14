@@ -73,6 +73,15 @@ const IMAGES_REVEAL_VH = REVEAL_VH + IMAGES_EXTRA_VH
  * картинки уже заметно сходятся и наезжают друг на друга, они были
  * полностью непрозрачными. */
 const IMAGES_OPACITY_FRACTION = 0.5
+/** Стартовая позиция картинок — на 50% дальше от центра Cliff-img-wrap,
+ * чем их исходная (Figma-заданная) позиция, по просьбе пользователя:
+ * opacity 0→1 читался слишком резко, т.к. дистанция схождения была
+ * короткой. dx/dy (см. offsets в useEffect) — вектор от исходной позиции
+ * ДО центра; на imagesEase=0 применяем -0.5×(dx,dy) (тот же вектор, но в
+ * обратную сторону, от центра), а не 0 — старт отодвигается на 50%
+ * своей же исходной дистанции ДАЛЬШЕ наружу, конечная (центр) точка не
+ * меняется. См. posFactor в imagesTrigger.onUpdate ниже. */
+const IMAGES_START_DISTANCE_FACTOR = 1.5
 
 /** Окно fade-in title внутри FADE_VH (0..1). Картинки сюда больше не
  * входят — их opacity теперь меняется одновременно с их же движением в
@@ -311,11 +320,14 @@ export default function CliffSection() {
         const imagesOpacityEase = easeOutCubic(
           clamp(imagesEase / IMAGES_OPACITY_FRACTION),
         )
+        const posFactor =
+          IMAGES_START_DISTANCE_FACTOR * imagesEase -
+          (IMAGES_START_DISTANCE_FACTOR - 1)
         images.forEach((img, i) => {
           if (!img) return
           const { dx, dy } = offsets[i]
           img.style.opacity = String(imagesOpacityEase)
-          img.style.transform = `translate(${dx * imagesEase}px, ${dy * imagesEase}px)`
+          img.style.transform = `translate(${dx * posFactor}px, ${dy * posFactor}px)`
         })
       },
     })

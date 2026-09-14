@@ -59,9 +59,16 @@ export function useInView<T extends Element = HTMLElement>(
      * за целой секцией, чтобы триггерить по её прогрессу появления, а не
      * по видимости самого анимируемого (маленького) элемента. */
     watch?: RefObject<Element | null>
+    /** rootMargin для внутреннего IntersectionObserver — по умолчанию
+     * стандартный (без расширения). Нужен, например, когда `once: false`
+     * должен реагировать ТОЛЬКО на пересечение одной конкретной границы
+     * вьюпорта (скажем, нижней — «появился снизу / спрятался обратно вниз»),
+     * а не гаситься и тогда, когда элемент уходит с экрана через
+     * противоположную границу при обычном скролле вперёд. */
+    rootMargin?: string
   } = {},
 ) {
-  const { once = true, amount = 0.2, watch } = opts
+  const { once = true, amount = 0.2, watch, rootMargin } = opts
   const ref = useRef<T>(null)
   const [inView, setInView] = useState(false)
 
@@ -77,11 +84,11 @@ export function useInView<T extends Element = HTMLElement>(
           setInView(false)
         }
       },
-      { threshold: amount },
+      { threshold: amount, rootMargin },
     )
     io.observe(el)
     return () => io.disconnect()
-  }, [once, amount, watch])
+  }, [once, amount, watch, rootMargin])
 
   return [ref, inView] as const
 }
@@ -212,11 +219,11 @@ export function Stagger({
  * Счётчик числа от `start` до `target` при попадании в вьюпорт.
  * Возвращает [ref, value] — ref повесить на элемент с числом.
  */
-export function useCounter(
+export function useCounter<T extends Element = HTMLElement>(
   target: number,
   { duration = 1200, start = 0 }: { duration?: number; start?: number } = {},
 ) {
-  const [ref, inView] = useInView<HTMLElement>({ once: true })
+  const [ref, inView] = useInView<T>({ once: true })
   const [value, setValue] = useState(start)
 
   useEffect(() => {

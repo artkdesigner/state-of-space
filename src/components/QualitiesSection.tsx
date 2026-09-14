@@ -36,8 +36,17 @@ const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3)
 const REVEAL_EASE = 'cubic-bezier(0.16, 1, 0.3, 1)'
 
 /** Qualities-item появляется slide-up + opacity, когда преодолевает нижнюю
- * границу экрана — вынесен в отдельный компонент, чтобы useInView вызывался
- * на верхнем уровне (а не внутри .map в QualitiesSection). */
+ * границу экрана, и ТАК ЖЕ уходит обратно (opacity/сдвиг реверсируются),
+ * когда скролим назад и элемент снова уходит за нижнюю границу — по прямой
+ * просьбе пользователя (`once: false`, а не `once: true`, как было раньше:
+ * тогда анимация проигрывалась один раз и больше не реагировала на
+ * обратный скролл). rootMargin с огромным запасом СВЕРХУ — без него
+ * IntersectionObserver считает элемент "не в вьюпорте" и тогда, когда он
+ * обычным скроллом ВПЕРЁД уходит за ВЕРХНЮЮ границу (уже прочитан), и
+ * пункты гасли бы один за другим по мере чтения списка, хотя реверс должен
+ * реагировать только на нижнюю границу. Вынесен в отдельный компонент,
+ * чтобы useInView вызывался на верхнем уровне (а не внутри .map в
+ * QualitiesSection). */
 function QualityItem({
   quality,
   isActive,
@@ -47,7 +56,11 @@ function QualityItem({
   isActive: boolean
   onActivate: () => void
 }) {
-  const [ref, inView] = useInView<HTMLButtonElement>({ once: true, amount: 0 })
+  const [ref, inView] = useInView<HTMLButtonElement>({
+    once: false,
+    amount: 0,
+    rootMargin: '9999px 0px 0px 0px',
+  })
 
   return (
     <button
@@ -76,8 +89,8 @@ function QualityItem({
 export default function QualitiesSection() {
   const sectionRef = useRef<HTMLElement>(null)
   const [activeIndex, setActiveIndex] = useState(0)
-  const [hoursRef, hours] = useCounter(72)
-  const [metersRef, meters] = useCounter(1650)
+  const [hoursRef, hours] = useCounter<HTMLParagraphElement>(72)
+  const [metersRef, meters] = useCounter<HTMLParagraphElement>(1650)
 
   useEffect(() => {
     const section = sectionRef.current

@@ -344,7 +344,7 @@ export default function AboveSection() {
                     ref={rightLine1Ref}
                     className="block [word-break:break-word] whitespace-nowrap text-right font-manrope text-[1.875rem] leading-none font-semibold tracking-[-0.04em] text-light md:text-[3.375rem] lg:text-[8.375rem] lg:tracking-[-0.06em]"
                   >
-                    Above
+                    {' Above'}
                   </span>
                 </span>
                 <span className="Above-right-title-line block overflow-hidden">
@@ -352,7 +352,7 @@ export default function AboveSection() {
                     ref={rightLine2Ref}
                     className="block [word-break:break-word] whitespace-nowrap text-right font-manrope text-[1.875rem] leading-none font-semibold tracking-[-0.04em] text-light md:text-[3.375rem] lg:text-[8.375rem] lg:tracking-[-0.06em]"
                   >
-                    the world
+                    {' the world'}
                   </span>
                 </span>
               </span>
