@@ -3,7 +3,7 @@ import historyPart1 from '../assets/location2/history-part-1.webp'
 export default function Location2History() {
   return (
     <div className="Location2-history flex flex-col px-2.5 pt-2.5 pb-5 md:h-dvh md:w-max md:shrink-0 md:flex-row md:gap-2.5 md:p-2.5 lg:gap-0 lg:p-5">
-      <div className="History-part-1 relative mx-2.5 flex h-[51.5rem] w-[calc(100vw-2.5rem)] shrink-0 items-center justify-center overflow-hidden rounded-md md:mx-0 md:h-full md:w-[47rem] lg:w-[120rem] lg:rounded-[1.875rem]">
+      <div className="History-part-1 relative mx-2.5 flex h-[51.5rem] w-[calc(100vw-2.5rem)] shrink-0 items-center justify-center overflow-hidden rounded-md md:mx-0 md:h-full md:w-[47rem] lg:mx-5 lg:w-[calc(100vw-2.5rem)] lg:rounded-[1.875rem]">
         <img
           src={historyPart1}
           alt="Original 1988 architecture of The Island Retreat"

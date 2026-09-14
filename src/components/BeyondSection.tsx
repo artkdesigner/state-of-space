@@ -63,7 +63,7 @@ const PIN_HEIGHT_VH = 400
  * обратно к исходной = PIN_HEIGHT_VH. Отдельная константа, а не правка
  * самого PIN_HEIGHT_VH: тот используется и для других фаз (бюджет пина,
  * вторая точка RING_SCALE_KEYFRAMES), трогать которые не просили. */
-const ROTATION_PERIOD_VH = PIN_HEIGHT_VH
+const ROTATION_PERIOD_VH = PIN_HEIGHT_VH * 1.25
 /** Заезд (заголовок из прозрачности + подъезд/усадка кольца до текущего
  * "покоя", включая довдвижение к центру секции — см. centerOffsetPx и
  * entranceEase в onUpdate ниже) занимает первые ENTRANCE_VH из общих
