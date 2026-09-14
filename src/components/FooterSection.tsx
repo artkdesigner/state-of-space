@@ -84,7 +84,7 @@ export default function FooterSection({ onBookNow }: FooterSectionProps) {
         />
       </a>
 
-      <div className="Footer-bottom flex w-full flex-col items-center gap-5 text-[0.875rem] leading-none font-semibold tracking-[-0.01em] text-light/60 md:flex-row md:justify-between md:gap-0 lg:leading-[1.1]">
+      <div className="Footer-bottom flex w-full flex-col items-center gap-5 text-[0.875rem] leading-none font-medium tracking-[-0.01em] text-light/60 md:flex-row md:justify-between md:gap-0 lg:leading-[1.1]">
         <p className="Footer-copyright md:flex-1">© 2026. Ocean Space</p>
         <p className="Footer-terms md:flex-1 md:text-center">
           All rights reserved
