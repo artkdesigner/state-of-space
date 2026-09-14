@@ -116,17 +116,19 @@ const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3)
 const windowProgress = (p: number, [start, end]: [number, number]) =>
   clamp((p - start) / (end - start))
 
-/** Tablet (md, но не lg) — единственная зона, где Cliff-content-wrap ещё
- * flex-col (см. разметку ниже, lg:flex-row): Cliff-sub-title стоит НАД
+/** Mobile+tablet (< lg) — вся зона, где Cliff-content-wrap ещё flex-col
+ * (см. разметку ниже, lg:flex-row): Cliff-sub-title стоит НАД
  * Cliff-img-wrap, а Cliff-description-wrap — ПОД ней, а не сбоку. Поэтому
  * въезд с боков (TEXT_ENTER_VW, рассчитанный по Desktop-кадру для
  * горизонтальной раскладки) на этой зоне не прячет блоки за пределы
  * экрана — они почти во всю ширину контейнера, боковой сдвиг на 34.375vw
- * оставляет большую часть блока на месте. На mobile та же flex-col
- * раскладка, но её не трогаем — не просили, там не подтверждён нужный
- * Figma-разлёт. */
-const isTabletRange = () =>
-  window.innerWidth >= 768 && window.innerWidth < 992
+ * оставляет большую часть блока на месте. Раньше это чинили только на
+ * tablet — mobile не трогали (не был подтверждён нужный Figma-разлёт).
+ * Пользователь выделил мобильные кадры сцены («Cliff» 11175:730/11198:1616,
+ * 390×844): Cliff-sub-title там тоже въезжает сверху (y: -64 → 238),
+ * Cliff-description-wrap — снизу (y: 864 → 552), тот же вертикальный
+ * паттерн, что на tablet — не что-то отдельное под mobile. */
+const isColumnLayoutRange = () => window.innerWidth < 992
 
 export default function CliffSection() {
   const wrapRef = useRef<HTMLDivElement>(null)
@@ -222,10 +224,10 @@ export default function CliffSection() {
     // Без этой инициализации в промежутке riseTrigger/fadeTrigger (пока
     // Cliff только появляется) у них нет вообще никакого transform, и они
     // на мгновение видны в своей обычной (центр экрана) позиции.
-    if (isTabletRange()) {
-      // На планшете sub-title/description едут не с боков, а из-за
-      // верхнего/нижнего края экрана (см. isTabletRange выше) — 100vh с
-      // запасом прячет их за пределы sticky-секции (она сама ровно
+    if (isColumnLayoutRange()) {
+      // На mobile/tablet sub-title/description едут не с боков, а из-за
+      // верхнего/нижнего края экрана (см. isColumnLayoutRange выше) —
+      // 100vh с запасом прячет их за пределы sticky-секции (она сама ровно
       // 100dvh) независимо от их фактической rest-позиции внутри неё.
       subTitle.style.transform = 'translateY(-100vh)'
       descriptionWrap.style.transform = 'translateY(100vh)'
@@ -331,7 +333,7 @@ export default function CliffSection() {
         const textEase = easeOutCubic(
           clamp((reveal - TEXT_ENTER_START) / (1 - TEXT_ENTER_START)),
         )
-        if (isTabletRange()) {
+        if (isColumnLayoutRange()) {
           subTitle.style.transform = `translateY(${-(1 - textEase) * 100}vh)`
           descriptionWrap.style.transform = `translateY(${(1 - textEase) * 100}vh)`
         } else {
