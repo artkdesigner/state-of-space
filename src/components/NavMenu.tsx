@@ -3,6 +3,7 @@ import { lockScroll, scrollToHash, unlockScroll } from '../lib/scroll'
 import { NavLogo } from './NavBar'
 import Button from './Button'
 import navMenuBg from '../assets/nav-menu-bg.webp'
+import { scrollToIntroRevealed } from './IntroSection'
 import {
   scrollToLocation2RetreatSlide,
   scrollToLocation3Slide,
@@ -12,12 +13,15 @@ const MENU_LINKS = ['The Cliff', 'The Island', 'The Water', 'About', 'Contact']
 /** Тот же список и переходы, что в NavBar.tsx (по прямой просьбе
  * пользователя, 2026-09-14) — The Island/The Water через те же императивные
  * функции (Location2/Location3 лежат в горизонтально-скроллящемся пине,
- * см. комментарий там же), остальные — простой scrollToHash. */
+ * см. комментарий там же), About — через scrollToIntroRevealed (см.
+ * IntroSection.tsx: простой scrollToHash('#intro') целил в самое начало
+ * её reveal-окна, где title/logo/bottom-wrap ещё не проявились), остальные
+ * — простой scrollToHash. */
 const LINK_ACTIONS: Record<string, () => void> = {
   'The Cliff': () => scrollToHash('#location1'),
   'The Island': () => scrollToLocation2RetreatSlide(0),
   'The Water': () => scrollToLocation3Slide(0),
-  About: () => scrollToHash('#intro'),
+  About: () => scrollToIntroRevealed(),
   Contact: () => scrollToHash('#footer'),
 }
 

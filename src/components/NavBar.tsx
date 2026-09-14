@@ -3,6 +3,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { reduceMotion } from '../lib/anim'
 import { HERO_INTRO } from '../lib/heroIntro'
 import { scrollToHash } from '../lib/scroll'
+import { scrollToIntroRevealed } from './IntroSection'
 import {
   scrollToLocation2RetreatSlide,
   scrollToLocation3Slide,
@@ -34,7 +35,7 @@ const LINK_ACTIONS: Record<string, () => void> = {
   'The Cliff': () => scrollToHash('#location1'),
   'The Island': () => scrollToLocation2RetreatSlide(0),
   'The Water': () => scrollToLocation3Slide(0),
-  About: () => scrollToHash('#intro'),
+  About: () => scrollToIntroRevealed(),
   Contact: () => scrollToHash('#footer'),
 }
 

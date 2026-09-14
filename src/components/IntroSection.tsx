@@ -2,7 +2,23 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useEffect, useRef } from 'react'
 import introLogo from '../assets/intro-logo.svg'
 import { reduceMotion } from '../lib/anim'
+import { scrollToY } from '../lib/scroll'
 import { INTRO_PIN_VH } from '../lib/scrollChain'
+
+/** `scrollToHash('#intro')` (клик по "About" в NavBar/NavMenu) целится в
+ * doc-flow позицию #intro, т.е. в wrapTop() — а это САМОЕ НАЧАЛО reveal-
+ * окна (см. trigger ниже: start = wrapTop() - PIN_VH*EARLY_SHIFT, end =
+ * wrapTop() + PIN_VH), где revealProgress лишь ~0.2: title ещё
+ * полупрозрачен, logo/bottom-wrap ещё вовсе invisible (opacity: 0) —
+ * пользователь видел просто фон секции (жалоба). Экспортируем свой
+ * scrollTo, целящийся туда, где reveal уже полностью доигран (конец
+ * PIN_VH-окна) — тот же приём (module-level impl + экспортированная
+ * обёртка), что у scrollToLocation2RetreatSlide/scrollToLocation3Slide в
+ * Location2Section.tsx. */
+let scrollToIntroRevealedImpl: (() => void) | null = null
+export function scrollToIntroRevealed() {
+  scrollToIntroRevealedImpl?.()
+}
 
 /** Собственная (reveal) фаза Intro, в высотах вьюпорта, пока Intro
  * приклеена вверху — см. «Скролл-переход Intro → Location1» ниже. Общий
@@ -85,19 +101,28 @@ export default function IntroSection() {
     const bottomWrap = bottomWrapRef.current
     if (!wrap || !title || !logo || !bottomWrap) return
 
-    if (reduceMotion()) {
-      title.style.opacity = '1'
-      logo.style.opacity = '1'
-      bottomWrap.style.opacity = '1'
-      return
-    }
-
     // Абсолютная doc-flow позиция wrap (та же величина, что резолвит
     // 'top top') — устойчива к скроллу, пока ничего не пинит wrap (см.
     // riseCompleteStart в PresenceSection.tsx, тот же приём).
     const wrapTop = () => {
       const r = wrap.getBoundingClientRect()
       return r.top + window.scrollY
+    }
+
+    // До reduceMotion-проверки — нужен независимо от того, играет ли
+    // reveal-анимация: сам скролл к уже раскрытому состоянию валиден в
+    // обоих случаях.
+    scrollToIntroRevealedImpl = () => {
+      scrollToY(wrapTop() + window.innerHeight * PIN_VH)
+    }
+
+    if (reduceMotion()) {
+      title.style.opacity = '1'
+      logo.style.opacity = '1'
+      bottomWrap.style.opacity = '1'
+      return () => {
+        scrollToIntroRevealedImpl = null
+      }
     }
 
     const trigger = ScrollTrigger.create({
@@ -120,6 +145,7 @@ export default function IntroSection() {
     })
 
     return () => {
+      scrollToIntroRevealedImpl = null
       trigger.kill()
       title.style.opacity = ''
       logo.style.opacity = ''
