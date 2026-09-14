@@ -172,7 +172,7 @@ export default function QualitiesSection() {
         </div>
 
         <div className="Qualities-list flex w-full flex-col items-end gap-2.5 pr-2.5 md:flex-1 md:justify-center md:gap-0 md:pr-0 lg:w-full lg:flex-none lg:justify-center">
-          <div className="flex flex-col">
+          <div className="flex flex-col gap-2.5 md:gap-0 lg:gap-0">
             {QUALITIES.map((quality, index) => (
               <QualityItem
                 key={quality.title}
