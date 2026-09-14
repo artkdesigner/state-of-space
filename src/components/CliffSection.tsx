@@ -116,6 +116,18 @@ const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3)
 const windowProgress = (p: number, [start, end]: [number, number]) =>
   clamp((p - start) / (end - start))
 
+/** Tablet (md, но не lg) — единственная зона, где Cliff-content-wrap ещё
+ * flex-col (см. разметку ниже, lg:flex-row): Cliff-sub-title стоит НАД
+ * Cliff-img-wrap, а Cliff-description-wrap — ПОД ней, а не сбоку. Поэтому
+ * въезд с боков (TEXT_ENTER_VW, рассчитанный по Desktop-кадру для
+ * горизонтальной раскладки) на этой зоне не прячет блоки за пределы
+ * экрана — они почти во всю ширину контейнера, боковой сдвиг на 34.375vw
+ * оставляет большую часть блока на месте. На mobile та же flex-col
+ * раскладка, но её не трогаем — не просили, там не подтверждён нужный
+ * Figma-разлёт. */
+const isTabletRange = () =>
+  window.innerWidth >= 768 && window.innerWidth < 992
+
 export default function CliffSection() {
   const wrapRef = useRef<HTMLDivElement>(null)
   const sectionRef = useRef<HTMLElement>(null)
@@ -210,8 +222,17 @@ export default function CliffSection() {
     // Без этой инициализации в промежутке riseTrigger/fadeTrigger (пока
     // Cliff только появляется) у них нет вообще никакого transform, и они
     // на мгновение видны в своей обычной (центр экрана) позиции.
-    subTitle.style.transform = `translateX(${-TEXT_ENTER_VW}vw)`
-    descriptionWrap.style.transform = `translateX(${TEXT_ENTER_VW}vw)`
+    if (isTabletRange()) {
+      // На планшете sub-title/description едут не с боков, а из-за
+      // верхнего/нижнего края экрана (см. isTabletRange выше) — 100vh с
+      // запасом прячет их за пределы sticky-секции (она сама ровно
+      // 100dvh) независимо от их фактической rest-позиции внутри неё.
+      subTitle.style.transform = 'translateY(-100vh)'
+      descriptionWrap.style.transform = 'translateY(100vh)'
+    } else {
+      subTitle.style.transform = `translateX(${-TEXT_ENTER_VW}vw)`
+      descriptionWrap.style.transform = `translateX(${TEXT_ENTER_VW}vw)`
+    }
 
     // Смещение центра каждого фото от центра Cliff-img-wrap — считаем
     // один раз по исходной (ещё не тронутой transform'ом) вёрстке, чтобы
@@ -306,8 +327,13 @@ export default function CliffSection() {
         const textEase = easeOutCubic(
           clamp((reveal - TEXT_ENTER_START) / (1 - TEXT_ENTER_START)),
         )
-        subTitle.style.transform = `translateX(${-(1 - textEase) * TEXT_ENTER_VW}vw)`
-        descriptionWrap.style.transform = `translateX(${(1 - textEase) * TEXT_ENTER_VW}vw)`
+        if (isTabletRange()) {
+          subTitle.style.transform = `translateY(${-(1 - textEase) * 100}vh)`
+          descriptionWrap.style.transform = `translateY(${(1 - textEase) * 100}vh)`
+        } else {
+          subTitle.style.transform = `translateX(${-(1 - textEase) * TEXT_ENTER_VW}vw)`
+          descriptionWrap.style.transform = `translateX(${(1 - textEase) * TEXT_ENTER_VW}vw)`
+        }
 
         const imagesEase = easeOutCubic(reveal)
         // По просьбе пользователя — opacity долистывает до 1 не по доле
@@ -474,7 +500,7 @@ export default function CliffSection() {
             className="Cliff-description-wrap w-full lg:w-[38.75rem]"
           >
             <div className="flex -translate-y-[0.9814rem] md:-translate-y-[2.2373rem] lg:translate-y-0 lg:justify-end">
-              <p className="Cliff-description w-full text-center font-manrope text-[0.875rem] leading-[1.3] font-medium tracking-[-0.01em] text-dark lg:w-[23.125rem] lg:text-left lg:text-[1.125rem]">
+              <p className="Cliff-description w-full text-center font-manrope text-[0.875rem] leading-[1.3] font-medium tracking-[-0.01em] text-dark md:w-[35.75rem] lg:w-[23.125rem] lg:text-left lg:text-[1.125rem]">
                 This space is not about retreating from life, but about removing
                 what distracts you from it. Here, attention becomes stable.
                 Thoughts slow down.
