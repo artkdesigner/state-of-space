@@ -16,6 +16,18 @@ const PIN_VH = HERO_PIN_VH
 const GROWTH_PIN_VH = 2
 /** Вторая фаза пина: диаметр заморожен, border-radius уходит 50% → 0%. */
 const UNWIND_PIN_VH = 1
+/** Лишний вьюпорт наезда Intro на Hero (см. комментарий у Hero-pin-wrap
+ * ниже) — триггер темы навбара продлён на эту дистанцию (см. `end` ниже),
+ * чтобы `setNavTheme` оставался её единственным источником вплоть до
+ * самого момента, когда Intro физически перекрывает Hero, симметрично в
+ * обе стороны скролла. Раньше триггер заканчивался на PIN_VH, и на весь
+ * наезд тему подхватывал резервный IntersectionObserver в NavBar.tsx — он
+ * реагирует на пересечение секцией верхней границы экрана, а не на
+ * реальный прогресс наезда, поэтому при скролле НАЗАД триггерился в
+ * момент, когда Hero заново "прилипает" (конец наезда), а не когда Intro
+ * реально начинает открывать Hero (начало наезда) — навбар темнел на
+ * целый вьюпорт раньше, чем нужно. */
+const NAEZD_VH = 1
 /** Доля общего прогресса пина (0..1), на которой заканчивается фаза роста
  * и начинается фаза распрямления. */
 const GROWTH_FRACTION = GROWTH_PIN_VH / (GROWTH_PIN_VH + UNWIND_PIN_VH)
@@ -163,10 +175,15 @@ export default function HeroSection() {
     const trigger = ScrollTrigger.create({
       trigger: wrap,
       start: 'top top',
-      end: () => '+=' + window.innerHeight * PIN_VH,
+      end: () => '+=' + window.innerHeight * (PIN_VH + NAEZD_VH),
       scrub: true,
       onUpdate: (self) => {
-        const progress = self.progress
+        // Пересчитываем обратно в 0..1 по исходному, более короткому
+        // PIN_VH-отсчёту (см. NAEZD_VH выше) и клэмпим — сама
+        // растяжка/распрямление доигрывает и замирает ровно там же, где и
+        // раньше, лишний NAEZD_VH продлевает только работу onUpdate (и,
+        // значит, setNavTheme) до конца наезда, не трогая темп анимации.
+        const progress = clamp((self.progress * (PIN_VH + NAEZD_VH)) / PIN_VH)
         const isDesktop = window.innerWidth >= DESKTOP_BREAKPOINT
         const targetDiameter = isDesktop
           ? window.innerWidth

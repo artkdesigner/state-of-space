@@ -115,12 +115,25 @@ export default function NavBar({ onBookNow }: NavBarProps) {
   }, [])
 
   useEffect(() => {
+    // 'hero' исключён здесь при обычном скролле: её тему целиком и
+    // симметрично в обе стороны ведёт собственный ScrollTrigger в
+    // HeroSection.tsx (продлён на весь наезд Intro, см. NAEZD_VH там же).
+    // Раньше этот наблюдатель тоже реагировал на 'hero' — при скролле
+    // НАЗАД он триггерился в момент, когда Hero заново "прилипает" (конец
+    // наезда Intro), а не когда Intro реально начинает её открывать
+    // (начало наезда), из-за чего навбар темнел на целый вьюпорт раньше,
+    // чем нужно. При reduceMotion() у HeroSection.tsx свой триггер вообще
+    // не создаётся (эффект выходит рано), так что там 'hero' — единственный
+    // источник темы и должен остаться.
+    const relevantThemes = reduceMotion()
+      ? SECTION_THEMES
+      : SECTION_THEMES.filter(({ id }) => id !== 'hero')
     const themeById = new Map(
-      SECTION_THEMES.map(({ id, theme }) => [id, theme]),
+      relevantThemes.map(({ id, theme }) => [id, theme]),
     )
-    const sections = SECTION_THEMES.map(({ id }) =>
-      document.getElementById(id),
-    ).filter((el): el is HTMLElement => el !== null)
+    const sections = relevantThemes
+      .map(({ id }) => document.getElementById(id))
+      .filter((el): el is HTMLElement => el !== null)
 
     /** rootMargin схлопывает зону наблюдения в линию у самого верха
      * вьюпорта — секция считается активной, пока её граница проходит

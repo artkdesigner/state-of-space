@@ -171,6 +171,15 @@ export default function IntroSection() {
             2026
           </p>
         </div>
+
+        {/* Затемнение Intro во время наезда Location1 (см. Capacity-overlay
+            в CapacitySection.tsx — тот же приём). Держится в opacity: 0,
+            Location1Section.tsx поднимает его до 1 своим riseTrigger, пока
+            Location1 не закрыла собой уже половину экрана. */}
+        <div
+          aria-hidden
+          className="Intro-overlay pointer-events-none absolute inset-0 z-1 bg-black/70 opacity-0"
+        />
       </section>
     </div>
   )

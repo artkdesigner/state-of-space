@@ -3,6 +3,7 @@ import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import LocationCard from './LocationCard'
 import LocationSlider from './LocationSlider'
+import { scrollToY } from '../lib/scroll'
 import baseImg from '../assets/location1-slider-base.webp'
 import slide1 from '../assets/location1-slide-1.webp'
 import slide2 from '../assets/location1-slide-2.webp'
@@ -73,6 +74,26 @@ export default function Location1Section({ onBookNow }: Location1SectionProps) {
     slideEls.current[index] = el
   }
 
+  /** Клик по Location-step (см. LocationCard.tsx) — скроллит к середине
+   * "виртуального" (PIN_VH-широкого, см. константы вверху файла) окна
+   * нужного слайда, т.е. туда, где он уже полностью проявлен и ещё не
+   * начал гаснуть в следующий кроссфейд. `PIN_VH === SLIDE_COUNT` (1 экран
+   * на слайд), поэтому середина окна слайда i — ровно `(i + 0.5)` вьюпорта
+   * от wrapTop; clamp на ACTIVE_VH — та же укороченная (без мёртвого
+   * хвоста после последнего кроссфейда, см. LAST_CROSSFADE_END выше)
+   * дистанция, на которую физически заведён trigger ниже. */
+  const handleStepClick = (index: number) => {
+    const wrap = wrapRef.current
+    if (!wrap) return
+    const wrapDocTop = wrap.getBoundingClientRect().top + window.scrollY
+    const target = gsap.utils.clamp(
+      0,
+      window.innerHeight * ACTIVE_VH,
+      (index + 0.5) * window.innerHeight,
+    )
+    scrollToY(wrapDocTop + target)
+  }
+
   /* Скролл-переход Intro → Location1 → Cliff (см. покадровую сцену в
    * Figma). Location1 — `position: sticky; top: 0` внутри обёртки
    * Location1-pin-wrap высотой (2 + ACTIVE_VH) вьюпортов, сдвинутой на
@@ -118,22 +139,33 @@ export default function Location1Section({ onBookNow }: Location1SectionProps) {
    * проявляется отдельно, уже ПОСЛЕ наезда, в первые CARD_FADE_IN
    * прогресса основного слайдера (см. ниже) — по той же покадровой сцене
    * card остаётся невидимой даже на кадре, где наезд уже полностью
-   * завершён (радиус уже 0%), и появляется только на следующем. */
+   * завершён (радиус уже 0%), и появляется только на следующем.
+   *
+   * Тот же riseTrigger параллельно поднимает Intro-overlay (см.
+   * IntroSection.tsx) из opacity: 0 до 1 за первую половину наезда — тот
+   * же приём и та же формула (`progress / 0.5`), что у Capacity-overlay в
+   * PresenceSection.tsx. */
   useEffect(() => {
     const wrap = wrapRef.current
     const section = sectionRef.current
     const slider = sliderRef.current
     const card = cardRef.current
-    if (!wrap || !section || !slider) return
+    const intro = document.getElementById('intro')
+    const overlay = intro?.querySelector<HTMLElement>('.Intro-overlay')
+    if (!wrap || !section || !slider || !overlay) return
 
     slider.style.borderRadius = '50%'
     // Синхронно, до первого срабатывания onUpdate (тот же приём, что и
     // borderRadius выше) — иначе на reload/refresh карточка на первый
     // кадр рисуется с дефолтной непрозрачностью (className её не задаёт)
     // и заметно "моргает" перед тем, как GSAP выставит настоящий opacity.
+    // backdrop-blur на Location-top/-footer (см. LocationCard.tsx) — сразу
+    // штатные 1.25rem, без раскрутки: card всё равно в opacity: 0, блюра
+    // не видно, а как только opacity начинает расти, backdrop-blur уже
+    // готов — крестфейд получается на одном свойстве (opacity), без
+    // прежнего "довключения" блюра поверх уже проявившейся карточки.
     if (card) {
       card.style.opacity = '0'
-      card.style.setProperty('--location-blur', '0rem')
     }
 
     const wrapTop = () => {
@@ -148,6 +180,7 @@ export default function Location1Section({ onBookNow }: Location1SectionProps) {
       scrub: true,
       onUpdate: (self) => {
         slider.style.borderRadius = `${(1 - self.progress) * 50}%`
+        overlay.style.opacity = String(gsap.utils.clamp(0, 1, self.progress / 0.5))
       },
     })
 
@@ -185,15 +218,20 @@ export default function Location1Section({ onBookNow }: Location1SectionProps) {
         // Линейно, без ease — так проявление ощущается напрямую
         // привязанным к скроллу, а не рывком в начале и подвисанием в
         // конце. backdrop-blur на дочерних Location-top/Location-footer
-        // не интерполируется браузером вместе с opacity родителя (типовой
-        // артефакт backdrop-filter — он либо есть, либо ощутимо
-        // "подскакивает" на пороге видимости), поэтому радиус блюра тоже
-        // гоним вручную тем же прогрессом через --location-blur, от 0 до
-        // штатных 1.25rem.
+        // (см. LocationCard.tsx) держится штатным (1.25rem, без JS) —
+        // раньше блюр тоже раскручивали вручную с 0 синхронно с opacity, но
+        // на глаз это давало обратный эффект: opacity успевает долистать до
+        // 1 заметно раньше, чем блюр — карточка проявляется резкой (ещё не
+        // заблюренной), а потом блюр "довключается" поверх уже видимой
+        // карточки. Раз opacity и backdrop-filter родителя/детей и так
+        // композитятся браузером как единый слой (сначала рисуется уже
+        // заблюренная подложка, потом её альфа умножается на opacity
+        // родителя), константный блюр с самого начала (пока opacity: 0, его
+        // всё равно не видно) убирает этот рассинхрон — card проявляется
+        // уже готовой, сразу с нужной степенью блюра.
         if (card) {
           const cardT = gsap.utils.clamp(0, 1, progress / CARD_FADE_IN)
           card.style.opacity = String(cardT)
-          card.style.setProperty('--location-blur', `${cardT * 1.25}rem`)
         }
       },
     })
@@ -202,9 +240,9 @@ export default function Location1Section({ onBookNow }: Location1SectionProps) {
       riseTrigger.kill()
       trigger.kill()
       slider.style.borderRadius = ''
+      overlay.style.opacity = ''
       if (card) {
         card.style.opacity = ''
-        card.style.removeProperty('--location-blur')
       }
     }
   }, [])
@@ -227,6 +265,7 @@ export default function Location1Section({ onBookNow }: Location1SectionProps) {
           quote="Height clears perception, form gathers focus, and silence restores clarity."
           locationLabel="Location 1"
           nameLines={['The', 'Cliff Villa']}
+          onStepClick={handleStepClick}
         />
         <LocationSlider
           ref={sliderRef}

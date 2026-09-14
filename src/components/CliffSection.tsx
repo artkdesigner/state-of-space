@@ -67,9 +67,11 @@ const IMAGES_START_OFFSET_VH = 0.5
 const IMAGES_EXTRA_VH = 1
 /** Итоговая длина imagesTrigger. */
 const IMAGES_REVEAL_VH = REVEAL_VH + IMAGES_EXTRA_VH
-/** Доля imagesTrigger, за которую картинки долистывают opacity 0→1 — по
- * просьбе пользователя, в 2 раза быстрее, чем их же движение в стопку
- * (которое идёт на всю длину imagesTrigger, 0..1 от reveal напрямую). */
+/** Доля УЖЕ ПРОЙДЕННОГО картинками пути к центру (imagesEase, не сырой
+ * reveal-прогресс скролла), на которой opacity долистывает 0→1 — по
+ * просьбе пользователя, ровно половина дистанции, чтобы к моменту, когда
+ * картинки уже заметно сходятся и наезжают друг на друга, они были
+ * полностью непрозрачными. */
 const IMAGES_OPACITY_FRACTION = 0.5
 
 /** Окно fade-in title внутри FADE_VH (0..1). Картинки сюда больше не
@@ -77,6 +79,15 @@ const IMAGES_OPACITY_FRACTION = 0.5
  * стопку, внутри REVEAL_VH (см. imagesEase в trigger ниже), а не отдельной
  * более быстрой фазой перед ним. */
 const TITLE_FADE_WINDOW: [number, number] = [0, 0.6]
+/** Реальная точка (в вьюпортах от wrapTop), где title долистывает fade-in —
+ * TITLE_FADE_WINDOW[1] от полного (RISE_VH + FADE_VH) окна fadeTrigger.
+ * titleTrigger/imagesTrigger раньше стартовали только в конце ВСЕГО этого
+ * окна, хотя сам fade реально завершался на TITLE_FADE_WINDOW[1] раньше —
+ * оставшийся хвост fadeTrigger ничего не анимировал, и на экране повисала
+ * пустая пауза между "title уже виден" и "картинки поехали" (пользователь
+ * пожаловался на этот пробел). Теперь titleTrigger стартует ровно от этой
+ * точки, без зазора. */
+const FADE_COMPLETE_VH = (RISE_VH + FADE_VH) * TITLE_FADE_WINDOW[1]
 
 /** Доля фазы REVEAL_VH, за которую Cliff-title успевает уйти за кадр
  * (см. покадровую сцену в Figma: -150 к кадру 4 из 5, т.е. к 75%). */
@@ -111,11 +122,12 @@ export default function CliffSection() {
   /* Скролл-переход Location1 → Cliff (см. покадровую сцену в Figma
    * «Location1 to Cliff» 1..5, затем «Cliff» 1..5). Cliff — `position:
    * sticky; top: 0` внутри обёртки Cliff-pin-wrap высотой
-   * (1 + RISE_VH + FADE_VH + IMAGES_START_OFFSET_VH + IMAGES_REVEAL_VH)
+   * (1 + FADE_COMPLETE_VH + IMAGES_START_OFFSET_VH + IMAGES_REVEAL_VH)
    * вьюпортов (imagesTrigger заканчивается позже titleTrigger — именно она
-   * теперь определяет общую длину, см. константы выше), сдвинутой на
-   * `margin-top: -100vh` — тот же приём, что у Location1-pin-wrap (см.
-   * Location1Section.tsx):
+   * теперь определяет общую длину, см. константы выше; FADE_COMPLETE_VH, а
+   * не полный RISE_VH + FADE_VH — см. комментарий у неё, дальше был пустой
+   * "мёртвый" хвост скролла), сдвинутой на `margin-top: -100vh` — тот же
+   * приём, что у Location1-pin-wrap (см. Location1Section.tsx):
    * margin утягивает документный верх Cliff-wrap ровно на 1 вьюпорт
    * раньше, чем закончился бы Location1-wrap "по прямому потоку" — то
    * есть ровно туда, где начинается последний (замороженный) вьюпорт
@@ -259,9 +271,9 @@ export default function CliffSection() {
 
     const titleTrigger = ScrollTrigger.create({
       trigger: wrap,
-      start: () => wrapTop() + window.innerHeight * (RISE_VH + FADE_VH),
+      start: () => wrapTop() + window.innerHeight * FADE_COMPLETE_VH,
       end: () =>
-        wrapTop() + window.innerHeight * (RISE_VH + FADE_VH + REVEAL_VH),
+        wrapTop() + window.innerHeight * (FADE_COMPLETE_VH + REVEAL_VH),
       scrub: true,
       onUpdate: (self) => {
         const titleEase = easeOutCubic(clamp(self.progress / TITLE_EXIT_FRACTION))
@@ -273,11 +285,11 @@ export default function CliffSection() {
       trigger: wrap,
       start: () =>
         wrapTop() +
-        window.innerHeight * (RISE_VH + FADE_VH + IMAGES_START_OFFSET_VH),
+        window.innerHeight * (FADE_COMPLETE_VH + IMAGES_START_OFFSET_VH),
       end: () =>
         wrapTop() +
         window.innerHeight *
-          (RISE_VH + FADE_VH + IMAGES_START_OFFSET_VH + IMAGES_REVEAL_VH),
+          (FADE_COMPLETE_VH + IMAGES_START_OFFSET_VH + IMAGES_REVEAL_VH),
       scrub: true,
       onUpdate: (self) => {
         const reveal = self.progress
@@ -289,8 +301,15 @@ export default function CliffSection() {
         descriptionWrap.style.transform = `translateX(${(1 - textEase) * TEXT_ENTER_VW}vw)`
 
         const imagesEase = easeOutCubic(reveal)
+        // По просьбе пользователя — opacity долистывает до 1 не по доле
+        // скролл-прогресса (reveal), а по доле УЖЕ ПРОЙДЕННОГО картинками
+        // пути (imagesEase): за счёт easeOutCubic картинки быстро
+        // пролетают первую половину дистанции и медленно доезжают
+        // последнюю, поэтому к моменту, когда они уже заметно сходятся и
+        // начинают перекрывать друг друга, они полностью непрозрачны, а не
+        // ещё частично прозрачны.
         const imagesOpacityEase = easeOutCubic(
-          clamp(reveal / IMAGES_OPACITY_FRACTION),
+          clamp(imagesEase / IMAGES_OPACITY_FRACTION),
         )
         images.forEach((img, i) => {
           if (!img) return
@@ -327,7 +346,7 @@ export default function CliffSection() {
       ref={wrapRef}
       className="Cliff-pin-wrap relative"
       style={{
-        height: `${(1 + RISE_VH + FADE_VH + IMAGES_START_OFFSET_VH + IMAGES_REVEAL_VH) * 100}vh`,
+        height: `${(1 + FADE_COMPLETE_VH + IMAGES_START_OFFSET_VH + IMAGES_REVEAL_VH) * 100}vh`,
         marginTop: '-100vh',
       }}
     >
