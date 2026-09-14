@@ -67,7 +67,7 @@ const Location3Panel = forwardRef<HTMLElement, Location3PanelProps>(
           onStepClick={scrollToLocation3Slide}
           onBookNow={onBookNow}
           quote={
-            'Where earth meets water, a profound sense of "I am here" naturally arises.'
+            'With water all around, a profound sense of freedom naturally comes into focus.'
           }
           locationLabel="Location 3"
           nameLines={['The Water Residence']}
