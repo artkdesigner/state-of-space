@@ -49,7 +49,7 @@ export default function Location2Galery({ col2Ref }: Location2GaleryProps) {
 
       <div
         ref={col2Ref}
-        className="Galery-col-2 flex h-[16.75rem] w-full shrink-0 flex-col items-center justify-center overflow-hidden md:h-[20.5rem] lg:h-full lg:w-auto lg:shrink"
+        className="Galery-col-2 flex h-[16.75rem] w-full shrink-0 flex-col items-center justify-center overflow-hidden md:h-[20.5rem] lg:h-full lg:w-auto lg:shrink-0"
       >
         <img
           src={img3}
