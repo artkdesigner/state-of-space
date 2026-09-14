@@ -42,7 +42,7 @@ export default function Location2Balance({ onBookNow }: Location2BalanceProps) {
         ref={setCursorRef(2)}
         src={cursor3}
         alt=""
-        className="Balance-cursor-img-3 pointer-events-none absolute top-[25.625rem] left-[calc(50%-0.8125rem)] z-1 h-[15rem] w-[11rem] rounded-[0.9375rem] object-cover opacity-100 transition-[opacity,scale] duration-700 ease-out md:top-1/2 md:left-[calc(50%+0.03125rem)] md:h-[15rem] md:w-[10.9375rem] md:-translate-x-1/2 md:-translate-y-1/2 lg:top-0 lg:left-0 lg:h-[11.25rem] lg:w-[8.75rem] lg:translate-x-0 lg:translate-y-0 lg:rounded-[1.875rem] lg:opacity-0 lg:scale-75"
+        className="Balance-cursor-img-3 pointer-events-none absolute top-[calc(50%-0.75rem)] left-[calc(50%-0.8125rem)] z-1 h-[15rem] w-[11rem] -translate-x-1/2 -translate-y-1/2 rounded-[0.9375rem] object-cover opacity-100 transition-[opacity,scale] duration-700 ease-out md:top-1/2 md:left-[calc(50%+0.03125rem)] md:h-[15rem] md:w-[10.9375rem] lg:top-0 lg:left-0 lg:h-[11.25rem] lg:w-[8.75rem] lg:translate-x-0 lg:translate-y-0 lg:rounded-[1.875rem] lg:opacity-0 lg:scale-75"
       />
       <img
         ref={setCursorRef(3)}
@@ -51,7 +51,7 @@ export default function Location2Balance({ onBookNow }: Location2BalanceProps) {
         className="Balance-cursor-img-4 pointer-events-none absolute top-0 left-0 z-0 hidden h-[11.25rem] w-[8.75rem] rounded-[1.875rem] object-cover opacity-0 scale-75 transition-[opacity,scale] duration-700 ease-out lg:block"
       />
 
-      <p className="Balance-title relative z-5 mt-15 font-manrope text-[1.875rem] leading-none font-semibold tracking-[-0.04em] text-dark md:text-[3.375rem] lg:text-[8.375rem] lg:tracking-[-0.06em]">
+      <p className="Balance-title relative z-5 mt-0 font-manrope text-[1.875rem] leading-none font-semibold tracking-[-0.04em] text-dark md:mt-15 md:text-[3.375rem] lg:mt-15 lg:text-[8.375rem] lg:tracking-[-0.06em]">
         <span>A balanced island </span>
         <span className="text-dark/60 lg:text-dark/30">
           retreat between land and horizon
