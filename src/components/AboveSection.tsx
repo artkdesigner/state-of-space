@@ -276,16 +276,25 @@ export default function AboveSection() {
         />
 
         {/* lg:flex-1 на Above-left/Above-right (вместо shrink-0-по-контенту)
-         * — "Above the ocean"/"Above the world" разной ширины, поэтому
-         * `justify-center` центрировал всю группу как единый блок, а не
-         * само кольцо: при разных по ширине соседях кольцо визуально
-         * съезжало от центра экрана (баг, на который пожаловался
-         * пользователь). Два равных flex-1 гарантируют, что кольцо стоит
-         * ровно посередине независимо от длины текста; justify-end/-start
-         * держат текст прижатым к кольцу на фиксированный `gap-21.25`, а
-         * вся "лишняя" ширина уходит в невидимый отступ у внешнего края. */}
-        <div className="Above-pin relative z-1 flex w-full items-center justify-between px-2.5 lg:justify-center lg:gap-21.25 lg:px-5">
-          <div className="Above-left flex shrink-0 items-center lg:flex-1 lg:justify-end">
+         * — "Above the ocean"/"Above the world" разной ширины: два равных
+         * flex-1 без третьего flex-участника (кольцо теперь position:
+         * absolute, а не flex-item, см. Above-circle-wrap ниже) делят
+         * Above-pin ровно пополам, их граница всегда точно на 50% ширины —
+         * там же, откуда центрируется абсолютное кольцо (left-1/2 от того
+         * же Above-pin). Раньше кольцо само было flex-item'ом (см.
+         * `lg:static`, убрано) — тот же трюк с flex-1 давал центровку
+         * НЕЗАВИСИМО от длины текста только приближённо, через flex-grow
+         * пересчёт остатка, и на practice всё равно визуально чуть съезжал
+         * от истинного центра (жалоба пользователя) — round-off в самом
+         * flex-алгоритме, а не в тексте. Абсолютное позиционирование
+         * кольца устраняет источник ошибки полностью: центр всегда ровно
+         * 50% Above-pin, без каких-либо вычислений через ширины соседей.
+         * `lg:pr-*`/`lg:pl-*` на Above-left/-right — тот же зазор
+         * (радиус кольца + бывший gap-21.25), что раньше давал flex `gap`
+         * между текстом и кольцом-как-flex-item, просто теперь paddingом,
+         * раз кольца в потоке больше нет. */}
+        <div className="Above-pin relative z-1 flex w-full items-center justify-between px-2.5 lg:px-5">
+          <div className="Above-left flex shrink-0 items-center lg:flex-1 lg:justify-end lg:pr-[24.0625rem]">
             <p>
               <span className="sr-only">Above the ocean</span>
               <span aria-hidden="true" className="Above-left-title flex flex-col">
@@ -311,7 +320,7 @@ export default function AboveSection() {
 
           <div
             ref={circleWrapRef}
-            className="Above-circle-wrap absolute top-1/2 left-1/2 z-[-1] size-75 -translate-x-1/2 -translate-y-1/2 md:size-125 lg:static lg:z-auto lg:size-150 lg:translate-x-0 lg:translate-y-0"
+            className="Above-circle-wrap absolute top-1/2 left-1/2 z-[-1] size-75 -translate-x-1/2 -translate-y-1/2 md:size-125 lg:size-150"
           >
             <svg viewBox="0 0 100 100" className="size-full" fill="none">
               <circle
@@ -335,7 +344,7 @@ export default function AboveSection() {
             </svg>
           </div>
 
-          <div className="Above-right flex shrink-0 items-center justify-end lg:flex-1 lg:justify-start">
+          <div className="Above-right flex shrink-0 items-center justify-end lg:flex-1 lg:justify-start lg:pl-[24.0625rem]">
             <p>
               <span className="sr-only">Above the world</span>
               <span aria-hidden="true" className="Above-right-title flex flex-col">

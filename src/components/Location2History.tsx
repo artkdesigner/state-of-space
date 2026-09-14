@@ -1,53 +1,9 @@
-import { useEffect, useRef } from 'react'
 import historyPart1 from '../assets/location2/history-part-1.webp'
 
-/** Высота полосы вверху экрана, которую занимает фикс-навбар (см. NavBar.tsx,
- * z-50) — с запасом под оба варианта (мобильный/десктопный хедер). Пока
- * History-part-1 пересекает именно эту полосу, Location2 (её ближайший
- * sticky-предок — z-51, а не просто сама History-part-1: `position: sticky`
- * всегда образует собственный stacking context, так что z-index на самой
- * карточке не может "прорваться" наружу и перебить fixed-навбар снаружи
- * этого контекста) поднимается z-index'ом выше навбара — по просьбе
- * пользователя навбар должен визуально заезжать ПОД History-part-1, а не
- * под весь Location2 целиком, поэтому переключаем по IntersectionObserver
- * именно на History-part-1, а не постоянно. */
-const NAV_STRIP_PX = 100
-
 export default function Location2History() {
-  const part1Ref = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    const part1 = part1Ref.current
-    const location2 = document.getElementById('location2')
-    if (!part1 || !location2) return
-
-    // rootMargin схлопывает зону пересечения в полосу NAV_STRIP_PX у самого
-    // верха вьюпорта (bottom-margin отрезает всё, что ниже неё) — так
-    // isIntersecting становится true только пока History-part-1 реально
-    // проходит под навбаром, а не в любой момент своей видимости.
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        location2.style.zIndex = entry.isIntersecting ? '51' : ''
-      },
-      {
-        rootMargin: `0px 0px -${window.innerHeight - NAV_STRIP_PX}px 0px`,
-        threshold: 0,
-      },
-    )
-    observer.observe(part1)
-
-    return () => {
-      observer.disconnect()
-      location2.style.zIndex = ''
-    }
-  }, [])
-
   return (
     <div className="Location2-history flex flex-col px-2.5 pt-2.5 pb-5 md:h-dvh md:w-max md:shrink-0 md:flex-row md:gap-2.5 md:p-2.5 lg:gap-0 lg:p-5">
-      <div
-        ref={part1Ref}
-        className="History-part-1 relative mx-2.5 flex h-[51.5rem] w-[calc(100vw-2.5rem)] shrink-0 items-center justify-center overflow-hidden rounded-md md:mx-0 md:h-full md:w-[47rem] lg:w-[120rem] lg:rounded-[1.875rem]"
-      >
+      <div className="History-part-1 relative mx-2.5 flex h-[51.5rem] w-[calc(100vw-2.5rem)] shrink-0 items-center justify-center overflow-hidden rounded-md md:mx-0 md:h-full md:w-[47rem] lg:w-[120rem] lg:rounded-[1.875rem]">
         <img
           src={historyPart1}
           alt="Original 1988 architecture of The Island Retreat"

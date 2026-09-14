@@ -1,6 +1,7 @@
 import { forwardRef } from 'react'
 import LocationCard from './LocationCard'
 import LocationSlider from './LocationSlider'
+import { scrollToLocation2RetreatSlide } from './Location2Section'
 import baseImg from '../assets/location2/retreat-slider-base.webp'
 import slide1 from '../assets/location2/retreat-slide-1.webp'
 import slide2 from '../assets/location2/retreat-slide-2.webp'
@@ -55,6 +56,7 @@ const Location2Retreat = forwardRef<HTMLDivElement, Location2RetreatProps>(
         <div className="Retreat-col-2 relative flex w-full flex-col items-center justify-end overflow-hidden p-2.5 md:h-full md:flex-1">
           <LocationCard
             activeIndex={activeIndex}
+            onStepClick={scrollToLocation2RetreatSlide}
             onBookNow={onBookNow}
             quote={
               'Where earth meets water, a profound sense of "I am here" naturally arises.'

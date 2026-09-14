@@ -1,6 +1,7 @@
 import { forwardRef } from 'react'
 import LocationCard from './LocationCard'
 import LocationSlider from './LocationSlider'
+import { scrollToLocation3Slide } from './Location2Section'
 import baseImg from '../assets/location3-slider-base.webp'
 import slide1 from '../assets/location3-slide-1.webp'
 import slide2 from '../assets/location3-slide-2.webp'
@@ -63,6 +64,7 @@ const Location3Panel = forwardRef<HTMLElement, Location3PanelProps>(
       >
         <LocationCard
           activeIndex={activeIndex}
+          onStepClick={scrollToLocation3Slide}
           onBookNow={onBookNow}
           quote={
             'Where earth meets water, a profound sense of "I am here" naturally arises.'

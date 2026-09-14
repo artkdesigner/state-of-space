@@ -67,6 +67,24 @@ export function scrollToLocation2About() {
   scrollToAboutImpl?.()
 }
 
+/** То же самое для Location-step внутри Location2Retreat.tsx/Location3Panel.tsx
+ * (см. LocationCard.tsx `onStepClick`) — по прямой просьбе пользователя
+ * ("сделал кликабельными Location-step во всех элементах Location?", до
+ * этого клик работал только у Location1Section, а Retreat/Location3 так и
+ * оставались некликабельными). Тот же приём, что scrollToAboutImpl: обе
+ * панели анимируются только md+ (см. комментарий у useEffect ниже — на
+ * mobile нет ни пина, ни трека), поэтому на mobile остаются null и
+ * LocationCard рендерит некликабельные степы, как и раньше (см. её
+ * optional `onStepClick?`). */
+let scrollToRetreatSlideImpl: ((index: number) => void) | null = null
+export function scrollToLocation2RetreatSlide(index: number) {
+  scrollToRetreatSlideImpl?.(index)
+}
+let scrollToLocation3SlideImpl: ((index: number) => void) | null = null
+export function scrollToLocation3Slide(index: number) {
+  scrollToLocation3SlideImpl?.(index)
+}
+
 type Location2SectionProps = {
   onBookNow: () => void
 }
@@ -226,6 +244,29 @@ export default function Location2Section({ onBookNow }: Location2SectionProps) {
         scrollToY(wrapDocTop + scrolledPx)
       }
 
+      // Location-step (см. scrollToLocation2RetreatSlide/scrollToLocation3Slide
+      // выше) — то же "прогресс → scrolledPx" обращение формул из onUpdate
+      // ниже, что и у scrollToAboutImpl, только для середины окна нужного
+      // слайда (тот же приём, что handleStepClick в Location1Section.tsx:
+      // `(index + 0.5)` вьюпорта внутри соответствующего budget).
+      scrollToRetreatSlideImpl = (index) => {
+        const scrolledPx = (index + 0.5) * window.innerHeight
+        const wrapDocTop = wrap.getBoundingClientRect().top + window.scrollY
+        scrollToY(wrapDocTop + scrolledPx)
+      }
+      scrollToLocation3SlideImpl = (index) => {
+        const distance = getDistance()
+        if (!distance) return
+        const local3 = (index + 0.5) / LOCATION3_SLIDE_COUNT
+        const scrolledPx =
+          getCrossfadeBudget() +
+          distance +
+          getLocation3EntranceBudget() +
+          local3 * getLocation3CrossfadeBudget()
+        const wrapDocTop = wrap.getBoundingClientRect().top + window.scrollY
+        scrollToY(wrapDocTop + scrolledPx)
+      }
+
       const trigger = ScrollTrigger.create({
         trigger: wrap,
         start: 'top top',
@@ -309,6 +350,8 @@ export default function Location2Section({ onBookNow }: Location2SectionProps) {
         location3.style.borderTopLeftRadius = ''
         location3.style.borderBottomLeftRadius = ''
         scrollToAboutImpl = null
+        scrollToRetreatSlideImpl = null
+        scrollToLocation3SlideImpl = null
       }
     })
 
@@ -371,6 +414,29 @@ export default function Location2Section({ onBookNow }: Location2SectionProps) {
         const targetTrackPx = gsap.utils.clamp(0, distance, about.offsetLeft)
         const scrolledPx =
           getCrossfadeBudget() + getSqueezeBudget() + targetTrackPx
+        const wrapDocTop = wrap.getBoundingClientRect().top + window.scrollY
+        scrollToY(wrapDocTop + scrolledPx)
+      }
+
+      // Location-step — тот же приём, что у tablet-ветки выше, но со
+      // squeezeBudget в сумме (см. её комментарий у onUpdate: "трек уже
+      // целиком докатился" на desktop наступает на
+      // crossfadeBudget+squeezeBudget+distance, а не crossfadeBudget+distance).
+      scrollToRetreatSlideImpl = (index) => {
+        const scrolledPx = (index + 0.5) * window.innerHeight
+        const wrapDocTop = wrap.getBoundingClientRect().top + window.scrollY
+        scrollToY(wrapDocTop + scrolledPx)
+      }
+      scrollToLocation3SlideImpl = (index) => {
+        const distance = getDistance()
+        if (!distance) return
+        const local3 = (index + 0.5) / LOCATION3_SLIDE_COUNT
+        const scrolledPx =
+          getCrossfadeBudget() +
+          getSqueezeBudget() +
+          distance +
+          getLocation3EntranceBudget() +
+          local3 * getLocation3CrossfadeBudget()
         const wrapDocTop = wrap.getBoundingClientRect().top + window.scrollY
         scrollToY(wrapDocTop + scrolledPx)
       }
@@ -484,6 +550,8 @@ export default function Location2Section({ onBookNow }: Location2SectionProps) {
         location3.style.borderTopLeftRadius = ''
         location3.style.borderBottomLeftRadius = ''
         scrollToAboutImpl = null
+        scrollToRetreatSlideImpl = null
+        scrollToLocation3SlideImpl = null
       }
     })
 
