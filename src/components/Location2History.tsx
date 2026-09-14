@@ -4,11 +4,11 @@ import historyPart1 from '../assets/location2/history-part-1.webp'
 
 const clamp = (v: number, min = 0, max = 1) => Math.min(max, Math.max(min, v))
 
-/** Экспериментальный параллакс History-part-1 — только tablet (md, не lg).
+/** Экспериментальный параллакс History-part-1 — tablet и desktop (md+).
  * На mobile убран по просьбе пользователя, картинка там просто заполняет
  * контейнер без сдвига.
  *
- * Tablet — весь блок уже внутри горизонтально-скроллящегося пина
+ * Tablet/desktop — весь блок уже внутри горизонтально-скроллящегося пина
  * Location2Section.tsx: контейнер стоит на месте по вертикали (Location2
  * сама приклеена), а едет мимо вьюпорта ПО ГОРИЗОНТАЛИ за счёт
  * `gsap.set(track, { x: ... })` там же — вертикальный прогресс тут всегда
@@ -31,19 +31,22 @@ export default function Location2History() {
     if (!container || !img) return
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
 
-    // Насколько картинка перекрывает контейнер сверх его размера (по
-    // обеим осям сразу, используем нужную по брейкпоинту) — доля от
-    // размера контейнера, не абсолютный px, чтобы соотношение "запас
-    // ⇄ амплитуда сдвига" оставалось одинаковым на любом экране.
-    const OVERSHOOT_FRACTION = 0.14
-
-    const isTabletRange = () =>
-      window.innerWidth >= 768 && window.innerWidth < 992
+    // Насколько картинка перекрывает контейнер сверх его размера — доля от
+    // ширины контейнера, не абсолютный px, чтобы соотношение "запас ⇄
+    // амплитуда сдвига" оставалось одинаковым на любом экране. Итоговая
+    // ширина картинки = контейнер + 2×overshoot, т.е. tablet шире
+    // контейнера на 28%, desktop — по прямой просьбе пользователя — на 20%.
+    const OVERSHOOT_FRACTION_TABLET = 0.14
+    const OVERSHOOT_FRACTION_DESKTOP = 0.1
 
     const measure = () => {
       const rect = container.getBoundingClientRect()
-      if (isTabletRange()) {
-        const overshoot = rect.width * OVERSHOOT_FRACTION
+      if (window.innerWidth >= 768) {
+        const fraction =
+          window.innerWidth < 992
+            ? OVERSHOOT_FRACTION_TABLET
+            : OVERSHOOT_FRACTION_DESKTOP
+        const overshoot = rect.width * fraction
         img.style.width = `${rect.width + overshoot * 2}px`
         img.style.height = '100%'
         img.style.left = `${-overshoot}px`
