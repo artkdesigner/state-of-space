@@ -16,7 +16,18 @@ export function initSmoothScroll() {
     return () => {}
   }
 
-  lenis = new Lenis({ lerp: 0.1, wheelMultiplier: 1.2 })
+  // syncTouch: по умолчанию (false) Lenis вообще не трогает тач-скролл,
+  // отдавая его нативному моментум-скроллу браузера — тот может пройти
+  // огромную дистанцию за один тик, а почти все ScrollTrigger в проекте на
+  // `scrub: true` (без сглаживания) один в один следуют за scrollY, из-за
+  // чего на touch-устройствах (планшет) скролл дёргается и перескакивает
+  // большими рывками (жалоба пользователя). syncTouch: true проводит тач
+  // через тот же lerp-конвейер, что и колесо мыши.
+  lenis = new Lenis({
+    lerp: 0.1,
+    wheelMultiplier: 1.2,
+    syncTouch: true,
+  })
   lenis.on('scroll', ScrollTrigger.update)
 
   const raf = (time: number) => {
