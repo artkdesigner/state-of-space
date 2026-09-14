@@ -24,7 +24,7 @@ const LOCATION3_SLIDE_COUNT = 3
  * вьюпорта — отдельный бюджет, СРАЗУ после того как трек (уже БЕЗ
  * Location3Panel, см. комментарий у useEffect ниже) целиком докатился и
  * Balance стоит полностью в кадре. См. setLocation3Overlay. */
-const LOCATION3_ENTRANCE_VH = 100
+const LOCATION3_ENTRANCE_VH = 200
 
 const smoothstep = (t: number) => t * t * (3 - 2 * t)
 

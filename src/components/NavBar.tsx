@@ -75,6 +75,7 @@ export function setNavTheme(theme: 'dark' | 'light') {
 
 export default function NavBar({ onBookNow }: NavBarProps) {
   const [theme, setTheme] = useState<'dark' | 'light'>('dark')
+  const [blendOverlay, setBlendOverlay] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const desktopHeaderRef = useRef<HTMLElement>(null)
   const mobileHeaderRef = useRef<HTMLElement>(null)
@@ -155,13 +156,36 @@ export default function NavBar({ onBookNow }: NavBarProps) {
     return () => observer.disconnect()
   }, [])
 
+  /** Overlay blend-режим навбара — только пока он визуально проходит над
+   * History-part-1 (фото с деревьями внутри Location2, единственное место
+   * на сайте с "шумным" фоном, где фиксированная dark/light тема не даёт
+   * стабильного контраста). rootMargin схлопывает зону наблюдения в линию
+   * у самого верха вьюпорта — тот же приём, что и у темы выше — так что
+   * сработает верно и на горизонтально-запиненном треке Location2Section
+   * (там у всех слайдов rect.top === 0, но intersection всё ещё считается
+   * по X, поэтому ловит именно момент, когда History-part-1 проходит под
+   * навбаром по горизонтали). */
+  useEffect(() => {
+    const historyEl = document.querySelector('.History-part-1')
+    if (!historyEl) return
+
+    const observer = new IntersectionObserver(
+      ([entry]) => setBlendOverlay(entry.isIntersecting),
+      { rootMargin: '0px 0px -100% 0px', threshold: 0 },
+    )
+    observer.observe(historyEl)
+
+    return () => observer.disconnect()
+  }, [])
+
   const themeClass = THEME_CLASS[theme]
+  const blendClass = blendOverlay ? 'mix-blend-overlay text-light' : ''
 
   return (
     <>
       <header
         ref={desktopHeaderRef}
-        className={`Nav fixed inset-x-0 top-0 z-50 hidden items-center justify-between p-5 font-manrope transition-colors duration-500 lg:flex ${themeClass}`}
+        className={`Nav fixed inset-x-0 top-0 z-50 hidden items-center justify-between p-5 font-manrope transition-colors duration-500 lg:flex ${blendClass || themeClass}`}
       >
         {LEFT_LINKS.map((label) => (
           <button
@@ -206,7 +230,7 @@ export default function NavBar({ onBookNow }: NavBarProps) {
 
       <header
         ref={mobileHeaderRef}
-        className={`Nav fixed inset-x-2.5 top-2.5 z-50 flex h-10 items-center font-manrope transition-colors duration-500 md:h-12 lg:hidden ${themeClass}`}
+        className={`Nav fixed inset-x-2.5 top-2.5 z-50 flex h-10 items-center font-manrope transition-colors duration-500 md:h-12 lg:hidden ${blendClass || themeClass}`}
       >
         <a
           href="#hero"
