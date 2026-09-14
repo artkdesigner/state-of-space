@@ -5,10 +5,6 @@ import { scrollToLocation2RetreatSlide } from './Location2Section'
 import baseImg from '../assets/location2/retreat-slider-base.webp'
 import slide1 from '../assets/location2/retreat-slide-1.webp'
 import slide2 from '../assets/location2/retreat-slide-2.webp'
-import img1 from '../assets/location2/retreat-img-1.webp'
-import img2 from '../assets/location2/retreat-img-2.webp'
-import img3 from '../assets/location2/retreat-img-3.webp'
-import img4 from '../assets/location2/retreat-img-4.webp'
 
 const SLIDES = [
   {
@@ -38,21 +34,6 @@ const Location2Retreat = forwardRef<HTMLDivElement, Location2RetreatProps>(
         ref={ref}
         className="Location2-retreat flex flex-col items-center md:h-dvh md:w-dvw md:shrink-0"
       >
-        <div className="Retreat-col-1 flex w-full items-end justify-end gap-2.5 px-2.5 pt-2.5 md:hidden">
-          <img
-            src={img1}
-            alt=""
-            loading="lazy"
-            className="Retreat-img-1 size-25 rounded-xl object-cover"
-          />
-          <img
-            src={img2}
-            alt="The Island Retreat pavilion exterior among pine trees"
-            loading="lazy"
-            className="Retreat-img-2 h-67 w-47.5 rounded-xl object-cover"
-          />
-        </div>
-
         <div className="Retreat-col-2 relative flex w-full flex-col items-center justify-end overflow-hidden p-2.5 md:h-full md:flex-1">
           <LocationCard
             activeIndex={activeIndex}
@@ -68,21 +49,6 @@ const Location2Retreat = forwardRef<HTMLDivElement, Location2RetreatProps>(
             baseSrc={baseImg}
             slides={SLIDES}
             setSlideRef={setSlideRef}
-          />
-        </div>
-
-        <div className="Retreat-col-3 flex w-full items-start gap-2.5 px-2.5 pb-2.5 md:hidden">
-          <img
-            src={img3}
-            alt="The Island Retreat pool terrace among pine trees"
-            loading="lazy"
-            className="Retreat-img-3 h-67 w-47.5 rounded-xl object-cover"
-          />
-          <img
-            src={img4}
-            alt=""
-            loading="lazy"
-            className="Retreat-img-4 size-25 rounded-xl object-cover"
           />
         </div>
       </div>
