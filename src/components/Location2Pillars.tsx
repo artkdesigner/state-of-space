@@ -53,6 +53,9 @@ const PILLARS: Pillar[] = [
 /** Доля СОБСТВЕННОЙ ширины картинки, на которую она максимально смещается
  * от параллакса — по прямой просьбе пользователя. */
 const PARALLAX_PERCENT = 20
+/** Pillars-img-2 едет на 25% быстрее Pillars-img-1 (тот же t, больше
+ * амплитуда) — по прямой просьбе пользователя. */
+const PARALLAX_PERCENT_IMG2 = PARALLAX_PERCENT * 1.25
 
 function PillarCard({ pillar }: { pillar: Pillar }) {
   return (
@@ -114,23 +117,22 @@ export default function Location2Pillars() {
     if (reduceMotion()) return
     if (!window.matchMedia('(min-width: 48rem)').matches) return
 
-    const parallaxOffset = (wrap: HTMLElement) => {
+    const parallaxT = (wrap: HTMLElement) => {
       const rect = wrap.getBoundingClientRect()
       const wrapCenterX = rect.left + rect.width / 2
       const viewportCenterX = window.innerWidth / 2
-      const t = gsap.utils.clamp(
+      return gsap.utils.clamp(
         -1,
         1,
         (wrapCenterX - viewportCenterX) / (window.innerWidth / 2 || 1),
       )
-      return t * PARALLAX_PERCENT
     }
 
     const onTick = () => {
-      const offset1 = parallaxOffset(wrap1)
-      img1El.style.transform = `translateX(${offset1}%)`
-      img2El.style.transform = `translateX(${offset1}%)`
-      img4El.style.transform = `translateX(${parallaxOffset(wrap2)}%)`
+      const t1 = parallaxT(wrap1)
+      img1El.style.transform = `translateX(${t1 * PARALLAX_PERCENT}%)`
+      img2El.style.transform = `translateX(${t1 * PARALLAX_PERCENT_IMG2}%)`
+      img4El.style.transform = `translateX(${parallaxT(wrap2) * PARALLAX_PERCENT}%)`
     }
     gsap.ticker.add(onTick)
 

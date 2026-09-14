@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
-import { reduceMotion } from '../lib/anim'
+import { reduceMotion, useCounter, useInView } from '../lib/anim'
 import qualitiesArchitecture from '../assets/qualities-architecture.webp'
 import qualitiesElementalRituals from '../assets/qualities-elemental-rituals.webp'
 import qualitiesProtectedSolitude from '../assets/qualities-protected-solitude.webp'
@@ -32,9 +32,52 @@ const ROUND_VH = 1
 
 const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3)
 
+/** cubic-bezier для `ease: out` — тот же дефолт, что у <Reveal> в lib/anim.tsx. */
+const REVEAL_EASE = 'cubic-bezier(0.16, 1, 0.3, 1)'
+
+/** Qualities-item появляется slide-up + opacity, когда преодолевает нижнюю
+ * границу экрана — вынесен в отдельный компонент, чтобы useInView вызывался
+ * на верхнем уровне (а не внутри .map в QualitiesSection). */
+function QualityItem({
+  quality,
+  isActive,
+  onActivate,
+}: {
+  quality: (typeof QUALITIES)[number]
+  isActive: boolean
+  onActivate: () => void
+}) {
+  const [ref, inView] = useInView<HTMLButtonElement>({ once: true, amount: 0 })
+
+  return (
+    <button
+      ref={ref}
+      type="button"
+      onMouseEnter={onActivate}
+      onFocus={onActivate}
+      className="Qualities-item cursor-pointer text-left"
+      style={{
+        opacity: inView ? 1 : 0,
+        transform: inView ? 'none' : 'translateY(1.5rem)',
+        transition: `opacity 600ms ${REVEAL_EASE}, transform 600ms ${REVEAL_EASE}`,
+      }}
+    >
+      <span
+        className={`font-manrope text-[1.625rem] font-medium leading-none tracking-[-0.04em] transition-colors duration-300 md:text-[3.125rem] lg:text-[8.75rem] ${
+          isActive ? 'text-dark' : 'text-dark/30'
+        }`}
+      >
+        {quality.title}
+      </span>
+    </button>
+  )
+}
+
 export default function QualitiesSection() {
   const sectionRef = useRef<HTMLElement>(null)
   const [activeIndex, setActiveIndex] = useState(0)
+  const [hoursRef, hours] = useCounter(72)
+  const [metersRef, meters] = useCounter(1650)
 
   useEffect(() => {
     const section = sectionRef.current
@@ -98,21 +141,12 @@ export default function QualitiesSection() {
         <div className="Qualities-list flex w-full flex-col items-end gap-2.5 pr-2.5 md:flex-1 md:justify-center md:gap-0 md:pr-0 lg:w-full lg:flex-none lg:justify-center">
           <div className="flex flex-col">
             {QUALITIES.map((quality, index) => (
-              <button
+              <QualityItem
                 key={quality.title}
-                type="button"
-                onMouseEnter={() => setActiveIndex(index)}
-                onFocus={() => setActiveIndex(index)}
-                className="Qualities-item cursor-pointer text-left"
-              >
-                <span
-                  className={`font-manrope text-[1.625rem] font-medium leading-none tracking-[-0.04em] transition-colors duration-300 md:text-[3.125rem] lg:text-[8.75rem] ${
-                    index === activeIndex ? 'text-dark' : 'text-dark/30'
-                  }`}
-                >
-                  {quality.title}
-                </span>
-              </button>
+                quality={quality}
+                isActive={index === activeIndex}
+                onActivate={() => setActiveIndex(index)}
+              />
             ))}
           </div>
         </div>
@@ -123,8 +157,11 @@ export default function QualitiesSection() {
           <p className="w-27.25 text-[0.875rem] leading-[1.3] tracking-[-0.01em] text-dark/60 md:w-full md:text-dark lg:text-[1.125rem]">
             Hours to enter the state
           </p>
-          <p className="whitespace-nowrap text-[5.625rem] leading-[0.75] tracking-[-0.06em] text-dark md:text-[10.5rem] lg:text-[26.25rem]">
-            72
+          <p
+            ref={hoursRef}
+            className="Qualities-numbers-num whitespace-nowrap text-[5.625rem] leading-[0.75] tracking-[-0.06em] text-dark md:text-[10.5rem] lg:text-[26.25rem]"
+          >
+            {hours}
           </p>
         </div>
 
@@ -132,8 +169,11 @@ export default function QualitiesSection() {
           <p className="w-27.25 text-[0.875rem] leading-[1.3] tracking-[-0.01em] text-dark/60 md:w-full md:text-dark lg:text-[1.125rem]">
             Meters above sea level
           </p>
-          <p className="whitespace-nowrap text-[5.625rem] leading-[0.75] tracking-[-0.06em] text-dark md:text-[10.5rem] lg:text-[26.25rem]">
-            1650
+          <p
+            ref={metersRef}
+            className="Qualities-numbers-num whitespace-nowrap text-[5.625rem] leading-[0.75] tracking-[-0.06em] text-dark md:text-[10.5rem] lg:text-[26.25rem]"
+          >
+            {meters}
           </p>
         </div>
       </div>

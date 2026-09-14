@@ -117,7 +117,7 @@ export default function AdvantagesSection() {
                   <div
                     key={i}
                     className={`Advantages-item flex items-center whitespace-nowrap font-manrope text-[1.875rem] leading-none font-semibold tracking-[-0.075rem] transition-colors duration-500 [--icon-slot:3rem] md:text-[3.375rem] md:tracking-[-0.135rem] md:[--icon-slot:4.125rem] lg:text-[8.375rem] lg:tracking-[-0.5025rem] lg:[--icon-slot:7.5rem] ${
-                      isCurrent ? 'text-light' : 'text-light/30'
+                      isCurrent ? 'text-light' : 'text-[#7A96C6]'
                     }`}
                   >
                     <div

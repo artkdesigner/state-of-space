@@ -78,8 +78,10 @@ export default function AboveSection() {
   const sectionRef = useRef<HTMLElement>(null)
   const circleWrapRef = useRef<HTMLDivElement>(null)
   const progressRef = useRef<SVGCircleElement>(null)
-  const leftTitleRef = useRef<HTMLParagraphElement>(null)
-  const rightTitleRef = useRef<HTMLParagraphElement>(null)
+  const leftLine1Ref = useRef<HTMLSpanElement>(null)
+  const leftLine2Ref = useRef<HTMLSpanElement>(null)
+  const rightLine1Ref = useRef<HTMLSpanElement>(null)
+  const rightLine2Ref = useRef<HTMLSpanElement>(null)
 
   /* Переход Qualities → Above → Capacity (см. покадровую сцену в Figma,
    * «Qualities to Above 1..8» и «Above to Capacity 1..7»). Above —
@@ -119,20 +121,32 @@ export default function AboveSection() {
     const qualities = document.getElementById('qualities')
     const circleWrap = circleWrapRef.current
     const progress = progressRef.current
-    const leftTitle = leftTitleRef.current
-    const rightTitle = rightTitleRef.current
+    const leftLine1 = leftLine1Ref.current
+    const leftLine2 = leftLine2Ref.current
+    const rightLine1 = rightLine1Ref.current
+    const rightLine2 = rightLine2Ref.current
     if (
       !wrap ||
       !section ||
       !qualities ||
       !circleWrap ||
       !progress ||
-      !leftTitle ||
-      !rightTitle
+      !leftLine1 ||
+      !leftLine2 ||
+      !rightLine1 ||
+      !rightLine2
     ) {
       return
     }
     if (reduceMotion()) return
+
+    // Каждая строка левого/правого заголовка едет в собственной маске
+    // (см. overflow-hidden на Above-left-line/Above-right-line в JSX) —
+    // обе строки одной стороны всегда получают один и тот же `transform`
+    // (см. onUpdate ниже), но видны/скрываются независимо, каждая в
+    // границах своей строки, а не единым блоком на всю высоту заголовка.
+    const leftLines = [leftLine1, leftLine2]
+    const rightLines = [rightLine1, rightLine2]
 
     qualities.style.zIndex = '47'
 
@@ -141,8 +155,12 @@ export default function AboveSection() {
     // до реального начала фазы элементы иначе на мгновение показывались
     // бы в дефолтном (полностью раскрытом) виде.
     circleWrap.style.opacity = '0'
-    leftTitle.style.transform = 'translateY(100%)'
-    rightTitle.style.transform = 'translateY(100%)'
+    leftLines.forEach((line) => {
+      line.style.transform = 'translateY(100%)'
+    })
+    rightLines.forEach((line) => {
+      line.style.transform = 'translateY(100%)'
+    })
     progress.style.strokeDashoffset = String(RING_CIRCUMFERENCE)
 
     const wrapTop = () => {
@@ -200,10 +218,16 @@ export default function AboveSection() {
         const rightExit = easeOutCubic(thicken)
         const rightPhase2Y = -rightExit * 100
 
-        leftTitle.style.transform = `translateY(${p < REVEAL_BOUNDARY ? leftPhase1Y : -100}%)`
-        rightTitle.style.transform = `translateY(${
+        const leftY = `translateY(${p < REVEAL_BOUNDARY ? leftPhase1Y : -100}%)`
+        const rightY = `translateY(${
           p < REVEAL_BOUNDARY ? rightPhase1Y : rightPhase2Y
         }%)`
+        leftLines.forEach((line) => {
+          line.style.transform = leftY
+        })
+        rightLines.forEach((line) => {
+          line.style.transform = rightY
+        })
 
         const hole = (1 - easeInCubic(thicken)) * RING_INNER_RESTING
         progress.style.strokeDashoffset = String(
@@ -218,8 +242,12 @@ export default function AboveSection() {
       trigger.kill()
       qualities.style.zIndex = ''
       circleWrap.style.opacity = ''
-      leftTitle.style.transform = ''
-      rightTitle.style.transform = ''
+      leftLines.forEach((line) => {
+        line.style.transform = ''
+      })
+      rightLines.forEach((line) => {
+        line.style.transform = ''
+      })
       progress.style.strokeDashoffset = ''
       progress.setAttribute('r', String(RING_RADIUS))
       progress.setAttribute('stroke-width', String(RING_STROKE_RESTING))
@@ -257,14 +285,27 @@ export default function AboveSection() {
          * держат текст прижатым к кольцу на фиксированный `gap-21.25`, а
          * вся "лишняя" ширина уходит в невидимый отступ у внешнего края. */}
         <div className="Above-pin relative z-1 flex w-full items-center justify-between px-2.5 lg:justify-center lg:gap-21.25 lg:px-5">
-          <div className="Above-left flex shrink-0 items-center overflow-hidden lg:flex-1 lg:justify-end">
-            <p
-              ref={leftTitleRef}
-              className="[word-break:break-word] whitespace-nowrap font-manrope text-[1.875rem] leading-none font-semibold tracking-[-0.04em] text-light md:text-[3.375rem] lg:text-[8.375rem] lg:tracking-[-0.06em]"
-            >
-              Above
-              <br />
-              the ocean
+          <div className="Above-left flex shrink-0 items-center lg:flex-1 lg:justify-end">
+            <p>
+              <span className="sr-only">Above the ocean</span>
+              <span aria-hidden="true" className="Above-left-title flex flex-col">
+                <span className="Above-left-title-line block overflow-hidden">
+                  <span
+                    ref={leftLine1Ref}
+                    className="block [word-break:break-word] whitespace-nowrap font-manrope text-[1.875rem] leading-none font-semibold tracking-[-0.04em] text-light md:text-[3.375rem] lg:text-[8.375rem] lg:tracking-[-0.06em]"
+                  >
+                    Above
+                  </span>
+                </span>
+                <span className="Above-left-title-line block overflow-hidden">
+                  <span
+                    ref={leftLine2Ref}
+                    className="block [word-break:break-word] whitespace-nowrap font-manrope text-[1.875rem] leading-none font-semibold tracking-[-0.04em] text-light md:text-[3.375rem] lg:text-[8.375rem] lg:tracking-[-0.06em]"
+                  >
+                    the ocean
+                  </span>
+                </span>
+              </span>
             </p>
           </div>
 
@@ -294,14 +335,27 @@ export default function AboveSection() {
             </svg>
           </div>
 
-          <div className="Above-right flex shrink-0 items-center justify-end overflow-hidden lg:flex-1 lg:justify-start">
-            <p
-              ref={rightTitleRef}
-              className="[word-break:break-word] whitespace-nowrap text-right font-manrope text-[1.875rem] leading-none font-semibold tracking-[-0.04em] text-light md:text-[3.375rem] lg:text-[8.375rem] lg:tracking-[-0.06em]"
-            >
-              Above
-              <br />
-              the world
+          <div className="Above-right flex shrink-0 items-center justify-end lg:flex-1 lg:justify-start">
+            <p>
+              <span className="sr-only">Above the world</span>
+              <span aria-hidden="true" className="Above-right-title flex flex-col">
+                <span className="Above-right-title-line block overflow-hidden">
+                  <span
+                    ref={rightLine1Ref}
+                    className="block [word-break:break-word] whitespace-nowrap text-right font-manrope text-[1.875rem] leading-none font-semibold tracking-[-0.04em] text-light md:text-[3.375rem] lg:text-[8.375rem] lg:tracking-[-0.06em]"
+                  >
+                    Above
+                  </span>
+                </span>
+                <span className="Above-right-title-line block overflow-hidden">
+                  <span
+                    ref={rightLine2Ref}
+                    className="block [word-break:break-word] whitespace-nowrap text-right font-manrope text-[1.875rem] leading-none font-semibold tracking-[-0.04em] text-light md:text-[3.375rem] lg:text-[8.375rem] lg:tracking-[-0.06em]"
+                  >
+                    the world
+                  </span>
+                </span>
+              </span>
             </p>
           </div>
         </div>

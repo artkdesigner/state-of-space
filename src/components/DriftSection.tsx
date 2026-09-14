@@ -44,7 +44,7 @@ export default function DriftSection({ onBookNow }: DriftSectionProps) {
         ref={sectionRef}
         className="Drift sticky top-0 isolate flex h-dvh w-full flex-col justify-between overflow-hidden bg-light p-2.5 lg:p-5"
       >
-        <h2 className="Drift-title relative z-5 font-manrope text-[1.875rem] leading-none font-semibold tracking-[-0.075rem] text-dark md:text-[3.375rem] md:tracking-[-0.135rem] lg:text-[8.375rem] lg:tracking-[-0.5025rem]">
+        <h2 className="Drift-title relative z-5 mt-15 font-manrope text-[1.875rem] leading-none font-semibold tracking-[-0.075rem] text-dark md:text-[3.375rem] md:tracking-[-0.135rem] lg:text-[8.375rem] lg:tracking-[-0.5025rem]">
           Drift, balance, presence — held by Water Residence.
         </h2>
 

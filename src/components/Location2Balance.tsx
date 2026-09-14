@@ -51,7 +51,7 @@ export default function Location2Balance({ onBookNow }: Location2BalanceProps) {
         className="Balance-cursor-img-4 pointer-events-none absolute top-0 left-0 z-0 hidden h-[11.25rem] w-[8.75rem] rounded-[1.875rem] object-cover opacity-0 scale-75 transition-[opacity,scale] duration-700 ease-out lg:block"
       />
 
-      <p className="relative z-5 font-manrope text-[1.875rem] leading-none font-semibold tracking-[-0.04em] text-dark md:text-[3.375rem] lg:text-[8.375rem] lg:tracking-[-0.06em]">
+      <p className="Balance-title relative z-5 mt-15 font-manrope text-[1.875rem] leading-none font-semibold tracking-[-0.04em] text-dark md:text-[3.375rem] lg:text-[8.375rem] lg:tracking-[-0.06em]">
         <span>A balanced island </span>
         <span className="text-dark/60 lg:text-dark/30">
           retreat between land and horizon

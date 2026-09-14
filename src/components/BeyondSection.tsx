@@ -54,8 +54,16 @@ const IMAGES = [
   img23,
 ]
 
-/** Высота скролла, за которую кольцо делает один полный оборот. */
+/** Высота скролла, за которую кольцо делает один полный оборот на
+ * "стандартной" скорости — используется как общий бюджет пина заезда, НЕ
+ * как скорость вращения (см. ROTATION_PERIOD_VH ниже — вращение теперь
+ * вдвое медленнее, по просьбе пользователя). */
 const PIN_HEIGHT_VH = 400
+/** Вдвое медленнее PIN_HEIGHT_VH — по прямой просьбе пользователя
+ * ("замедли вращение карусели в два раза"), отдельная константа, а не
+ * правка самого PIN_HEIGHT_VH: тот используется и для других фаз (бюджет
+ * пина, вторая точка RING_SCALE_KEYFRAMES), трогать которые не просили. */
+const ROTATION_PERIOD_VH = PIN_HEIGHT_VH * 2
 /** Заезд (заголовок из прозрачности + подъезд/усадка кольца до текущего
  * "покоя", включая довдвижение к центру секции — см. centerOffsetPx и
  * entranceEase в onUpdate ниже) занимает первые ENTRANCE_VH из общих
@@ -69,8 +77,11 @@ const PIN_HEIGHT_VH = 400
  * довдвижение к центру было отдельной, более поздней фазой, и читалось
  * как самостоятельный "улёт" в сторону). Вращение (rotation, ниже) идёт
  * непрерывно на весь PIN_HEIGHT_VH и не зависит от ENTRANCE_VH — это
- * отдельный, уже существовавший до заезда слой анимации. */
-const ENTRANCE_VH = 300
+ * отдельный, уже существовавший до заезда слой анимации. Было 300 — по
+ * жалобе пользователя (карусель "долго поднимается") сократили вдвое, сам
+ * заезд без других изменений просто проигрывается на вдвое меньшем
+ * скролле. */
+const ENTRANCE_VH = 150
 
 /** Кадры 1..5 из Figma-сцены, взятые как точки прогресса 0/0.25/0.5/0.75/1
  * внутри ENTRANCE_VH. Кадр 5 — уже закодированное состояние покоя
@@ -132,12 +143,13 @@ const MOVE_PHASE3_VH = 80
 const MOVE_VH = MOVE_PHASE1_VH + MOVE_PHASE2_VH + MOVE_PHASE3_VH
 /** Итоговый scale кольца на кадре 3 сцены (920/1888 от текущего покоя). */
 const EXIT_SCALE_END = 920 / 1888
-/** Смена 3 карточек Move-visual — тот же расчёт (`CARD_COUNT - 0.5`), что
- * раньше был в отдельной MoveSection.tsx, просто выраженный в "vh-числах"
- * (×100), как остальные константы этого файла, а не как прямой множитель
- * `window.innerHeight`. */
+/** Смена карточек Move-visual — по прямой просьбе пользователя шаг между
+ * карточками (сколько vh скролла занимает один переход) = CARD_STEP_VH,
+ * всего CARD_COUNT-1 переходов (карточка 0 уже показана в состоянии покоя
+ * — на неё саму скролл не тратится, см. cardIndex ниже). */
 const CARD_COUNT = 3
-const CARD_PIN_VH = (CARD_COUNT - 0.5) * 100
+const CARD_STEP_VH = 50
+const CARD_PIN_VH = (CARD_COUNT - 1) * CARD_STEP_VH
 /** Итоговый блюр заголовка на кадре 4 сцены, 48.35px на Figma-фрейме 1920. */
 const TITLE_BLUR_END_REM = 48.35 / 16
 
@@ -390,7 +402,7 @@ export default function BeyondSection() {
       scrub: true,
       onUpdate: (self) => {
         const vhScrolled = self.progress * TOTAL_SCRUB_VH
-        setRotation((vhScrolled / PIN_HEIGHT_VH) * 360)
+        setRotation((vhScrolled / ROTATION_PERIOD_VH) * 360)
 
         if (reduceMotion()) return
 
@@ -465,13 +477,19 @@ export default function BeyondSection() {
         }
 
         // Фаза 4: маска уже полностью выросла (см. фазы 1-3 выше) — смена
-        // карточек Move-visual, тот же расчёт, что раньше был в отдельной
-        // MoveSection.tsx (см. CARD_PIN_VH/CARD_COUNT).
+        // карточек Move-visual. Card 0 уже показана в MoveVisual.tsx без
+        // всякого скролла (её translateY 0% с самого начала, см. там же) —
+        // `floor(progress * CARD_COUNT)` тратил на это "бесплатное" состояние
+        // целый первый шаг скролла, из-за чего сразу после того, как маска
+        // раскрывалась, был заметный пробел, прежде чем начиналось
+        // движение (жалоба пользователя). `ceil` по CARD_COUNT-1 переходам
+        // убирает этот пробел — индекс трогается сразу же, как только
+        // vhInCards отходит от 0, а не только после целого первого шага.
         const vhInCards = vhInMove - MOVE_VH
         const cardsProgress = clamp(vhInCards / CARD_PIN_VH)
         const cardIndex = Math.min(
           CARD_COUNT - 1,
-          Math.floor(cardsProgress * CARD_COUNT),
+          Math.ceil(cardsProgress * (CARD_COUNT - 1)),
         )
         setActiveIndex((prev) => (prev === cardIndex ? prev : cardIndex))
       },
