@@ -163,9 +163,15 @@ export function Reveal({
  * `src/lib/heroIntro.ts`. Полный текст остаётся доступен screen-reader'ам
  * через отдельный `sr-only` span, посимвольные — `aria-hidden`.
  */
-/** `a`, и `t` сразу после `a`, кернятся заметно теснее — маргин вдвое больше. */
-const CHAR_MARGIN = '-ml-1 md:-ml-1 lg:-ml-[0.46875rem]'
-const CHAR_MARGIN_WIDE = '-ml-2 md:-ml-2 lg:-ml-[0.9375rem]'
+/** `a`, и `t` сразу после `a`, кернятся заметно теснее — маргин вдвое больше.
+ * Mobile было -ml-1/-ml-2 (0.25rem/0.5rem) — вдвое агрессивнее относительно
+ * своего font-size (2rem), чем на md/lg (margin/font-size ≈ 7%/13.6% там
+ * против 12.5%/25% на mobile), из-за чего узкие буквы (например "III")
+ * визуально сливались в сплошную полосу (баг, на который пожаловался
+ * пользователь). -ml-0.5/-ml-1 (0.125rem/0.25rem) держат ту же ~7%/13.6%
+ * пропорцию, что и остальные брейкпоинты. */
+const CHAR_MARGIN = '-ml-0.5 md:-ml-1 lg:-ml-[0.46875rem]'
+const CHAR_MARGIN_WIDE = '-ml-1 md:-ml-2 lg:-ml-[0.9375rem]'
 
 export function SplitChars({ text }: { text: string }) {
   return (

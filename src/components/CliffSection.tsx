@@ -282,8 +282,12 @@ export default function CliffSection() {
       onUpdate: (self) => {
         const t = easeOutCubic(self.progress)
         const radius = t * 45
-        location1.style.borderBottomLeftRadius = `${radius}vw`
-        location1.style.borderBottomRightRadius = `${radius}vw`
+        // vmin, не vw — на портретных tablet/mobile viewport высота уже
+        // ширины, а радиус, привязанный только к ширине, на квадратном
+        // угле должен опираться на МЕНЬШУЮ сторону (см. ту же правку в
+        // QualitiesSection.tsx/Location2Section.tsx).
+        location1.style.borderBottomLeftRadius = `${radius}vmin`
+        location1.style.borderBottomRightRadius = `${radius}vmin`
       },
     })
 

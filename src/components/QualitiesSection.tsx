@@ -111,19 +111,35 @@ export default function QualitiesSection() {
       return r.top + r.height - window.innerHeight / 2 + window.scrollY
     }
 
+    // Радиус — в px от МЕНЬШЕЙ стороны секции, не в % (см. ту же правку в
+    // Location2Section.tsx/CliffSection.tsx): секция на tablet/mobile не
+    // квадратная (высота либо 100dvh, либо своя контентная — в любом
+    // случае намного меньше ширины), а border-radius в `%` считается
+    // отдельно от ширины и от высоты — угол получался вытянутым эллипсом
+    // вместо ровной круглой дуги (жалоба пользователя). min(width,height)
+    // даёт корректный "квадратный" угол на любом соотношении сторон.
+    const measureMinSide = () =>
+      Math.min(section.offsetWidth, section.offsetHeight)
+    let minSide = measureMinSide()
+    const onResize = () => {
+      minSide = measureMinSide()
+    }
+    window.addEventListener('resize', onResize)
+
     const trigger = ScrollTrigger.create({
       trigger: section,
       start: roundStart,
       end: () => `+=${window.innerHeight * ROUND_VH}`,
       scrub: true,
       onUpdate: (self) => {
-        const radius = `${50 * easeOutCubic(self.progress)}%`
+        const radius = `${(minSide / 2) * easeOutCubic(self.progress)}px`
         section.style.borderBottomLeftRadius = radius
         section.style.borderBottomRightRadius = radius
       },
     })
 
     return () => {
+      window.removeEventListener('resize', onResize)
       trigger.kill()
       section.style.borderBottomLeftRadius = ''
       section.style.borderBottomRightRadius = ''

@@ -165,7 +165,12 @@ export default function Location2Section({ onBookNow }: Location2SectionProps) {
     const setLocation3Overlay = (t: number) => {
       const eased = smoothstep(gsap.utils.clamp(0, 1, t))
       location3.style.transform = `translateX(${(1 - eased) * 100}%)`
-      const radius = `${50 * (1 - eased)}%`
+      // vmin, не % — Location3 (viewport-sized на всех брейкпоинтах, см.
+      // её className) не квадратная, а border-radius в `%` считается
+      // отдельно от ширины и от высоты: угол получался вытянутым эллипсом
+      // вместо ровной дуги на tablet/mobile (жалоба пользователя, см. ту
+      // же правку в QualitiesSection.tsx/CliffSection.tsx).
+      const radius = `${50 * (1 - eased)}vmin`
       location3.style.borderTopLeftRadius = radius
       location3.style.borderBottomLeftRadius = radius
     }
