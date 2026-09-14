@@ -1,10 +1,120 @@
+import { useEffect, useRef } from 'react'
+import gsap from 'gsap'
 import historyPart1 from '../assets/location2/history-part-1.webp'
 
+const clamp = (v: number, min = 0, max = 1) => Math.min(max, Math.max(min, v))
+
+/** Экспериментальный параллакс History-part-1 на mobile/tablet — по
+ * прямой просьбе пользователя ("попробуй, посмотрим что получится").
+ * Ось параллакса — та, по которой контейнер РЕАЛЬНО едет мимо вьюпорта:
+ *
+ * - Mobile (< md) — Location2-history тут в обычном document flow (см.
+ *   md:flex-row в родителе — до этой ширины горизонтальный трек ещё не
+ *   активен), контейнер едет ВЕРТИКАЛЬНО обычным скроллом страницы —
+ *   картинка сдвигается по Y.
+ * - Tablet (md, не lg) — весь блок уже внутри горизонтально-скроллящегося
+ *   пина Location2Section.tsx: контейнер стоит на месте по вертикали
+ *   (Location2 сама приклеена), а едет мимо вьюпорта ПО ГОРИЗОНТАЛИ за
+ *   счёт `gsap.set(track, { x: ... })` там же — вертикальный прогресс тут
+ *   всегда 0, нужен именно горизонтальный сдвиг картинки.
+ *
+ * Меряем прогресс не через ScrollTrigger (его `start`/`end` строки вроде
+ * 'top bottom' — только по вертикали, для горизонтального трека не
+ * годятся), а напрямую через getBoundingClientRect() на каждый тик
+ * gsap.ticker — читает уже применённую на этот кадр позицию независимо от
+ * того, обычный это скролл или чужой JS-transform трека (тот же тик,
+ * что двигает трек в Location2Section.tsx, уже отработал раньше — этот
+ * эффект подписывается позже, см. порядок маунта в HomePage.tsx). */
 export default function Location2History() {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const imgRef = useRef<HTMLImageElement>(null)
+
+  useEffect(() => {
+    const container = containerRef.current
+    const img = imgRef.current
+    if (!container || !img) return
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+
+    // Насколько картинка перекрывает контейнер сверх его размера (по
+    // обеим осям сразу, используем нужную по брейкпоинту) — доля от
+    // размера контейнера, не абсолютный px, чтобы соотношение "запас
+    // ⇄ амплитуда сдвига" оставалось одинаковым на любом экране.
+    const OVERSHOOT_FRACTION = 0.14
+
+    const isColumnLayoutRange = () => window.innerWidth < 992
+
+    const measure = () => {
+      const rect = container.getBoundingClientRect()
+      if (isColumnLayoutRange()) {
+        if (window.innerWidth < 768) {
+          const overshoot = rect.height * OVERSHOOT_FRACTION
+          img.style.height = `${rect.height + overshoot * 2}px`
+          img.style.width = '100%'
+          img.style.top = `${-overshoot}px`
+          img.style.left = '0'
+          return { overshoot, axis: 'y' as const }
+        }
+        const overshoot = rect.width * OVERSHOOT_FRACTION
+        img.style.width = `${rect.width + overshoot * 2}px`
+        img.style.height = '100%'
+        img.style.left = `${-overshoot}px`
+        img.style.top = '0'
+        return { overshoot, axis: 'x' as const }
+      }
+      img.style.height = '100%'
+      img.style.width = '100%'
+      img.style.top = '0'
+      img.style.left = '0'
+      return { overshoot: 0, axis: null }
+    }
+
+    let { overshoot, axis } = measure()
+    const onResize = () => {
+      ;({ overshoot, axis } = measure())
+    }
+    window.addEventListener('resize', onResize)
+
+    const tick = () => {
+      if (!axis) {
+        img.style.transform = ''
+        return
+      }
+      const rect = container.getBoundingClientRect()
+      const progress =
+        axis === 'y'
+          ? clamp(
+              (window.innerHeight - rect.top) /
+                (window.innerHeight + rect.height),
+            )
+          : clamp(
+              (window.innerWidth - rect.left) /
+                (window.innerWidth + rect.width),
+            )
+      const offset = (progress - 0.5) * 2 * overshoot
+      img.style.transform =
+        axis === 'y' ? `translateY(${offset}px)` : `translateX(${offset}px)`
+    }
+    gsap.ticker.add(tick)
+
+    return () => {
+      window.removeEventListener('resize', onResize)
+      gsap.ticker.remove(tick)
+      img.style.transform = ''
+      img.style.height = ''
+      img.style.width = ''
+      img.style.top = ''
+      img.style.left = ''
+    }
+  }, [])
+
   return (
     <div className="Location2-history flex flex-col px-2.5 pt-2.5 pb-5 md:h-dvh md:w-max md:shrink-0 md:flex-row md:gap-2.5 md:p-2.5 lg:gap-0 lg:p-5">
-      <div className="History-part-1 relative flex h-[51.5rem] w-full shrink-0 items-center justify-center overflow-hidden rounded-md md:h-full md:w-[47rem] lg:mx-5 lg:w-[calc(100vw-2.5rem)] lg:rounded-[1.875rem]">
+      <div
+        ref={containerRef}
+        className="History-part-1 relative flex h-[51.5rem] w-full shrink-0 items-center justify-center overflow-hidden rounded-md md:h-full md:w-[47rem] lg:mx-5 lg:w-[calc(100vw-2.5rem)] lg:rounded-[1.875rem]"
+      >
         <img
+          ref={imgRef}
           src={historyPart1}
           alt="Original 1988 architecture of The Island Retreat"
           className="absolute inset-0 size-full object-cover"
