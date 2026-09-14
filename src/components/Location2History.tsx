@@ -117,7 +117,7 @@ export default function Location2History() {
           ref={imgRef}
           src={historyPart1}
           alt="Original 1988 architecture of The Island Retreat"
-          className="absolute inset-0 size-full object-cover"
+          className="absolute inset-0 size-full max-w-none object-cover"
         />
         <p className="relative font-manrope text-[1.875rem] font-semibold whitespace-nowrap text-light md:text-[3.375rem] md:tracking-[-0.04em] lg:text-[8.375rem] lg:tracking-[-0.06em]">
           1988 — 2026
