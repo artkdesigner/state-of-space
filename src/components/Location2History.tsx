@@ -4,19 +4,15 @@ import historyPart1 from '../assets/location2/history-part-1.webp'
 
 const clamp = (v: number, min = 0, max = 1) => Math.min(max, Math.max(min, v))
 
-/** Экспериментальный параллакс History-part-1 на mobile/tablet — по
- * прямой просьбе пользователя ("попробуй, посмотрим что получится").
- * Ось параллакса — та, по которой контейнер РЕАЛЬНО едет мимо вьюпорта:
+/** Экспериментальный параллакс History-part-1 — только tablet (md, не lg).
+ * На mobile убран по просьбе пользователя, картинка там просто заполняет
+ * контейнер без сдвига.
  *
- * - Mobile (< md) — Location2-history тут в обычном document flow (см.
- *   md:flex-row в родителе — до этой ширины горизонтальный трек ещё не
- *   активен), контейнер едет ВЕРТИКАЛЬНО обычным скроллом страницы —
- *   картинка сдвигается по Y.
- * - Tablet (md, не lg) — весь блок уже внутри горизонтально-скроллящегося
- *   пина Location2Section.tsx: контейнер стоит на месте по вертикали
- *   (Location2 сама приклеена), а едет мимо вьюпорта ПО ГОРИЗОНТАЛИ за
- *   счёт `gsap.set(track, { x: ... })` там же — вертикальный прогресс тут
- *   всегда 0, нужен именно горизонтальный сдвиг картинки.
+ * Tablet — весь блок уже внутри горизонтально-скроллящегося пина
+ * Location2Section.tsx: контейнер стоит на месте по вертикали (Location2
+ * сама приклеена), а едет мимо вьюпорта ПО ГОРИЗОНТАЛИ за счёт
+ * `gsap.set(track, { x: ... })` там же — вертикальный прогресс тут всегда
+ * 0, нужен именно горизонтальный сдвиг картинки.
  *
  * Меряем прогресс не через ScrollTrigger (его `start`/`end` строки вроде
  * 'top bottom' — только по вертикали, для горизонтального трека не
@@ -41,19 +37,12 @@ export default function Location2History() {
     // ⇄ амплитуда сдвига" оставалось одинаковым на любом экране.
     const OVERSHOOT_FRACTION = 0.14
 
-    const isColumnLayoutRange = () => window.innerWidth < 992
+    const isTabletRange = () =>
+      window.innerWidth >= 768 && window.innerWidth < 992
 
     const measure = () => {
       const rect = container.getBoundingClientRect()
-      if (isColumnLayoutRange()) {
-        if (window.innerWidth < 768) {
-          const overshoot = rect.height * OVERSHOOT_FRACTION
-          img.style.height = `${rect.height + overshoot * 2}px`
-          img.style.width = '100%'
-          img.style.top = `${-overshoot}px`
-          img.style.left = '0'
-          return { overshoot, axis: 'y' as const }
-        }
+      if (isTabletRange()) {
         const overshoot = rect.width * OVERSHOOT_FRACTION
         img.style.width = `${rect.width + overshoot * 2}px`
         img.style.height = '100%'
@@ -80,19 +69,11 @@ export default function Location2History() {
         return
       }
       const rect = container.getBoundingClientRect()
-      const progress =
-        axis === 'y'
-          ? clamp(
-              (window.innerHeight - rect.top) /
-                (window.innerHeight + rect.height),
-            )
-          : clamp(
-              (window.innerWidth - rect.left) /
-                (window.innerWidth + rect.width),
-            )
+      const progress = clamp(
+        (window.innerWidth - rect.left) / (window.innerWidth + rect.width),
+      )
       const offset = (progress - 0.5) * 2 * overshoot
-      img.style.transform =
-        axis === 'y' ? `translateY(${offset}px)` : `translateX(${offset}px)`
+      img.style.transform = `translateX(${offset}px)`
     }
     gsap.ticker.add(tick)
 
