@@ -1,5 +1,9 @@
 import footerLogo from '../assets/footer-logo.svg'
 import { scrollToHash } from '../lib/scroll'
+import {
+  scrollToLocation2RetreatSlide,
+  scrollToLocation3Slide,
+} from './Location2Section'
 
 /** ВСЕГДА ровно 1 вьюпорт — та же константа, что у margin-top любого
  * другого "наезжающего" сиблинга в этой цепочке (Cliff-pin-wrap,
@@ -23,13 +27,23 @@ import { scrollToHash } from '../lib/scroll'
 const FOOTER_ENTRANCE_VH = 100
 
 const NAV_LINKS = [
-  'Experience',
-  'Spaces',
+  'The Cliff',
+  'The Island',
+  'The Water',
   'About',
-  'Blog',
   'Contact',
   'Book now',
 ]
+
+/** Тот же список и переходы, что в NavBar.tsx (по прямой просьбе
+ * пользователя, 2026-09-14). */
+const LINK_ACTIONS: Record<string, () => void> = {
+  'The Cliff': () => scrollToHash('#location1'),
+  'The Island': () => scrollToLocation2RetreatSlide(0),
+  'The Water': () => scrollToLocation3Slide(0),
+  About: () => scrollToHash('#intro'),
+  Contact: () => scrollToHash('#footer'),
+}
 
 type FooterSectionProps = {
   onBookNow: () => void
@@ -47,7 +61,7 @@ export default function FooterSection({ onBookNow }: FooterSectionProps) {
           <button
             key={label}
             type="button"
-            onClick={label === 'Book now' ? onBookNow : undefined}
+            onClick={label === 'Book now' ? onBookNow : LINK_ACTIONS[label]}
             className="Footer-nav-link cursor-pointer whitespace-nowrap text-[0.875rem] font-medium tracking-[-0.03em] text-light transition-opacity duration-300 hover:opacity-70 md:text-[1.125rem] lg:text-[0.9375rem]"
           >
             {label}

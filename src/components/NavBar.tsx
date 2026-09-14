@@ -3,7 +3,10 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { reduceMotion } from '../lib/anim'
 import { HERO_INTRO } from '../lib/heroIntro'
 import { scrollToHash } from '../lib/scroll'
-import { scrollToLocation2About } from './Location2Section'
+import {
+  scrollToLocation2RetreatSlide,
+  scrollToLocation3Slide,
+} from './Location2Section'
 import NavMenu from './NavMenu'
 
 export function NavLogo({ className }: { className?: string }) {
@@ -17,19 +20,21 @@ export function NavLogo({ className }: { className?: string }) {
   )
 }
 
-const LEFT_LINKS = ['Experience', 'Spaces', 'About']
-const RIGHT_LINKS = ['Blog', 'Contact', 'Book now']
+const LEFT_LINKS = ['The Cliff', 'The Island', 'The Water']
+const RIGHT_LINKS = ['About', 'Contact', 'Book now']
 
-/** Ссылки-переходы к секциям — по прямой просьбе пользователя (Blog
- * по-прежнему плейсхолдер без действия, см. memory). About — не простой
- * `scrollToHash`: Location2-about лежит внутри горизонтально-скроллящегося
- * пина Location2Section.tsx, её реальная вертикальная позиция зависит от
- * того, сколько ещё горизонтального прогресса трека нужно докрутить, а не
- * от статичного doc-offset — см. `scrollToLocation2About` там же. */
+/** Ссылки-переходы к секциям — по прямой просьбе пользователя (новый
+ * список 2026-09-14). The Island/The Water — не простой `scrollToHash`:
+ * Location2/Location3 лежат внутри горизонтально-скроллящегося пина
+ * Location2Section.tsx, их реальная вертикальная позиция зависит от того,
+ * сколько ещё горизонтального прогресса трека нужно докрутить, а не от
+ * статичного doc-offset — см. `scrollToLocation2RetreatSlide`/
+ * `scrollToLocation3Slide` там же. */
 const LINK_ACTIONS: Record<string, () => void> = {
-  Experience: () => scrollToHash('#intro'),
-  Spaces: () => scrollToHash('#location1'),
-  About: () => scrollToLocation2About(),
+  'The Cliff': () => scrollToHash('#location1'),
+  'The Island': () => scrollToLocation2RetreatSlide(0),
+  'The Water': () => scrollToLocation3Slide(0),
+  About: () => scrollToHash('#intro'),
   Contact: () => scrollToHash('#footer'),
 }
 

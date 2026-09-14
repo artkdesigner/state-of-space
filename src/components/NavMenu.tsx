@@ -3,13 +3,22 @@ import { lockScroll, scrollToHash, unlockScroll } from '../lib/scroll'
 import { NavLogo } from './NavBar'
 import Button from './Button'
 import navMenuBg from '../assets/nav-menu-bg.webp'
+import {
+  scrollToLocation2RetreatSlide,
+  scrollToLocation3Slide,
+} from './Location2Section'
 
-const MENU_LINKS = ['Experience', 'Spaces', 'Contact']
-/** Тот же переход к секциям, что в NavBar.tsx. */
-const LINK_HASHES: Record<string, string> = {
-  Experience: '#intro',
-  Spaces: '#location1',
-  Contact: '#footer',
+const MENU_LINKS = ['The Cliff', 'The Island', 'The Water', 'About', 'Contact']
+/** Тот же список и переходы, что в NavBar.tsx (по прямой просьбе
+ * пользователя, 2026-09-14) — The Island/The Water через те же императивные
+ * функции (Location2/Location3 лежат в горизонтально-скроллящемся пине,
+ * см. комментарий там же), остальные — простой scrollToHash. */
+const LINK_ACTIONS: Record<string, () => void> = {
+  'The Cliff': () => scrollToHash('#location1'),
+  'The Island': () => scrollToLocation2RetreatSlide(0),
+  'The Water': () => scrollToLocation3Slide(0),
+  About: () => scrollToHash('#intro'),
+  Contact: () => scrollToHash('#footer'),
 }
 
 type NavMenuProps = {
@@ -102,8 +111,7 @@ export default function NavMenu({ open, onClose, onBookNow }: NavMenuProps) {
             type="button"
             onClick={() => {
               onClose()
-              const hash = LINK_HASHES[label]
-              if (hash) scrollToHash(hash)
+              LINK_ACTIONS[label]?.()
             }}
             className="Nav-menu-link cursor-pointer whitespace-nowrap text-[1.75rem] tracking-[-0.0525rem] transition-opacity duration-300 hover:opacity-70 md:text-[2.25rem] md:tracking-[-0.0675rem]"
           >
