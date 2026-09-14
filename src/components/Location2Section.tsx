@@ -44,6 +44,21 @@ const GALERY_COL2_REST = { width: 120, paddingX: 20, paddingY: 6.25 }
  * просто без раннтайм-измерения. paddingY = 60px = 3.75rem. */
 const GALERY_COL2_SETTLED = { width: 38.375, paddingX: 0, paddingY: 3.75 }
 
+/** Tablet (md, см. Location2Galery.tsx): тот же приём, что SQUEEZE_VH/
+ * GALERY_COL2_REST/SETTLED выше, только по вертикали — Galery-col-2
+ * (Galery-img-3) въезжает на весь экран, потом "садится" до 1/3 высоты,
+ * открывая col-1/col-3 сверху/снизу. Числа — из двух выделенных
+ * пользователем Figma-кадров сцены «Location2-galery» на tablet-фрейме
+ * 768×1024: кадр 1 (col-2 h=1002px=62.625rem, во весь экран) и кадр 2
+ * (все три строки поровну, 328px=20.5rem). Без paddingX/Y — на этом
+ * фрейме Galery-img-3 в обоих кадрах заполняет col-2 без отступов (в
+ * отличие от desktop, см. GALERY_COL2_REST/SETTLED). Тот же бюджет
+ * SQUEEZE_VH, что и у desktop — отдельного числа под tablet в макете нет,
+ * это чисто скролл-таймингу, не геометрия конкретного кадра. */
+const TABLET_SQUEEZE_VH = SQUEEZE_VH
+const TABLET_GALERY_COL2_REST_HEIGHT = 62.625
+const TABLET_GALERY_COL2_SETTLED_HEIGHT = 20.5
+
 /** Хвостовой запас пина (в vh), после того как трек (включая Location3Panel,
  * последнюю панель) уже полностью доехал и её собственный кроссфейд слайдов
  * доигран — держит Location2 приклеенной ещё на эту дистанцию, пока
@@ -210,6 +225,8 @@ export default function Location2Section({ onBookNow }: Location2SectionProps) {
     }
 
     mm.add('(min-width: 48rem) and (max-width: 61.9375rem)', () => {
+      const col2 = galeryCol2Ref.current
+
       const getDistance = () => track.scrollWidth - window.innerWidth
       /** Отдельный бюджет скролла на кроссфейд трёх фото ретрит-панели —
        * трек всё это время стоит на месте (x: 0), и только после того как
@@ -217,6 +234,8 @@ export default function Location2Section({ onBookNow }: Location2SectionProps) {
        * Location2-about. Тот же приём "N × высота экрана на слайд", что и у
        * Location1Section.tsx и у LOCATION3_SLIDE_COUNT ниже. */
       const getCrossfadeBudget = () => window.innerHeight * SLIDE_COUNT
+      const getRetreatWidth = () => retreatRef.current?.offsetWidth ?? 0
+      const getSqueezeBudget = () => window.innerHeight * (TABLET_SQUEEZE_VH / 100)
       const getLocation3EntranceBudget = () =>
         window.innerHeight * (LOCATION3_ENTRANCE_VH / 100)
       const getLocation3CrossfadeBudget = () =>
@@ -226,25 +245,38 @@ export default function Location2Section({ onBookNow }: Location2SectionProps) {
       const getPinDistance = () =>
         getCrossfadeBudget() +
         getDistance() +
+        getSqueezeBudget() +
         getLocation3EntranceBudget() +
         getLocation3CrossfadeBudget() +
         getResidenceDwellBudget()
+
+      const setCol2Height = (t: number) => {
+        if (!col2) return
+        const eased = smoothstep(t)
+        const height =
+          TABLET_GALERY_COL2_REST_HEIGHT +
+          (TABLET_GALERY_COL2_SETTLED_HEIGHT - TABLET_GALERY_COL2_REST_HEIGHT) *
+            eased
+        col2.style.height = `${height}rem`
+      }
 
       const updateHeight = () => {
         wrap.style.height = `${section.offsetHeight + getPinDistance()}px`
       }
       updateHeight()
+      setCol2Height(0)
       setLocation3Overlay(0)
 
-      // Тот же приём, что в desktop-ветке ниже (см. её комментарий) — без
-      // Galery/squeeze тут проще: трек линеен, целевой trackPx — это
-      // просто offsetLeft самой About внутри track (offsetLeft не зависит
-      // от текущего JS-transform, см. комментарий у desktop-варианта).
+      // Тот же приём, что в desktop-ветке ниже (см. её комментарий),
+      // теперь с тем же squeezeBudget в сумме — Galery-col-2 squeeze
+      // добавляет "мёртвую" дистанцию скролла между Retreat и About, как
+      // и на desktop.
       scrollToAboutImpl = () => {
         const distance = getDistance()
         if (!distance) return
         const targetTrackPx = gsap.utils.clamp(0, distance, about.offsetLeft)
-        const scrolledPx = getCrossfadeBudget() + targetTrackPx
+        const scrolledPx =
+          getCrossfadeBudget() + getSqueezeBudget() + targetTrackPx
         const wrapDocTop = wrap.getBoundingClientRect().top + window.scrollY
         scrollToY(wrapDocTop + scrolledPx)
       }
@@ -265,6 +297,7 @@ export default function Location2Section({ onBookNow }: Location2SectionProps) {
         const local3 = (index + 0.5) / LOCATION3_SLIDE_COUNT
         const scrolledPx =
           getCrossfadeBudget() +
+          getSqueezeBudget() +
           distance +
           getLocation3EntranceBudget() +
           local3 * getLocation3CrossfadeBudget()
@@ -281,61 +314,76 @@ export default function Location2Section({ onBookNow }: Location2SectionProps) {
         onUpdate: (self) => {
           const distance = getDistance()
           const crossfadeBudget = getCrossfadeBudget()
+          const retreatWidth = getRetreatWidth()
+          const squeezeBudget = getSqueezeBudget()
           const location3EntranceBudget = getLocation3EntranceBudget()
           const location3CrossfadeBudget = getLocation3CrossfadeBudget()
           const total = getPinDistance()
           if (!distance || !total) return
 
           const splitCrossfade = crossfadeBudget / total
-          // Конец фазы 2 (горизонтальный переезд трека — теперь БЕЗ
-          // Location3Panel, трек оканчивается на Balance).
-          const splitDistance = (crossfadeBudget + distance) / total
-          // Конец фазы 3 (наезд Location3Panel поверх уже неподвижного
-          // Balance).
-          const splitEntrance =
-            (crossfadeBudget + distance + location3EntranceBudget) / total
-          // Конец фазы 4 (кроссфейд слайдов Location3Panel) — сразу после
-          // неё остаётся только RESIDENCE_DWELL_VH хвост-запас (см.
-          // константу выше), ничего уже не меняется.
-          const splitLocation3Crossfade =
-            (crossfadeBudget +
-              distance +
-              location3EntranceBudget +
-              location3CrossfadeBudget) /
-            total
 
           // Фаза 1 (0 → splitCrossfade): кроссфейд слайдов Retreat, трек
           // неподвижен.
           runCrossfade(gsap.utils.clamp(0, 1, self.progress / splitCrossfade))
 
-          // Фаза 2 (splitCrossfade → splitDistance): горизонтальный переезд
-          // трека, начинается только после того как кроссфейд завершён —
-          // довозит все панели трека, последняя из которых теперь Balance.
-          const scrollLocal = gsap.utils.clamp(
-            0,
-            1,
-            (self.progress - splitCrossfade) / (splitDistance - splitCrossfade),
-          )
-          gsap.set(track, { x: -distance * scrollLocal })
+          // Дальше работаем в пикселях самого скролла, а не в долях
+          // прогресса — так проще воткнуть внутри трек-переезда третью,
+          // "замершую" фазу сжатия Galery-col-2 (тот же приём, что в
+          // desktop-ветке выше, см. её комментарий у SQUEEZE_VH, только
+          // squeeze тут по высоте, а не по ширине).
+          const scrolledPx = self.progress * total
+          const afterCrossfadePx = Math.max(0, scrolledPx - crossfadeBudget)
 
-          // Фаза 3 (splitDistance → splitEntrance): трек уже целиком
-          // докатился (Balance полностью в кадре, неподвижна) — теперь
-          // Location3Panel наезжает поверх неё.
+          let trackPx: number
+          let squeezeProgress: number
+          if (afterCrossfadePx <= retreatWidth) {
+            // Фаза 2: Location2-retreat уезжает, Location2-galery въезжает
+            // (Galery-col-2 уже во весь экран, кадр 1 сцены) — обычный
+            // трек-переезд на 1 вьюпорт.
+            trackPx = afterCrossfadePx
+            squeezeProgress = 0
+          } else if (afterCrossfadePx <= retreatWidth + squeezeBudget) {
+            // Фаза 3: трек застыл на уже целиком въехавшей галерее, пока
+            // Galery-col-2 садится и открывает col-1/col-3 сверху/снизу
+            // (кадр 1→2 сцены).
+            trackPx = retreatWidth
+            squeezeProgress = (afterCrossfadePx - retreatWidth) / squeezeBudget
+          } else {
+            // Фаза 4: сжатие доиграно (col-1/2/3 замерли как на кадре 2),
+            // трек продолжает переезд — Location2-galery уезжает, дальше
+            // About/History/Pillars/Balance.
+            trackPx = afterCrossfadePx - squeezeBudget
+            squeezeProgress = 1
+          }
+
+          const clampedTrackPx = gsap.utils.clamp(0, distance, trackPx)
+          gsap.set(track, { x: -clampedTrackPx })
+          setCol2Height(squeezeProgress)
+
+          // Фаза 5: трек уже целиком докатился (Balance полностью в
+          // кадре, неподвижна) — теперь Location3Panel наезжает поверх неё.
+          const afterTrackPx = Math.max(
+            0,
+            afterCrossfadePx - squeezeBudget - distance,
+          )
           const overlayT = gsap.utils.clamp(
             0,
             1,
-            (self.progress - splitDistance) / (splitEntrance - splitDistance),
+            afterTrackPx / location3EntranceBudget,
           )
           setLocation3Overlay(overlayT)
 
-          // Фаза 4 (splitEntrance → splitLocation3Crossfade): наезд
-          // доигран (Location3Panel полностью на месте) — теперь кроссфейд
-          // её собственных слайдов.
+          // Фаза 6: наезд доигран (Location3Panel полностью на месте) —
+          // теперь кроссфейд её собственных слайдов.
+          const afterEntrancePx = Math.max(
+            0,
+            afterTrackPx - location3EntranceBudget,
+          )
           const location3Local = gsap.utils.clamp(
             0,
             1,
-            (self.progress - splitEntrance) /
-              (splitLocation3Crossfade - splitEntrance),
+            afterEntrancePx / location3CrossfadeBudget,
           )
           runLocation3Crossfade(location3Local)
         },
@@ -351,6 +399,7 @@ export default function Location2Section({ onBookNow }: Location2SectionProps) {
         window.removeEventListener('resize', onResize)
         trigger.kill()
         wrap.style.height = ''
+        if (col2) col2.style.height = ''
         location3.style.transform = ''
         location3.style.borderTopLeftRadius = ''
         location3.style.borderBottomLeftRadius = ''
