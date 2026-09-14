@@ -72,7 +72,7 @@ function QualityItem({
       type="button"
       onMouseEnter={onActivate}
       onFocus={onActivate}
-      className="Qualities-item cursor-pointer text-left"
+      className="Qualities-item w-[15.1875rem] cursor-pointer text-left md:w-auto lg:w-auto"
       style={{
         opacity: inView ? 1 : 0,
         transform: inView ? 'none' : 'translateY(1.5rem)',
