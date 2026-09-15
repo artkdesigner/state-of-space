@@ -23,8 +23,16 @@ const LOCATION3_SLIDE_COUNT = 3
 /** Скролл-дистанция наезда Location3Panel поверх Balance, в высотах
  * вьюпорта — отдельный бюджет, СРАЗУ после того как трек (уже БЕЗ
  * Location3Panel, см. комментарий у useEffect ниже) целиком докатился и
- * Balance стоит полностью в кадре. См. setLocation3Overlay. */
-const LOCATION3_ENTRANCE_VH = 200
+ * Balance стоит полностью в кадре. См. setLocation3Overlay.
+ *
+ * Было кратковременно удвоено до 200 (по просьбе "замедли наезд
+ * Location3") — визуально наезд действительно шёл плавнее, но ценой
+ * лишних 100vh «мёртвого» скролла ровно там, где трек уже доехал и
+ * Balance неподвижна: Balance начинала ощущаться «залипшей» (жалоба
+ * пользователя, 2026-09-15, "раньше такой проблемы не было"). Вернул
+ * обратно 100 — сам наезд по-прежнему плавный (smoothstep), просто без
+ * лишнего пустого скролл-бюджета перед ним. */
+const LOCATION3_ENTRANCE_VH = 100
 
 const smoothstep = (t: number) => t * t * (3 - 2 * t)
 
@@ -435,9 +443,18 @@ export default function Location2Section({ onBookNow }: Location2SectionProps) {
         ScrollTrigger.refresh()
       }
       window.addEventListener('resize', onResize)
+      // visualViewport 'resize' — тот же приём, что ниже в desktop-ветке
+      // (см. её комментарий): ловит live-пересчёт dvh при сворачивании/
+      // разворачивании тулбара iPad Safari ПРЯМО ВО ВРЕМЯ скролла, когда
+      // обычный window 'resize' не стреляет вовсе — без этого wrap.style.height
+      // оставался считан по устаревшему innerHeight, и на границе pin-секции
+      // на кадр-два обнажался body под ней (жалоба пользователя — мерцающая
+      // полоска по всему сайту на iPad).
+      window.visualViewport?.addEventListener('resize', onResize)
 
       return () => {
         window.removeEventListener('resize', onResize)
+        window.visualViewport?.removeEventListener('resize', onResize)
         trigger.kill()
         wrap.style.height = ''
         if (col2) col2.style.height = ''
@@ -629,9 +646,17 @@ export default function Location2Section({ onBookNow }: Location2SectionProps) {
         ScrollTrigger.refresh()
       }
       window.addEventListener('resize', onResize)
+      // visualViewport 'resize', не только window 'resize' — на iPad Safari
+      // dvh пересчитывается прямо во время скролла (сворачивание/
+      // разворачивание тулбара), а обычный window 'resize' в этот момент
+      // не стреляет: wrap.style.height оставался посчитан по устаревшему
+      // innerHeight, и на границе pin-секции на кадр-два обнажался body под
+      // ней (жалоба пользователя — мерцающая полоска по всему сайту на iPad).
+      window.visualViewport?.addEventListener('resize', onResize)
 
       return () => {
         window.removeEventListener('resize', onResize)
+        window.visualViewport?.removeEventListener('resize', onResize)
         trigger.kill()
         wrap.style.height = ''
         if (col2) {

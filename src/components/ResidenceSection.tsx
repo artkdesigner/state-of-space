@@ -194,6 +194,13 @@ export default function ResidenceSection() {
       ScrollTrigger.refresh()
     }
     window.addEventListener('resize', onResize)
+    // visualViewport 'resize', не только window 'resize' — тот же приём,
+    // что в Location2Section.tsx: на iPad Safari dvh пересчитывается прямо
+    // во время скролла (сворачивание/разворачивание тулбара), когда
+    // обычный window 'resize' не стреляет, оставляя wrap.style.height
+    // посчитанным по устаревшему innerHeight (жалоба пользователя —
+    // мерцающая полоска по всему сайту на iPad).
+    window.visualViewport?.addEventListener('resize', onResize)
 
     // getDistance() меряет track.scrollWidth сразу на mount — если
     // self-hosted Manrope (font-display: swap) к этому моменту ещё не
@@ -210,6 +217,7 @@ export default function ResidenceSection() {
 
     return () => {
       window.removeEventListener('resize', onResize)
+      window.visualViewport?.removeEventListener('resize', onResize)
       trigger.kill()
       wrap.style.height = ''
       wrap.style.marginTop = ''
