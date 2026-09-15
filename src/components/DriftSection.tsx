@@ -54,7 +54,7 @@ export default function DriftSection({ onBookNow }: DriftSectionProps) {
 
         <div
           ref={setCursorRef(0)}
-          className="Drift-cursor-img pointer-events-none absolute left-[4.25rem] top-[24.3125rem] w-25 h-[8.0625rem] overflow-hidden rounded-[0.75rem] opacity-100 transition-[opacity,scale] duration-700 ease-out md:left-[11.875rem] md:top-[28.375rem] md:h-[11.25rem] md:w-35 md:rounded-[1.875rem] lg:left-0 lg:top-0 lg:opacity-0 lg:scale-75"
+          className="Drift-cursor-img pointer-events-none absolute left-[4.25rem] top-[calc(50%-2.28125rem)] w-25 h-[8.0625rem] overflow-hidden rounded-[0.75rem] opacity-100 transition-[opacity,scale] duration-700 ease-out md:left-[11.875rem] md:top-[28.375rem] md:h-[11.25rem] md:w-35 md:rounded-[1.875rem] lg:left-0 lg:top-0 lg:opacity-0 lg:scale-75"
         >
           <img
             src={CURSOR_IMAGES[0]}
@@ -65,7 +65,7 @@ export default function DriftSection({ onBookNow }: DriftSectionProps) {
 
         <div
           ref={setCursorRef(1)}
-          className="Drift-cursor-img pointer-events-none absolute left-[8.625rem] top-[20.3125rem] w-25 h-[8.0625rem] overflow-hidden rounded-[0.75rem] opacity-100 transition-[opacity,scale] duration-700 ease-out md:left-[19.125rem] md:top-[24.375rem] md:h-[11.25rem] md:w-35 md:rounded-[1.875rem] lg:left-0 lg:top-0 lg:opacity-0 lg:scale-75"
+          className="Drift-cursor-img pointer-events-none absolute left-[8.625rem] top-[calc(50%-6.28125rem)] w-25 h-[8.0625rem] overflow-hidden rounded-[0.75rem] opacity-100 transition-[opacity,scale] duration-700 ease-out md:left-[19.125rem] md:top-[24.375rem] md:h-[11.25rem] md:w-35 md:rounded-[1.875rem] lg:left-0 lg:top-0 lg:opacity-0 lg:scale-75"
         >
           <img
             src={CURSOR_IMAGES[1]}
@@ -76,7 +76,7 @@ export default function DriftSection({ onBookNow }: DriftSectionProps) {
 
         <div
           ref={setCursorRef(2)}
-          className="Drift-cursor-img pointer-events-none absolute left-[13.8125rem] top-[22.9375rem] w-25 h-[8.0625rem] overflow-hidden rounded-[0.75rem] opacity-100 transition-[opacity,scale] duration-700 ease-out md:left-[26.375rem] md:top-[27rem] md:h-[11.25rem] md:w-35 md:rounded-[1.875rem] lg:left-0 lg:top-0 lg:opacity-0 lg:scale-75"
+          className="Drift-cursor-img pointer-events-none absolute left-[13.8125rem] top-[calc(50%-3.53125rem)] w-25 h-[8.0625rem] overflow-hidden rounded-[0.75rem] opacity-100 transition-[opacity,scale] duration-700 ease-out md:left-[26.375rem] md:top-[27rem] md:h-[11.25rem] md:w-35 md:rounded-[1.875rem] lg:left-0 lg:top-0 lg:opacity-0 lg:scale-75"
         >
           <img
             src={CURSOR_IMAGES[2]}
