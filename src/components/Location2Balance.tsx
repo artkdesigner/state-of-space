@@ -36,7 +36,14 @@ export default function Location2Balance({ onBookNow }: Location2BalanceProps) {
         ref={setCursorRef(1)}
         src={cursor2}
         alt=""
-        className="Balance-cursor-img-2 pointer-events-none absolute top-[25.625rem] left-[13.625rem] z-2 h-[12.25rem] w-[8.9375rem] rounded-[0.9375rem] object-cover opacity-100 transition-[opacity,scale] duration-700 ease-out md:top-[32rem] md:left-[26.3125rem] md:h-[12.2469rem] md:w-[8.9369rem] lg:top-0 lg:left-0 lg:h-[11.25rem] lg:w-[8.75rem] lg:rounded-[1.875rem] lg:opacity-0 lg:scale-75"
+        /* top: по прямой просьбе пользователя — ровно 7.5rem ниже верхнего
+         * края Balance-cursor-img-3 (без плейсхолдера-2 не имеет своего
+         * translate, top — уже верхний край; у img-3 top — её ЦЕНТР
+         * (-translate-y-1/2, h-[15rem]), верхний край = top - 7.5rem =
+         * calc(50% - 0.75rem - 7.5rem); + 7.5rem обратно даёт
+         * calc(50% - 0.75rem), т.е. буквально top img-3 без поправки на
+         * translate). */
+        className="Balance-cursor-img-2 pointer-events-none absolute top-[calc(50%-0.75rem)] left-[13.625rem] z-2 h-[12.25rem] w-[8.9375rem] rounded-[0.9375rem] object-cover opacity-100 transition-[opacity,scale] duration-700 ease-out md:top-[32rem] md:left-[26.3125rem] md:h-[12.2469rem] md:w-[8.9369rem] lg:top-0 lg:left-0 lg:h-[11.25rem] lg:w-[8.75rem] lg:rounded-[1.875rem] lg:opacity-0 lg:scale-75"
       />
       <img
         ref={setCursorRef(2)}
