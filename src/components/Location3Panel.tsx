@@ -165,7 +165,7 @@ const Location3Panel = forwardRef<HTMLElement, Location3PanelProps>(
         <section
           id="location3"
           ref={ref}
-          className="Location3 sticky top-0 flex h-dvh w-full flex-col items-center justify-end overflow-hidden px-2.5 pb-2.5 md:relative md:h-auto md:w-auto md:absolute md:inset-0 md:z-20 lg:px-5 lg:pt-30 lg:pb-5"
+          className="Location3 sticky top-0 flex h-dvh w-full flex-col items-center justify-end overflow-hidden px-2.5 pb-2.5 md:h-auto md:w-auto md:absolute md:inset-0 md:z-20 lg:px-5 lg:pt-30 lg:pb-5"
         >
           <LocationCard
             activeIndex={window.innerWidth < 768 ? mobileActiveIndex : activeIndex}
