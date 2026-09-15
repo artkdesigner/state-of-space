@@ -20,10 +20,15 @@ type Location2GaleryProps = {
  *   Location2Retreat.tsx на mobile).
  * - Tablet (md) — своя, вертикальная squeeze-анимация (та же идея, что у
  *   desktop-раскладки ниже, только по высоте, а не по ширине): Galery-col-2
- *   едет от 62.625rem (кадр 1, во весь экран) до 20.5rem (кадр 2, треть),
- *   толкая/открывая col-1/col-3 (фикс. 20.5rem) сверху/снизу через
+ *   едет от 97.8515625% (кадр 1, во весь экран) до 32.03125% (кадр 2, треть),
+ *   толкая/открывая col-1/col-3 (фикс. 32.03125%) сверху/снизу через
  *   `justify-center` + `overflow-clip` на обёртке — управляется JS
  *   (`galeryCol2Ref`/setCol2Height) в Location2Section.tsx, tablet-ветка.
+ *   Проценты, не rem — см. комментарий у TABLET_GALERY_COL2_REST_HEIGHT_PCT
+ *   там же: rem (от ширины) верно совпадал бы с высотой контейнера только
+ *   при точно таком же соотношении сторон, что у эталонного tablet-фрейма
+ *   768×1024 — у реальных iPad оно другое (плюс `dvh` на iOS Safari ещё и
+ *   сам по себе не совпадает с шириной), из-за чего col-1/col-3 обрезались.
  * - Desktop (lg) — исходная раскладка колонками, без изменений.
  *
  * DOM-порядок img1→img2 (col-1) и img4→img5 (col-3) — как в desktop
@@ -34,7 +39,7 @@ type Location2GaleryProps = {
 export default function Location2Galery({ col2Ref }: Location2GaleryProps) {
   return (
     <div className="Location2-galery flex flex-col items-center justify-center gap-2.5 overflow-clip bg-light p-2.5 md:h-dvh md:w-dvw md:shrink-0 lg:h-dvh lg:w-[120rem] lg:shrink-0 lg:flex-row lg:items-start lg:justify-center lg:gap-5 lg:overflow-visible lg:p-5">
-      <div className="Galery-col-1 flex h-[16.75rem] w-full shrink-0 items-end justify-end gap-2.5 md:h-[20.5rem] lg:h-full lg:w-[38.3125rem] lg:flex-col lg:justify-normal lg:gap-5 lg:overflow-hidden lg:rounded-[1.875rem]">
+      <div className="Galery-col-1 flex h-[16.75rem] w-full shrink-0 items-end justify-end gap-2.5 md:h-[32.03125%] lg:h-full lg:w-[38.3125rem] lg:flex-col lg:justify-normal lg:gap-5 lg:overflow-hidden lg:rounded-[1.875rem]">
         <img
           src={img1}
           alt="The Island Retreat pavilion roofline among the pines"
@@ -49,7 +54,7 @@ export default function Location2Galery({ col2Ref }: Location2GaleryProps) {
 
       <div
         ref={col2Ref}
-        className="Galery-col-2 flex h-[16.75rem] w-full shrink-0 flex-col items-center justify-center overflow-hidden md:h-[20.5rem] lg:h-full lg:w-auto lg:shrink-0"
+        className="Galery-col-2 flex h-[16.75rem] w-full shrink-0 flex-col items-center justify-center overflow-hidden md:h-[97.8515625%] lg:h-full lg:w-auto lg:shrink-0"
       >
         <img
           src={img3}
@@ -58,7 +63,7 @@ export default function Location2Galery({ col2Ref }: Location2GaleryProps) {
         />
       </div>
 
-      <div className="Galery-col-3 flex h-[16.75rem] w-full shrink-0 items-start gap-2.5 md:h-[20.5rem] lg:h-full lg:w-[38.3125rem] lg:flex-col lg:justify-end lg:gap-5 lg:overflow-hidden lg:rounded-[1.875rem]">
+      <div className="Galery-col-3 flex h-[16.75rem] w-full shrink-0 items-start gap-2.5 md:h-[32.03125%] lg:h-full lg:w-[38.3125rem] lg:flex-col lg:justify-end lg:gap-5 lg:overflow-hidden lg:rounded-[1.875rem]">
         <img
           src={img4}
           alt="The Island Retreat guest room interior"

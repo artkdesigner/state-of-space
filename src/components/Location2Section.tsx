@@ -49,15 +49,26 @@ const GALERY_COL2_SETTLED = { width: 38.375, paddingX: 0, paddingY: 3.75 }
  * (Galery-img-3) въезжает на весь экран, потом "садится" до 1/3 высоты,
  * открывая col-1/col-3 сверху/снизу. Числа — из двух выделенных
  * пользователем Figma-кадров сцены «Location2-galery» на tablet-фрейме
- * 768×1024: кадр 1 (col-2 h=1002px=62.625rem, во весь экран) и кадр 2
- * (все три строки поровну, 328px=20.5rem). Без paddingX/Y — на этом
- * фрейме Galery-img-3 в обоих кадрах заполняет col-2 без отступов (в
- * отличие от desktop, см. GALERY_COL2_REST/SETTLED). Тот же бюджет
- * SQUEEZE_VH, что и у desktop — отдельного числа под tablet в макете нет,
- * это чисто скролл-таймингу, не геометрия конкретного кадра. */
+ * 768×1024: кадр 1 (col-2 h=1002px, во весь экран) и кадр 2 (все три
+ * строки поровну, 328px). Без paddingX/Y — на этом фрейме Galery-img-3 в
+ * обоих кадрах заполняет col-2 без отступов (в отличие от desktop, см.
+ * GALERY_COL2_REST/SETTLED). Тот же бюджет SQUEEZE_VH, что и у desktop —
+ * отдельного числа под tablet в макете нет, это чисто скролл-таймингу, не
+ * геометрия конкретного кадра.
+ *
+ * В % от высоты контейнера (md:h-dvh), а не в rem — 1002px/328px были
+ * пересчитаны в rem от ширины эталонного tablet-фрейма (768px), и это
+ * верно только пока реальное устройство имеет ТОЧНО такое же соотношение
+ * сторон 768:1024; у реальных iPad оно отличается (другая высота при той
+ * же ширине, а на iOS Safari ещё и сам `dvh` меняется независимо от
+ * ширины при показе/скрытии тулбара) — из-за чего Galery-col-1/-col-3
+ * обрезались сверху/снизу (жалоба пользователя, iPad Safari). % от
+ * реальной высоты контейнера верны при любом соотношении сторон и любом
+ * текущем `dvh`. Те же проценты — на md:h-[...] у Galery-col-1/-col-2/
+ * -col-3 в Location2Galery.tsx (32.03125% = 328/1024). */
 const TABLET_SQUEEZE_VH = SQUEEZE_VH
-const TABLET_GALERY_COL2_REST_HEIGHT = 62.625
-const TABLET_GALERY_COL2_SETTLED_HEIGHT = 20.5
+const TABLET_GALERY_COL2_REST_HEIGHT_PCT = (1002 / 1024) * 100
+const TABLET_GALERY_COL2_SETTLED_HEIGHT_PCT = (328 / 1024) * 100
 
 /** Хвостовой запас пина (в vh), после того как трек (включая Location3Panel,
  * последнюю панель) уже полностью доехал и её собственный кроссфейд слайдов
@@ -254,10 +265,11 @@ export default function Location2Section({ onBookNow }: Location2SectionProps) {
         if (!col2) return
         const eased = smoothstep(t)
         const height =
-          TABLET_GALERY_COL2_REST_HEIGHT +
-          (TABLET_GALERY_COL2_SETTLED_HEIGHT - TABLET_GALERY_COL2_REST_HEIGHT) *
+          TABLET_GALERY_COL2_REST_HEIGHT_PCT +
+          (TABLET_GALERY_COL2_SETTLED_HEIGHT_PCT -
+            TABLET_GALERY_COL2_REST_HEIGHT_PCT) *
             eased
-        col2.style.height = `${height}rem`
+        col2.style.height = `${height}%`
       }
 
       const updateHeight = () => {
