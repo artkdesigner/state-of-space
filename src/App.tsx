@@ -3,6 +3,7 @@ import HomePage from './pages/HomePage'
 import { reduceMotion } from './lib/anim'
 import { HERO_INTRO_DURATION_MS } from './lib/heroIntro'
 import { getLenis, initSmoothScroll } from './lib/scroll'
+import navMenuBg from './assets/nav-menu-bg.webp'
 
 /* Пока не доиграла загрузочная интро-анимация Hero (навбар → Hero-img →
  * текст → subtitle, см. src/lib/heroIntro.ts), скролл заблокирован —
@@ -41,7 +42,17 @@ function App() {
     }
   }, [])
 
-  return <HomePage />
+  return (
+    <>
+      {/* NavMenu монтируется только при первом открытии меню (см.
+       * NavMenu.tsx: `if (!mounted) return null`), поэтому без явного
+       * preload браузер начинал грузить фоновую картинку только в момент
+       * открытия — заметный доскок картинки поверх уже открытого меню.
+       * React 19 хоистит этот <link> в <head> независимо от места в дереве. */}
+      <link rel="preload" as="image" href={navMenuBg} fetchPriority="low" />
+      <HomePage />
+    </>
+  )
 }
 
 export default App
