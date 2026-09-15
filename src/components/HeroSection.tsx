@@ -157,6 +157,37 @@ export default function HeroSection() {
    * ниже на `> EPSILON`, а не `> 0`, иначе оверлей мгновенно становится
    * полностью видимым в размере покоя и перекрывает ещё идущую
    * load-анимацию scale Hero-img. */
+  /* Оверлей растёт из центра статичной Hero-img, а не из центра вьюпорта —
+   * они совпадают на Desktop (текст стоит по бокам в один ряд с картинкой,
+   * lg:grid-cols-3), но НЕ совпадают на Tablet/Mobile (grid-cols-1: текст
+   * стоит над и под картинкой в колонку, поэтому сама картинка сдвинута от
+   * центра вьюпорта). Измеряем реальный центр img и на его основе выставляем
+   * left/top оверлею — без этого на Mobile/Tablet оверлей рос из чужой
+   * точки, визуально «убегая» от статичной картинки под ним. Пересчитываем
+   * на resize (смена брейкпоинта/поворот экрана) и после подгрузки шрифта
+   * (self-hosted Manrope может доехать после первого рендера и сдвинуть
+   * текст, а с ним и позицию img в колоночной раскладке). */
+  useLayoutEffect(() => {
+    const zoom = zoomRef.current
+    const img = imgRef.current
+    const section = sectionRef.current
+    if (!zoom || !img || !section) return
+
+    const positionZoom = () => {
+      const imgRect = img.getBoundingClientRect()
+      const sectionRect = section.getBoundingClientRect()
+      zoom.style.left = `${imgRect.left - sectionRect.left + imgRect.width / 2}px`
+      zoom.style.top = `${imgRect.top - sectionRect.top + imgRect.height / 2}px`
+    }
+
+    positionZoom()
+    const resizeObserver = new ResizeObserver(positionZoom)
+    resizeObserver.observe(section)
+    document.fonts.ready.then(positionZoom)
+
+    return () => resizeObserver.disconnect()
+  }, [])
+
   useEffect(() => {
     const wrap = wrapRef.current
     const zoom = zoomRef.current
@@ -221,7 +252,13 @@ export default function HeroSection() {
     <div
       ref={wrapRef}
       className="Hero-pin-wrap relative"
-      style={{ height: `${(2 + PIN_VH) * 100}vh` }}
+      /* dvh, не vh — иначе на iOS Safari эта высота (и margin-top на
+       * Intro-pin-wrap) отсчитывается от "большого" вьюпорта со скрытым
+       * тулбаром, а `onUpdate` выше считает дистанцию через
+       * window.innerHeight (актуальный, "маленький" вьюпорт при видимом
+       * тулбаре) — расхождение давало пробел по скроллу перед наездом
+       * Intro. */
+      style={{ height: `${(2 + PIN_VH) * 100}dvh` }}
     >
       <section
         id="hero"
@@ -231,7 +268,7 @@ export default function HeroSection() {
         <span
           ref={zoomRef}
           aria-hidden="true"
-          className="Hero-img-zoom pointer-events-none absolute left-1/2 top-1/2 z-40 block -translate-x-1/2 -translate-y-1/2 overflow-hidden opacity-0"
+          className="Hero-img-zoom pointer-events-none absolute z-40 block -translate-x-1/2 -translate-y-1/2 overflow-hidden opacity-0"
         >
           <img src={heroPortrait} alt="" className="size-full object-cover" />
         </span>
