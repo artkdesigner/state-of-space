@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactNode } from 'react'
+import { useEffect, useLayoutEffect, useRef, type ReactNode } from 'react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { reduceMotion } from '../lib/anim'
@@ -141,8 +141,13 @@ export default function ResidenceSection() {
    * но Residence-bottom ещё не начиналась (баг, на который пожаловался
    * пользователь: "заголовок закончил скольжение — и часть скролла
    * проходит впустую"). Без инфляции wrap-высота ровно совпадает с
-   * длительностью пина, и Residence-bottom стартует сразу же. */
-  useEffect(() => {
+   * длительностью пина, и Residence-bottom стартует сразу же.
+   *
+   * useLayoutEffect, а не useEffect — margin-top ниже правится сразу на
+   * mount (см. комментарий у updateHeight про mobile), и без синхронного
+   * применения до первой отрисовки был бы виден один кадр с ещё
+   * непоправленным JSX-дефолтом margin-top на mobile. */
+  useLayoutEffect(() => {
     const wrap = wrapRef.current
     const pin = pinRef.current
     const track = trackRef.current
@@ -151,7 +156,19 @@ export default function ResidenceSection() {
     const getDistance = () => Math.max(0, track.scrollWidth - window.innerWidth)
     const getPinDistance = () => getDistance() * 2
 
+    // RISE_VH наезжает на хвостовой dwell Location2 (RESIDENCE_DWELL_VH в
+    // Location2Section.tsx), а тот существует только на md+ (там у
+    // Location2 есть пин/трек вообще, см. комментарий там). На mobile
+    // Location2 — обычный поток без хвоста, и тот же безусловный
+    // `margin-top: -100vh` вместо совпадения с несуществующим хвостом
+    // утягивал Residence прямо на живой контент Location2-balance (баг,
+    // на который пожаловался пользователь: "Residence наезжает на
+    // Location2-balance"). Поэтому margin — тоже здесь, а не статикой в
+    // JSX, и применяется только от md (48rem = 768px, та же граница, что
+    // у RESIDENCE_DWELL_VH-веток в Location2Section.tsx).
     const updateHeight = () => {
+      wrap.style.marginTop =
+        window.innerWidth >= 768 ? `-${RISE_VH}dvh` : '0px'
       wrap.style.height = `${pin.offsetHeight + getPinDistance()}px`
     }
     updateHeight()
@@ -182,6 +199,7 @@ export default function ResidenceSection() {
       window.removeEventListener('resize', onResize)
       trigger.kill()
       wrap.style.height = ''
+      wrap.style.marginTop = ''
     }
   }, [])
 
