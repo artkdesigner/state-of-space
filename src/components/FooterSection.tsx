@@ -28,23 +28,18 @@ import {
  * DWELL_VH ⇒ margin = 100vh, независимо от значения DWELL_VH. */
 const FOOTER_ENTRANCE_VH = 100
 
-const NAV_LINKS = [
-  'The Cliff',
-  'The Island',
-  'The Water',
-  'About',
-  'Contact',
-  'Book now',
-]
+/** Без 'Contact' (в отличие от NavBar.tsx/NavMenu.tsx) — внутри самого
+ * Footer эта ссылка вела бы на #footer, т.е. саму себя (жалоба
+ * пользователя, 2026-09-15). */
+const NAV_LINKS = ['The Cliff', 'The Island', 'The Water', 'About', 'Book now']
 
-/** Тот же список и переходы, что в NavBar.tsx (по прямой просьбе
- * пользователя, 2026-09-14). */
+/** Тот же список (кроме Contact, см. NAV_LINKS выше) и переходы, что в
+ * NavBar.tsx (по прямой просьбе пользователя, 2026-09-14). */
 const LINK_ACTIONS: Record<string, () => void> = {
   'The Cliff': () => scrollToLocation1Revealed(),
   'The Island': () => scrollToLocation2RetreatSlide(0),
   'The Water': () => scrollToLocation3Slide(0),
   About: () => scrollToIntroRevealed(),
-  Contact: () => scrollToHash('#footer'),
 }
 
 type FooterSectionProps = {
