@@ -26,6 +26,11 @@ export function initSmoothScroll() {
   lenis = new Lenis({
     lerp: 0.1,
     wheelMultiplier: 1.2,
+    // По просьбе пользователя — на мобильном (touch, см. syncTouch ниже)
+    // скролл ощущался тугим, на 25% быстрее того же свайпа. wheelMultiplier
+    // не трогает touch (см. syncTouch ниже) — это отдельный, специфичный
+    // для тача коэффициент.
+    touchMultiplier: 1.25,
     syncTouch: true,
   })
   lenis.on('scroll', ScrollTrigger.update)
