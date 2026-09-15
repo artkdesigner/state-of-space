@@ -387,17 +387,17 @@ export default function ResidenceSection() {
                 <img
                   src={residenceCircleSide}
                   alt=""
-                  className="absolute left-2.5 top-1/2 size-36 -translate-y-1/2 md:size-71 lg:left-0 lg:size-[44.2805rem]"
+                  className="absolute left-2.5 top-1/2 size-[7.2rem] -translate-y-1/2 md:size-71 lg:left-0 lg:size-[44.2805rem]"
                 />
                 <img
                   src={residenceCircleCenter}
                   alt=""
-                  className="absolute left-1/2 top-1/2 h-36.75 w-40 -translate-x-1/2 -translate-y-1/2 md:h-72.75 md:w-79 lg:left-[33.1291rem] lg:h-[50.2868rem] lg:w-[54.6808rem] lg:translate-x-0"
+                  className="absolute left-1/2 top-1/2 h-[7.35rem] w-32 -translate-x-1/2 -translate-y-1/2 md:h-72.75 md:w-79 lg:left-[33.1291rem] lg:h-[50.2868rem] lg:w-[54.6808rem] lg:translate-x-0"
                 />
                 <img
                   src={residenceCircleSide}
                   alt=""
-                  className="absolute right-2.5 top-1/2 size-36 -translate-y-1/2 md:size-71 lg:right-0 lg:size-[44.2805rem]"
+                  className="absolute right-2.5 top-1/2 size-[7.2rem] -translate-y-1/2 md:size-71 lg:right-0 lg:size-[44.2805rem]"
                 />
               </div>
             </div>
