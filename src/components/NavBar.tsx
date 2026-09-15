@@ -1,4 +1,5 @@
 import gsap from 'gsap'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { reduceMotion } from '../lib/anim'
 import { HERO_INTRO } from '../lib/heroIntro'
@@ -122,45 +123,66 @@ export default function NavBar({ onBookNow }: NavBarProps) {
     }
   }, [])
 
+  /* Раньше тему секции выбирал IntersectionObserver с rootMargin,
+   * схлопывающим зону наблюдения в линию у верха вьюпорта — секция
+   * "активна", пока её граница пересекает эту линию, порог срабатывает
+   * `entry.isIntersecting` на КАЖДОЙ секции по отдельности. Проблема: у
+   * каждого naezd-перехода в цепочке (см. scrollChain.ts) предыдущая
+   * секция перестаёт пересекать линию РОВНО в тот же скролл-тик, когда
+   * следующая начинает её пересекать — оба entry попадают в один и тот же
+   * batch колбэка, и от какой из секций entry обработается последней (не
+   * гарантированный, а фактический DOM/браузерный порядок — на Safari
+   * отличается от Chromium) зависела итоговая тема. Отсюда обе жалобы
+   * пользователя: тема иногда переключается ДО того, как секция реально
+   * скрылась за краем экрана (Location1→Cliff, Qualities→Above), и на
+   * обратном скролле переключение вообще нередко ломается (то же
+   * состязание, просто в другую сторону).
+   *
+   * Вместо реакции на пороговые события — пересчёт заново на каждый
+   * скролл-тик (тот же ScrollTrigger + `scrub`, без pin, что и у всех
+   * scroll-driven анимаций на странице, привязан к тому же Lenis-мосту):
+   * берём последнюю (по порядку в SECTION_THEMES = порядку в документе)
+   * секцию, чья верхняя граница уже выше/на линии экрана — она и есть
+   * секция, которая сейчас реально видна под навбаром. Никакого состояния
+   * между тиками, никакой гонки entry — каждый пересчёт самодостаточен. */
   useEffect(() => {
-    // 'hero' исключён здесь при обычном скролле: её тему целиком и
+    // 'hero' исключена здесь при обычном скролле: её тему целиком и
     // симметрично в обе стороны ведёт собственный ScrollTrigger в
     // HeroSection.tsx (продлён на весь наезд Intro, см. NAEZD_VH там же).
-    // Раньше этот наблюдатель тоже реагировал на 'hero' — при скролле
-    // НАЗАД он триггерился в момент, когда Hero заново "прилипает" (конец
-    // наезда Intro), а не когда Intro реально начинает её открывать
-    // (начало наезда), из-за чего навбар темнел на целый вьюпорт раньше,
-    // чем нужно. При reduceMotion() у HeroSection.tsx свой триггер вообще
-    // не создаётся (эффект выходит рано), так что там 'hero' — единственный
+    // При reduceMotion() у HeroSection.tsx свой триггер вообще не
+    // создаётся (эффект выходит рано), так что там 'hero' — единственный
     // источник темы и должен остаться.
     const relevantThemes = reduceMotion()
       ? SECTION_THEMES
       : SECTION_THEMES.filter(({ id }) => id !== 'hero')
-    const themeById = new Map(
-      relevantThemes.map(({ id, theme }) => [id, theme]),
-    )
     const sections = relevantThemes
-      .map(({ id }) => document.getElementById(id))
-      .filter((el): el is HTMLElement => el !== null)
+      .map(({ id, theme }) => {
+        const el = document.getElementById(id)
+        return el ? { el, theme } : null
+      })
+      .filter((s): s is { el: HTMLElement; theme: 'dark' | 'light' } => s !== null)
 
-    /** rootMargin схлопывает зону наблюдения в линию у самого верха
-     * вьюпорта — секция считается активной, пока её граница проходит
-     * через эту линию. */
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (entry.isIntersecting) {
-            const sectionTheme = themeById.get(entry.target.id)
-            if (sectionTheme) setTheme(sectionTheme)
-          }
-        }
-      },
-      { rootMargin: '0px 0px -100% 0px', threshold: 0 },
-    )
+    const pickTheme = () => {
+      let current: 'dark' | 'light' | null = null
+      for (const { el, theme } of sections) {
+        if (el.getBoundingClientRect().top <= 0) current = theme
+      }
+      return current
+    }
 
-    sections.forEach((section) => observer.observe(section))
+    const update = () => {
+      const next = pickTheme()
+      if (next) setTheme(next)
+    }
+    update()
 
-    return () => observer.disconnect()
+    const trigger = ScrollTrigger.create({
+      start: 0,
+      end: () => document.documentElement.scrollHeight - window.innerHeight,
+      onUpdate: update,
+    })
+
+    return () => trigger.kill()
   }, [])
 
   /** Overlay blend-режим навбара — только пока он визуально проходит над
