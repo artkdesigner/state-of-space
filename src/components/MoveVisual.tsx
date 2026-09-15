@@ -47,7 +47,7 @@ export default function MoveVisual({
     <>
       <svg
         aria-hidden
-        className="Move-bg-img pointer-events-none absolute left-1/2 top-1/2 w-[68.75rem] max-w-none -translate-x-1/2 -translate-y-1/2 md:w-[87.5rem] lg:w-[141.875rem]"
+        className="Move-bg-img pointer-events-none absolute left-1/2 top-1/2 w-[48.125rem] max-w-none -translate-x-1/2 -translate-y-1/2 md:w-[87.5rem] lg:w-[141.875rem]"
         viewBox="0 0 2270 2088.89"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
