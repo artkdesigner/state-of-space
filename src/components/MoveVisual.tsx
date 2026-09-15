@@ -8,6 +8,13 @@ const CARDS = [
   { label: 'Freedom', image: freedom },
 ]
 
+/** Card 2/3 картинки раньше были `loading="lazy"` — браузер откладывал их
+ * загрузку по своей собственной оценке близости к вьюпорту, а карточки
+ * реально раскрываются гораздо раньше (сразу по activeIndex от
+ * BeyondSection.tsx), из-за чего translateY-реveal нередко доигрывал
+ * раньше, чем догружалась картинка (жалоба пользователя). Теперь все три
+ * грузятся сразу с маунта, как и card 1. */
+
 /** Тот же приём вращения фоновых колец, что в CapacitySection. */
 const ROTATE = '[transform-box:fill-box] [transform-origin:50%_50%]'
 
@@ -143,7 +150,6 @@ export default function MoveVisual({
                 <img
                   src={card.image}
                   alt=""
-                  loading="lazy"
                   className="absolute inset-0 size-full object-cover"
                 />
               )}
