@@ -195,6 +195,19 @@ export default function ResidenceSection() {
     }
     window.addEventListener('resize', onResize)
 
+    // getDistance() меряет track.scrollWidth сразу на mount — если
+    // self-hosted Manrope (font-display: swap) к этому моменту ещё не
+    // подгрузился, ширина посчитана по шрифту-заместителю, и как только
+    // настоящий Manrope подставляется, реальная ширина текста меняется, а
+    // ничего это не пересчитывает (resize здесь не стреляет) — весь
+    // scroll-бюджет пина (getPinDistance) и сама анимация (gsap.set x:
+    // -getDistance()*progress) остаются привязаны к устаревшей, обычно
+    // заниженной ширине. На iPad Safari (медленнее грузит шрифт) это
+    // давало заголовку "уже финальное положение" без видимого движения
+    // (жалоба пользователя). onResize чинит то же самое при живом ресайзе
+    // — здесь тот же приём, но по готовности шрифта.
+    document.fonts.ready.then(onResize)
+
     return () => {
       window.removeEventListener('resize', onResize)
       trigger.kill()
