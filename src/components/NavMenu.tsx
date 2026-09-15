@@ -51,11 +51,20 @@ export default function NavMenu({ open, onClose, onBookNow }: NavMenuProps) {
     return () => clearTimeout(timeout)
   }, [open])
 
+  /* Завязано на `open`, а не `mounted` — иначе скролл (в т.ч. Lenis, см.
+   * lockScroll) оставался залоченным ещё TRANSITION_MS после клика по
+   * ссылке (mounted схлопывается только после closing-transition), и
+   * scrollToHash/scrollToY, вызванные тем же кликом, попадали на ещё
+   * остановленный Lenis и на `overflow: hidden` — переход визуально не
+   * происходил вообще (баг, на который пожаловался пользователь: ссылки
+   * в меню "не работают" на mobile/tablet). Меню остаётся видимым
+   * (`mounted`) все те же TRANSITION_MS, просто фон уже можно скроллить
+   * под ним. */
   useEffect(() => {
-    if (!mounted) return
+    if (!open) return
     lockScroll()
     return () => unlockScroll()
-  }, [mounted])
+  }, [open])
 
   useEffect(() => {
     if (!mounted) return
@@ -115,6 +124,18 @@ export default function NavMenu({ open, onClose, onBookNow }: NavMenuProps) {
             type="button"
             onClick={() => {
               onClose()
+              // Синхронный unlockScroll() ПЕРЕД самим переходом — onClose()
+              // выше лишь ставит `open` в false, а связанный с ним эффект
+              // (см. `useEffect(..., [open])` выше) отработает только на
+              // следующем рендере React, ПОСЛЕ этого клика. Без этого вызова
+              // scrollToHash/scrollToY ниже попадали на ещё залоченный
+              // (Lenis stop() + overflow: hidden) скролл и молча не
+              // срабатывали (баг, на который пожаловался пользователь:
+              // "переходы по ссылкам из меню не работают"). unlockScroll()
+              // безопасно вызвать второй раз (эффект всё равно позовёт его
+              // же при закрытии) — счётчик клэмпится в 0, второй вызов
+              // просто no-op.
+              unlockScroll()
               LINK_ACTIONS[label]?.()
             }}
             className="Nav-menu-link cursor-pointer whitespace-nowrap text-[1.75rem] tracking-[-0.0525rem] transition-opacity duration-300 hover:opacity-70 md:text-[2.25rem] md:tracking-[-0.0675rem]"
