@@ -97,18 +97,39 @@ export function scrollToLocation2About() {
  * (см. LocationCard.tsx `onStepClick`) — по прямой просьбе пользователя
  * ("сделал кликабельными Location-step во всех элементах Location?", до
  * этого клик работал только у Location1Section, а Retreat/Location3 так и
- * оставались некликабельными). Тот же приём, что scrollToAboutImpl: обе
- * панели анимируются только md+ (см. комментарий у useEffect ниже — на
- * mobile нет ни пина, ни трека), поэтому на mobile остаются null и
- * LocationCard рендерит некликабельные степы, как и раньше (см. её
- * optional `onStepClick?`). */
+ * оставались некликабельными). Тот же приём, что scrollToAboutImpl: панели
+ * анимируются только md+ (см. комментарий у useEffect ниже — на mobile нет
+ * ни пина, ни трека), поэтому там `scrollToRetreatSlideImpl` остаётся null
+ * и LocationCard рендерит некликабельные степы у Retreat, как и раньше (см.
+ * её optional `onStepClick?`) — у Retreat на mobile нет отдельных
+ * "слайдов", к которым можно было бы скроллить. Fallback ниже просто
+ * скроллит к самой секции (по жалобе пользователя "The Island" в мобильном
+ * меню/футере должна хоть куда-то вести, а не быть no-op). */
 let scrollToRetreatSlideImpl: ((index: number) => void) | null = null
 export function scrollToLocation2RetreatSlide(index: number) {
-  scrollToRetreatSlideImpl?.(index)
+  if (scrollToRetreatSlideImpl) {
+    scrollToRetreatSlideImpl(index)
+    return
+  }
+  const el = document.querySelector('.Location2-retreat')
+  if (el) scrollToY(el.getBoundingClientRect().top + window.scrollY)
 }
+
+/** Location3, в отличие от Retreat, на mobile ЕСТЬ отдельный слайд-индекс —
+ * у неё свой pin+ScrollTrigger, полностью самодостаточный внутри
+ * Location3Panel.tsx (по прямой просьбе пользователя, см. комментарий там).
+ * Два раздельных слота impl (md+ и mobile), а не один общий — matchMedia-
+ * ветки этого файла (md+) и Location3Panel.tsx (mobile) независимо
+ * монтируются/размонтируются на разных брейкпоинтах, ничего друг про друга
+ * не знают; экспортируемая функция сама выбирает, какой из двух сейчас
+ * актуален. */
 let scrollToLocation3SlideImpl: ((index: number) => void) | null = null
+let scrollToLocation3SlideMobileImpl: ((index: number) => void) | null = null
+export function setLocation3MobileImpl(impl: ((index: number) => void) | null) {
+  scrollToLocation3SlideMobileImpl = impl
+}
 export function scrollToLocation3Slide(index: number) {
-  scrollToLocation3SlideImpl?.(index)
+  ;(scrollToLocation3SlideImpl ?? scrollToLocation3SlideMobileImpl)?.(index)
 }
 
 type Location2SectionProps = {
