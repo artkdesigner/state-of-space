@@ -34,7 +34,7 @@ const Location2Retreat = forwardRef<HTMLDivElement, Location2RetreatProps>(
         ref={ref}
         className="Location2-retreat flex flex-col items-center md:h-dvh md:w-dvw md:shrink-0"
       >
-        <div className="Retreat-col-2 relative flex w-full flex-col items-center justify-end overflow-hidden p-2.5 md:h-full md:flex-1">
+        <div className="Retreat-col-2 relative flex h-dvh w-full flex-col items-center justify-end overflow-hidden p-2.5 md:h-full md:flex-1">
           <LocationCard
             activeIndex={activeIndex}
             onStepClick={scrollToLocation2RetreatSlide}
