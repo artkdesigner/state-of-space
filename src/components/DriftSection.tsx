@@ -37,7 +37,11 @@ export default function DriftSection({ onBookNow }: DriftSectionProps) {
   return (
     <div
       className="Drift-pin-wrap relative"
-      style={{ height: `${100 + DWELL_VH}vh` }}
+      /* dvh, не vh — см. комментарий у Hero-pin-wrap в HeroSection.tsx:
+       * держит эту высоту в одной системе отсчёта с Footer-ным
+       * `marginTop: -100dvh` (см. FooterSection.tsx), который утягивает
+       * Footer ровно к концу этого wrap. */
+      style={{ height: `${100 + DWELL_VH}dvh` }}
     >
       <section
         id="drift"

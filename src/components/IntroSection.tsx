@@ -157,7 +157,10 @@ export default function IntroSection() {
     <div
       ref={wrapRef}
       className="Intro-pin-wrap relative z-[45]"
-      style={{ height: `${(2 + PIN_VH) * 100}vh`, marginTop: '-100vh' }}
+      /* dvh, не vh — см. тот же комментарий у Hero-pin-wrap в
+       * HeroSection.tsx: держит эту дистанцию в одной системе отсчёта с
+       * window.innerHeight, которым считает JS. */
+      style={{ height: `${(2 + PIN_VH) * 100}dvh`, marginTop: '-100dvh' }}
     >
       <section
         id="intro"

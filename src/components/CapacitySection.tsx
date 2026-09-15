@@ -222,9 +222,10 @@ export default function CapacitySection() {
     <div
       ref={wrapRef}
       className="Capacity-pin-wrap relative"
+      /* dvh, не vh — см. комментарий у Hero-pin-wrap в HeroSection.tsx. */
       style={{
-        height: `${(2 + GROW_VH + UNWIND_VH) * 100}vh`,
-        marginTop: `${-(1 + GROW_VH + UNWIND_VH) * 100}vh`,
+        height: `${(2 + GROW_VH + UNWIND_VH) * 100}dvh`,
+        marginTop: `${-(1 + GROW_VH + UNWIND_VH) * 100}dvh`,
       }}
     >
       <section

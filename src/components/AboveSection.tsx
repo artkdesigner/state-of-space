@@ -258,9 +258,10 @@ export default function AboveSection() {
     <div
       ref={wrapRef}
       className="Above-pin-wrap relative"
+      /* dvh, не vh — см. комментарий у Hero-pin-wrap в HeroSection.tsx. */
       style={{
-        height: `${(1 + RISE_VH + TOTAL_PIN_VH + CAPACITY_GROW_VH) * 100}vh`,
-        marginTop: '-100vh',
+        height: `${(1 + RISE_VH + TOTAL_PIN_VH + CAPACITY_GROW_VH) * 100}dvh`,
+        marginTop: '-100dvh',
       }}
     >
       <section

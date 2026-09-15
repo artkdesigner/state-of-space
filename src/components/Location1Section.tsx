@@ -255,7 +255,11 @@ export default function Location1Section({ onBookNow }: Location1SectionProps) {
     <div
       ref={wrapRef}
       className="Location1-pin-wrap relative z-[46]"
-      style={{ height: `${(2 + ACTIVE_VH) * 100}vh`, marginTop: '-100vh' }}
+      /* dvh, не vh — см. комментарий у Hero-pin-wrap в HeroSection.tsx:
+       * держит эту дистанцию в одной системе отсчёта с window.innerHeight,
+       * которым считает JS (иначе на мобильном Chrome/Yandex, где тулбар
+       * скрывается по ходу скролла, здесь накапливался тот же разъезд). */
+      style={{ height: `${(2 + ACTIVE_VH) * 100}dvh`, marginTop: '-100dvh' }}
     >
       <section
         id="location1"

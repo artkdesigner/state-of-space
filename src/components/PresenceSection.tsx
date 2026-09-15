@@ -227,9 +227,10 @@ export default function PresenceSection({ onBookNow }: PresenceSectionProps) {
     <div
       ref={wrapRef}
       className="Presence-pin-wrap relative z-[48]"
+      /* dvh, не vh — см. комментарий у Hero-pin-wrap в HeroSection.tsx. */
       style={{
-        height: `${(1 + PRESENCE_PIN_VH) * 100}vh`,
-        marginTop: '-100vh',
+        height: `${(1 + PRESENCE_PIN_VH) * 100}dvh`,
+        marginTop: '-100dvh',
       }}
     >
       <section
