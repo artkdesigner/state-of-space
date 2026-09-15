@@ -4,6 +4,7 @@ import { reduceMotion } from '../lib/anim'
 import { HERO_INTRO } from '../lib/heroIntro'
 import { scrollToHash } from '../lib/scroll'
 import { scrollToIntroRevealed } from './IntroSection'
+import { scrollToLocation1Revealed } from './Location1Section'
 import {
   scrollToLocation2RetreatSlide,
   scrollToLocation3Slide,
@@ -32,7 +33,7 @@ const RIGHT_LINKS = ['About', 'Contact', 'Book now']
  * статичного doc-offset — см. `scrollToLocation2RetreatSlide`/
  * `scrollToLocation3Slide` там же. */
 const LINK_ACTIONS: Record<string, () => void> = {
-  'The Cliff': () => scrollToHash('#location1'),
+  'The Cliff': () => scrollToLocation1Revealed(),
   'The Island': () => scrollToLocation2RetreatSlide(0),
   'The Water': () => scrollToLocation3Slide(0),
   About: () => scrollToIntroRevealed(),

@@ -4,6 +4,7 @@ import { NavLogo } from './NavBar'
 import Button from './Button'
 import navMenuBg from '../assets/nav-menu-bg.webp'
 import { scrollToIntroRevealed } from './IntroSection'
+import { scrollToLocation1Revealed } from './Location1Section'
 import {
   scrollToLocation2RetreatSlide,
   scrollToLocation3Slide,
@@ -18,7 +19,7 @@ const MENU_LINKS = ['The Cliff', 'The Island', 'The Water', 'About', 'Contact']
  * её reveal-окна, где title/logo/bottom-wrap ещё не проявились), остальные
  * — простой scrollToHash. */
 const LINK_ACTIONS: Record<string, () => void> = {
-  'The Cliff': () => scrollToHash('#location1'),
+  'The Cliff': () => scrollToLocation1Revealed(),
   'The Island': () => scrollToLocation2RetreatSlide(0),
   'The Water': () => scrollToLocation3Slide(0),
   About: () => scrollToIntroRevealed(),

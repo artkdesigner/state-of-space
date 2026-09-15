@@ -58,6 +58,19 @@ const CARD_FADE_IN = 0.2
 /** Smoothstep — тот же диапазон, что и линейная интерполяция, но мягче на краях. */
 const smoothstep = (t: number) => t * t * (3 - 2 * t)
 
+/** Тот же приём, что `scrollToIntroRevealed` в IntroSection.tsx: простой
+ * `scrollToHash('#location1')` целится в doc-flow позицию самой sticky
+ * секции — а поскольку вызывается издалека (Footer/меню, вне её пина),
+ * getBoundingClientRect отдаёт её уже "отклеенную" итоговую позицию (низ
+ * собственного wrap), которая совпадает с точкой наезда Cliff — то есть
+ * ссылка кидала на переходный момент Location1 → Cliff, а не туда, где
+ * LocationCard уже проявилась из opacity (жалоба пользователя). Целимся
+ * туда же, куда доезжает card-фейд (см. CARD_FADE_IN в useEffect ниже). */
+let scrollToLocation1RevealedImpl: (() => void) | null = null
+export function scrollToLocation1Revealed() {
+  scrollToLocation1RevealedImpl?.()
+}
+
 type Location1SectionProps = {
   onBookNow: () => void
 }
@@ -177,6 +190,10 @@ export default function Location1Section({ onBookNow }: Location1SectionProps) {
       return r.top + window.scrollY
     }
 
+    scrollToLocation1RevealedImpl = () => {
+      scrollToY(wrapTop() + window.innerHeight * PIN_VH * CARD_FADE_IN)
+    }
+
     const riseTrigger = ScrollTrigger.create({
       trigger: wrap,
       start: () => wrapTop() - window.innerHeight,
@@ -241,6 +258,7 @@ export default function Location1Section({ onBookNow }: Location1SectionProps) {
     })
 
     return () => {
+      scrollToLocation1RevealedImpl = null
       riseTrigger.kill()
       trigger.kill()
       slider.style.borderRadius = ''

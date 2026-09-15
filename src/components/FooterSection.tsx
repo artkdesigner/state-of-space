@@ -1,5 +1,7 @@
 import footerLogo from '../assets/footer-logo.svg'
 import { scrollToHash } from '../lib/scroll'
+import { scrollToIntroRevealed } from './IntroSection'
+import { scrollToLocation1Revealed } from './Location1Section'
 import {
   scrollToLocation2RetreatSlide,
   scrollToLocation3Slide,
@@ -38,10 +40,10 @@ const NAV_LINKS = [
 /** Тот же список и переходы, что в NavBar.tsx (по прямой просьбе
  * пользователя, 2026-09-14). */
 const LINK_ACTIONS: Record<string, () => void> = {
-  'The Cliff': () => scrollToHash('#location1'),
+  'The Cliff': () => scrollToLocation1Revealed(),
   'The Island': () => scrollToLocation2RetreatSlide(0),
   'The Water': () => scrollToLocation3Slide(0),
-  About: () => scrollToHash('#intro'),
+  About: () => scrollToIntroRevealed(),
   Contact: () => scrollToHash('#footer'),
 }
 
