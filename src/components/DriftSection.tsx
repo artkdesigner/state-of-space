@@ -93,24 +93,24 @@ export default function DriftSection({ onBookNow }: DriftSectionProps) {
           }}
           className="cta group relative z-4 flex w-full items-start gap-2 md:items-end md:gap-2.5 lg:gap-5"
         >
-          <div className="cta-icon-wrap flex h-8 w-21 flex-none shrink-0 items-center transition-transform duration-700 ease-out group-hover:rotate-[360deg] md:h-14 md:w-45 lg:h-auto lg:w-auto lg:flex-1">
+          <div className="cta-icon-wrap flex h-8 w-21 flex-none shrink-0 items-center md:h-14 md:w-45 lg:h-auto lg:w-auto lg:flex-1">
             <img
               src={ctaIcon}
               alt=""
               aria-hidden
-              className="size-8 md:hidden"
+              className="size-8 transition-transform duration-700 ease-out group-hover:rotate-[360deg] md:hidden"
             />
             <img
               src={ctaIconMd}
               alt=""
               aria-hidden
-              className="hidden md:block lg:hidden md:size-14"
+              className="hidden transition-transform duration-700 ease-out md:block md:size-14 md:group-hover:rotate-[360deg] lg:hidden"
             />
             <img
               src={ctaIconLg}
               alt=""
               aria-hidden
-              className="hidden lg:block lg:size-35"
+              className="hidden transition-transform duration-700 ease-out lg:block lg:size-35 lg:group-hover:rotate-[360deg]"
             />
           </div>
           <span className="cta-title w-[14.3593rem] font-manrope text-[1.875rem] leading-none font-semibold tracking-[-0.075rem] text-dark transition-colors duration-300 group-hover:text-dark/60 md:w-127 md:text-[3.375rem] md:tracking-[-0.135rem] lg:w-[79.375rem] lg:text-[8.375rem] lg:tracking-[-0.5025rem]">

@@ -71,22 +71,40 @@ export default function Location2Balance({ onBookNow }: Location2BalanceProps) {
           e.preventDefault()
           onBookNow()
         }}
-        className="Balance-cta relative z-4 flex w-full items-center gap-2 md:gap-2.5 lg:gap-5"
+        className="Balance-cta group relative z-4 flex w-full items-center gap-2 md:gap-2.5 lg:gap-5"
       >
-        <img
-          src={ctaIconMobile}
-          alt=""
-          className="Cta-icon-wrap h-8 w-21 shrink-0 md:hidden"
-        />
-        <img
-          src={ctaIconTablet}
-          alt=""
-          className="Cta-icon-wrap hidden h-14 w-45 shrink-0 md:block lg:hidden"
-        />
-        <div className="Cta-icon-wrap hidden items-center lg:flex lg:flex-1">
-          <img src={ctaIconDesktop} alt="" className="size-35 shrink-0" />
+        <div className="Cta-icon-wrap h-8 w-21 shrink-0 overflow-hidden md:hidden">
+          {/* cta-icon-mobile.svg — холст 84×32, сама иконка занимает только
+           * левый квадрат 32×32 (остальное — пустое поле, экспортированное
+           * вместе с фреймом из Figma) — object-none/object-left показывают
+           * картинку в НАТИВНОМ размере, обрезая по size-8, чтобы крутить
+           * вокруг центра именно иконки, а не всего холста с полем (иначе
+           * крутящаяся иконка "гуляла" бы по дуге — жалоба пользователя,
+           * тот же баг, что чинили в DriftSection.tsx). Ширина обёртки не
+           * меняется — отступ до текста остаётся прежним. */}
+          <img
+            src={ctaIconMobile}
+            alt=""
+            className="size-8 object-none object-left transition-transform duration-700 ease-out group-hover:rotate-[360deg]"
+          />
         </div>
-        <span className="w-[14.3593rem] font-manrope text-[1.875rem] leading-none font-semibold tracking-[-0.04em] text-dark md:w-127 md:text-[3.375rem] lg:w-auto lg:text-[8.375rem] lg:tracking-[-0.06em]">
+        <div className="Cta-icon-wrap hidden h-14 w-45 shrink-0 overflow-hidden md:block lg:hidden">
+          {/* Тот же приём, что у mobile-обёртки выше — cta-icon-tablet.svg
+           * холст 180×56, иконка — левый квадрат 56×56. */}
+          <img
+            src={ctaIconTablet}
+            alt=""
+            className="size-14 object-none object-left transition-transform duration-700 ease-out md:group-hover:rotate-[360deg]"
+          />
+        </div>
+        <div className="Cta-icon-wrap hidden items-center lg:flex lg:flex-1">
+          <img
+            src={ctaIconDesktop}
+            alt=""
+            className="size-35 shrink-0 transition-transform duration-700 ease-out lg:group-hover:rotate-[360deg]"
+          />
+        </div>
+        <span className="w-[14.3593rem] font-manrope text-[1.875rem] leading-none font-semibold tracking-[-0.04em] text-dark transition-colors duration-300 group-hover:text-dark/60 md:w-127 md:text-[3.375rem] lg:w-auto lg:text-[8.375rem] lg:tracking-[-0.06em]">
           Request Access
         </span>
       </a>
