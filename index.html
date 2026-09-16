@@ -9,6 +9,28 @@
       name="description"
       content="State of Space — a quiet return to yourself, shaped by space, rhythm, and presence."
     />
+    <!-- Preload только 2 самых критичных above-the-fold начертания (Hero
+    заголовок — 600, subtitle/nav — 500) — латинский подсет: у сайта весь
+    текст на английском, latin-ext (`unicode-range` в @font-face) браузер
+    так и не запросит. Без этого браузер находит шрифты только после
+    парсинга CSS, а до этого рисует текст фолбэком (жалоба пользователя —
+    на перезагрузке заметна смена шрифта); href — то же самое
+    /state-of-space/fonts/... что и в @font-face (src/index.css), иначе
+    шрифт скачался бы дважды (см. комментарий там). -->
+    <link
+      rel="preload"
+      as="font"
+      type="font/woff2"
+      href="/state-of-space/fonts/manrope-600-latin.woff2"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      as="font"
+      type="font/woff2"
+      href="/state-of-space/fonts/manrope-500-latin.woff2"
+      crossorigin
+    />
   </head>
   <body>
     <div id="root"></div>
