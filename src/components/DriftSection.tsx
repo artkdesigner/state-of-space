@@ -91,9 +91,9 @@ export default function DriftSection({ onBookNow }: DriftSectionProps) {
             e.preventDefault()
             onBookNow()
           }}
-          className="cta relative z-4 flex w-full items-start gap-2 md:items-end md:gap-2.5 lg:gap-5"
+          className="cta group relative z-4 flex w-full items-start gap-2 md:items-end md:gap-2.5 lg:gap-5"
         >
-          <div className="cta-icon-wrap flex h-8 w-21 flex-none shrink-0 items-center md:h-14 md:w-45 lg:h-auto lg:w-auto lg:flex-1">
+          <div className="cta-icon-wrap flex h-8 w-21 flex-none shrink-0 items-center transition-transform duration-700 ease-out group-hover:rotate-[360deg] md:h-14 md:w-45 lg:h-auto lg:w-auto lg:flex-1">
             <img
               src={ctaIcon}
               alt=""
@@ -113,7 +113,7 @@ export default function DriftSection({ onBookNow }: DriftSectionProps) {
               className="hidden lg:block lg:size-35"
             />
           </div>
-          <span className="cta-title w-[14.3593rem] font-manrope text-[1.875rem] leading-none font-semibold tracking-[-0.075rem] text-dark md:w-127 md:text-[3.375rem] md:tracking-[-0.135rem] lg:w-[79.375rem] lg:text-[8.375rem] lg:tracking-[-0.5025rem]">
+          <span className="cta-title w-[14.3593rem] font-manrope text-[1.875rem] leading-none font-semibold tracking-[-0.075rem] text-dark transition-colors duration-300 group-hover:text-dark/60 md:w-127 md:text-[3.375rem] md:tracking-[-0.135rem] lg:w-[79.375rem] lg:text-[8.375rem] lg:tracking-[-0.5025rem]">
             Request Access
           </span>
         </a>
