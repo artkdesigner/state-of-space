@@ -98,19 +98,19 @@ export default function DriftSection({ onBookNow }: DriftSectionProps) {
               src={ctaIcon}
               alt=""
               aria-hidden
-              className="size-8 transition-transform duration-700 ease-out group-hover:rotate-[180deg] md:hidden"
+              className="size-8 transition-[transform,opacity] duration-700 ease-out group-hover:rotate-[180deg] group-hover:opacity-60 md:hidden"
             />
             <img
               src={ctaIconMd}
               alt=""
               aria-hidden
-              className="hidden transition-transform duration-700 ease-out md:block md:size-14 md:group-hover:rotate-[180deg] lg:hidden"
+              className="hidden transition-[transform,opacity] duration-700 ease-out md:block md:size-14 md:group-hover:rotate-[180deg] md:group-hover:opacity-60 lg:hidden"
             />
             <img
               src={ctaIconLg}
               alt=""
               aria-hidden
-              className="hidden transition-transform duration-700 ease-out lg:block lg:size-35 lg:group-hover:rotate-[180deg]"
+              className="hidden transition-[transform,opacity] duration-700 ease-out lg:block lg:size-35 lg:group-hover:rotate-[180deg] lg:group-hover:opacity-60"
             />
           </div>
           <span className="cta-title w-[14.3593rem] font-manrope text-[1.875rem] leading-none font-semibold tracking-[-0.075rem] text-dark transition-colors duration-300 group-hover:text-dark/60 md:w-127 md:text-[3.375rem] md:tracking-[-0.135rem] lg:w-[79.375rem] lg:text-[8.375rem] lg:tracking-[-0.5025rem]">
