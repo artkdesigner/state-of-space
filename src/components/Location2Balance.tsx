@@ -85,7 +85,7 @@ export default function Location2Balance({ onBookNow }: Location2BalanceProps) {
           <img
             src={ctaIconMobile}
             alt=""
-            className="size-8 object-none object-left transition-transform duration-700 ease-out group-hover:rotate-[360deg]"
+            className="size-8 object-none object-left transition-transform duration-700 ease-out group-hover:rotate-[180deg]"
           />
         </div>
         <div className="Cta-icon-wrap hidden h-14 w-45 shrink-0 overflow-hidden md:block lg:hidden">
@@ -94,14 +94,14 @@ export default function Location2Balance({ onBookNow }: Location2BalanceProps) {
           <img
             src={ctaIconTablet}
             alt=""
-            className="size-14 object-none object-left transition-transform duration-700 ease-out md:group-hover:rotate-[360deg]"
+            className="size-14 object-none object-left transition-transform duration-700 ease-out md:group-hover:rotate-[180deg]"
           />
         </div>
         <div className="Cta-icon-wrap hidden items-center lg:flex lg:flex-1">
           <img
             src={ctaIconDesktop}
             alt=""
-            className="size-35 shrink-0 transition-transform duration-700 ease-out lg:group-hover:rotate-[360deg]"
+            className="size-35 shrink-0 transition-transform duration-700 ease-out lg:group-hover:rotate-[180deg]"
           />
         </div>
         <span className="w-[14.3593rem] font-manrope text-[1.875rem] leading-none font-semibold tracking-[-0.04em] text-dark transition-colors duration-300 group-hover:text-dark/60 md:w-127 md:text-[3.375rem] lg:w-auto lg:text-[8.375rem] lg:tracking-[-0.06em]">
