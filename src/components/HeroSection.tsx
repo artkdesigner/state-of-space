@@ -276,7 +276,7 @@ export default function HeroSection() {
         <h1 className="grid w-full grid-cols-1 items-center justify-items-center gap-5 font-manrope font-semibold uppercase leading-none tracking-[-0.04em] text-dark md:gap-10 lg:grid-cols-[1fr_auto_1fr] lg:gap-0">
           <span
             ref={textLeftRef}
-            className="Hero-text-left whitespace-nowrap text-[2rem] md:text-[3.4375rem] lg:justify-self-start lg:text-[6.875rem]"
+            className="Hero-text-left whitespace-nowrap text-[2rem] text-blue md:text-[3.4375rem] lg:justify-self-start lg:text-[6.875rem]"
           >
             <SplitChars text="III spaces" />
           </span>
